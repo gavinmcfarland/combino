@@ -36,8 +36,8 @@ Outputs:
 
 ```bash
 ouput/
-    README.md # copied from base
     package.json # deep merge with base
+    README.md # copied from base
     svelte.config.js # new file
 ```
 
