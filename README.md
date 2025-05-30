@@ -74,4 +74,14 @@ templates/
     base/
         [?framework=svelte]
             App.svelte
+        [?framework=react]
+            App.tsx
+```
+
+Is `framework` equals `svelte` then this is the output.
+
+```
+templates/
+    base/
+        App.svelte
 ```
