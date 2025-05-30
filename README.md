@@ -8,12 +8,8 @@ Combine multiple template folders to generate custom file and folder structures.
 
 ## Quick Start
 
-```js
-const combino = new Combino();
-await combino.combine({
-  outputDir: "output",
-  templates: ["templates/base", "templates/typescript"],
-});
+```
+combino templates/base templates/testing
 ```
 
 ---
@@ -106,3 +102,13 @@ plugin.version = 1.0.0
 
 * **\[ignore]**: Prevent specific files from being merged or copied.
 * **\[data]**: Provide custom data for use in templates.
+
+## Combining programmatically 
+
+```js
+const combino = new Combino();
+await combino.combine({
+  outputDir: "output",
+  templates: ["templates/base", "templates/typescript"],
+});
+```
