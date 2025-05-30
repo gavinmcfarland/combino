@@ -4,7 +4,9 @@ A flexible scaffolding tool that lets you combine template folders to generate c
 
 > **Note:** This project is currently a work in progress. Features and documentation are being actively developed.
 
-## Combine folders
+## Quick Start
+
+Here's a simple example of how to use Combino:
 
 ```js
 const combino = new Combino();
@@ -14,7 +16,9 @@ await combino.combine({
 });
 ```
 
-Template 1
+### Example Structure
+
+**Template 1 (Base)**
 
 ```bash
 templates/
@@ -23,7 +27,7 @@ templates/
         README.md
 ```
 
-Template 2
+**Template 2 (Svelte)**
 
 ```bash
 templates/
@@ -32,29 +36,29 @@ templates/
         svelte.config.js
 ```
 
-Outputs:
+**Generated Output**
 
 ```bash
-ouput/
-    package.json # deep merge with base
-    README.md # copied from base
-    svelte.config.js # new file
+output/
+    package.json    # Deep merged from both templates
+    README.md      # Copied from base template
+    svelte.config.js # New file from svelte template
 ```
 
-## Configuring templates
+## Template Configuration
 
-### Ignore
+### Ignore Files
 
-Ignore certain files from being copied
+You can specify files to be ignored during the combination process:
 
 ```ini
 [ignore]
 package.json
 ```
 
-## Data
+### Template Data
 
-Supply data with templates
+Supply custom data to your templates:
 
 ```ini
 [data]
@@ -63,31 +67,26 @@ plugin.description = "Take figma plugins to the next level"
 plugin.version = 1.0.0
 ```
 
-## Confitional files and folders
+### Conditional Templates
 
-In some cases you want folders and files to be copied only if certain conditions are met.
+Combino supports conditional template inclusion based on configuration values. This allows you to create dynamic templates that adapt based on your needs.
 
-In the folowing example. The `tests` folder will only be copied if `testing` equals `true`.
+#### Conditional Folders
 
-```
+The following example only includes the `tests` folder when `testing` is set to `true`:
+
+```bash
 templates/
     base/
-        tests[?testing]
+        tests[?testing]/
             example.test.ts
 ```
 
-Output:
+#### Conditional Files
 
-```
-templates/
-    base/
-        tests/
-            example.test.ts
-```
+You can also conditionally include specific files based on configuration:
 
-You don't have to provide output a folder though.
-
-```
+```bash
 templates/
     base/
         [?framework=svelte]
@@ -96,17 +95,17 @@ templates/
             App.tsx
 ```
 
-and will output if `framework` equals `svelte`
+When `framework=svelte`:
 
-```
+```bash
 templates/
     base/
         App.svelte
 ```
 
-and will output if `framework` equals `react`.
+When `framework=react`:
 
-```
+```bash
 templates/
     base/
         App.tsx
