@@ -2,111 +2,107 @@
 
 Combine multiple template folders to generate custom file and folder structures. Supports deep merging, conditional inclusion via query parameters, and configurable template data—all with minimal setup.
 
-> **Note:** This project is currently a work in progress. Features and documentation are being actively developed.
+> **Note:** This project is a work in progress. Features and documentation are still being developed.
+
+---
 
 ## Quick Start
-
-Here's a simple example of how to use Combino:
 
 ```js
 const combino = new Combino();
 await combino.combine({
-    outputDir: "output",
-    templates: ["templates/base", "templates/typescript"],
+  outputDir: "output",
+  templates: ["templates/base", "templates/typescript"],
 });
 ```
 
-### Example Structure
+---
 
-**Template 1 (Base)**
+## Example
 
-```bash
-templates/
-    base/
-        package.json
-        README.md
-```
-
-**Template 2 (Svelte)**
+### Templates
 
 ```bash
 templates/
-    svelte/
-        package.json
-        svelte.config.js
+  base/
+    package.json
+    README.md
+
+  svelte/
+    package.json
+    svelte.config.js
 ```
 
-**Generated Output**
+### Output
 
 ```bash
 output/
-    package.json    # Deep merged from both templates
-    README.md      # Copied from base template
-    svelte.config.js # New file from svelte template
+  package.json       # Deep merged from both templates
+  README.md          # From base
+  svelte.config.js   # From svelte
 ```
 
-## Template Configuration
+---
 
-### Conditional Templates
+## Template Logic
 
-Templates support query parameters to conditionally include or exclude specific files and folders.
+### Conditional Inclusion
 
-#### Conditional Folders
+Files and folders can be conditionally included or excluded using query parameters.
 
-The following example only includes the `tests` folder when `testing` is set to `true`:
+#### Example: Conditional Folder
+
+Only include `tests/` if `testing=true`:
 
 ```bash
 templates/
-    base/
-        tests[?testing]/
-            example.test.ts
+  base/
+    tests[?testing]/
+      example.test.ts
 ```
 
-#### Conditional Files
+#### Example: Conditional File
 
-You can also conditionally include specific files based on configuration.
+Include a file based on `framework` value:
 
 ```bash
 templates/
-    base/
-        [?framework=svelte]
-            App.svelte
-        [?framework=react]
-            App.tsx
+  base/
+    [?framework=svelte]
+      App.svelte
+    [?framework=react]
+      App.tsx
 ```
 
-When `framework=svelte`:
+If `framework=svelte`, the output includes:
 
 ```bash
-templates/
-    base/
-        App.svelte
+App.svelte
 ```
 
-When `framework=react`:
+If `framework=react`, the output includes:
 
 ```bash
-templates/
-    base/
-        App.tsx
+App.tsx
 ```
 
-### Ignore Files
+---
 
-You can specify files to be ignored during the combination process:
+## Configuration
+
+Use a `.combino` config file to customize how templates are combined.
+
+### Example `.combino` file
 
 ```ini
 [ignore]
 package.json
-```
 
-### Template Data
-
-Supply custom data to your templates:
-
-```ini
 [data]
 plugin.name = "Plugma"
 plugin.description = "Take figma plugins to the next level"
 plugin.version = 1.0.0
 ```
+
+* **\[ignore]**: Prevent specific files from being merged or copied.
+* **\[data]**: Provide custom data for use in templates.
