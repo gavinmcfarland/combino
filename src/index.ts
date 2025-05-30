@@ -10,229 +10,325 @@ import { mergeMarkdown } from "./mergers/markdown";
 import { mergeText } from "./mergers/text";
 
 interface CombinoConfig {
-  ignore?: string[];
-  data?: Record<string, any>;
+	ignore?: string[];
+	data?: Record<string, any>;
 }
 
 export class Combino {
-  private async readFile(filePath: string): Promise<FileContent> {
-    const content = await fs.readFile(filePath, "utf-8");
-    const { data, content: fileContent } = matter(content);
-    return {
-      content: fileContent,
-      config: data as any,
-    };
-  }
+	private async readFile(filePath: string): Promise<FileContent> {
+		const content = await fs.readFile(filePath, "utf-8");
+		const { data, content: fileContent } = matter(content);
+		return {
+			content: fileContent,
+			config: data as any,
+		};
+	}
 
-  private async readCombinoConfig(
-    templatePath: string
-  ): Promise<CombinoConfig> {
-    const configPath = path.join(templatePath, ".combino");
-    try {
-      const content = await fs.readFile(configPath, "utf-8");
-      const lines = content.split("\n");
-      const config: CombinoConfig = {};
+	private async readCombinoConfig(
+		templatePath: string
+	): Promise<CombinoConfig> {
+		const configPath = path.join(templatePath, ".combino");
+		try {
+			const content = await fs.readFile(configPath, "utf-8");
+			const lines = content.split("\n");
+			const config: CombinoConfig = {};
 
-      let currentSection: string | null = null;
-      for (const line of lines) {
-        const trimmedLine = line.trim();
-        if (!trimmedLine) continue;
+			let currentSection: string | null = null;
+			for (const line of lines) {
+				const trimmedLine = line.trim();
+				if (!trimmedLine) continue;
 
-        if (trimmedLine.startsWith("[") && trimmedLine.endsWith("]")) {
-          currentSection = trimmedLine.slice(1, -1);
-          if (currentSection === "ignore") {
-            config.ignore = [];
-          } else if (currentSection === "data") {
-            config.data = {};
-          }
-        } else if (currentSection === "ignore" && config.ignore) {
-          config.ignore.push(trimmedLine);
-        } else if (currentSection === "data" && config.data) {
-          const [key, value] = trimmedLine.split("=").map((s) => s.trim());
-          if (key && value) {
-            // Remove quotes from value if present
-            const cleanValue = value.replace(/^["']|["']$/g, "");
-            // Handle nested properties (e.g., "project.name")
-            const keys = key.split(".");
-            let current = config.data;
-            for (let i = 0; i < keys.length - 1; i++) {
-              current[keys[i]] = current[keys[i]] || {};
-              current = current[keys[i]];
-            }
-            current[keys[keys.length - 1]] = cleanValue;
-          }
-        }
-      }
+				if (trimmedLine.startsWith("[") && trimmedLine.endsWith("]")) {
+					currentSection = trimmedLine.slice(1, -1);
+					if (currentSection === "ignore") {
+						config.ignore = [];
+					} else if (currentSection === "data") {
+						config.data = {};
+					}
+				} else if (currentSection === "ignore" && config.ignore) {
+					config.ignore.push(trimmedLine);
+				} else if (currentSection === "data" && config.data) {
+					const [key, value] = trimmedLine
+						.split("=")
+						.map((s) => s.trim());
+					if (key && value) {
+						// Remove quotes from value if present
+						const cleanValue = value.replace(/^["']|["']$/g, "");
+						// Handle nested properties (e.g., "project.name")
+						const keys = key.split(".");
+						let current = config.data;
+						for (let i = 0; i < keys.length - 1; i++) {
+							current[keys[i]] = current[keys[i]] || {};
+							current = current[keys[i]];
+						}
+						current[keys[keys.length - 1]] = cleanValue;
+					}
+				}
+			}
 
-      return config;
-    } catch (error) {
-      return {};
-    }
-  }
+			return config;
+		} catch (error) {
+			return {};
+		}
+	}
 
-  private async processTemplate(
-    content: string,
-    data: Record<string, any>
-  ): Promise<string> {
-    try {
-      return await ejs.render(content, data, { async: true });
-    } catch (error) {
-      console.error("Error processing template:", error);
-      return content;
-    }
-  }
+	private async processTemplate(
+		content: string,
+		data: Record<string, any>
+	): Promise<string> {
+		try {
+			return await ejs.render(content, data, { async: true });
+		} catch (error) {
+			console.error("Error processing template:", error);
+			return content;
+		}
+	}
 
-  private async getFilesInTemplate(
-    templatePath: string,
-    ignorePatterns: string[]
-  ): Promise<string[]> {
-    try {
-      console.log("Template path:", templatePath);
-      console.log("Ignore patterns:", ignorePatterns);
+	private evaluateCondition(
+		condition: string,
+		data: Record<string, any>
+	): boolean {
+		// Remove the [? and ] from the condition
+		const cleanCondition = condition.slice(2, -1);
 
-      const files = await glob("**/*", {
-        cwd: templatePath,
-        nodir: true,
-        ignore: ignorePatterns,
-        dot: true,
-      });
+		// Split on = to get the key and value
+		const [key, value] = cleanCondition.split("=").map((s) => s.trim());
 
-      const filteredFiles = files.filter((file) => {
-        return !ignorePatterns.some((pattern) => {
-          const regex = new RegExp(pattern.replace(/\*/g, ".*"));
-          return regex.test(file);
-        });
-      });
+		// Get the actual value from the data object
+		const actualValue = key.split(".").reduce((obj, k) => obj?.[k], data);
 
-      console.log("Found files:", filteredFiles);
-      return filteredFiles;
-    } catch (error) {
-      throw new Error(`Failed to get files in template: ${error}`);
-    }
-  }
+		// Compare the values, converting both to strings for comparison
+		return String(actualValue) === value;
+	}
 
-  private getMergeStrategy(filePath: string, config?: any): MergeStrategy {
-    if (config?.merge?.strategy) {
-      return config.merge.strategy;
-    }
+	private async getFilesInTemplate(
+		templatePath: string,
+		ignorePatterns: string[],
+		data: Record<string, any>
+	): Promise<{ sourcePath: string; targetPath: string }[]> {
+		try {
+			console.log("Template path:", templatePath);
+			console.log("Ignore patterns:", ignorePatterns);
 
-    const ext = path.extname(filePath).toLowerCase();
-    switch (ext) {
-      case ".json":
-        return "deep";
-      case ".md":
-        return "replace";
-      default:
-        return "replace";
-    }
-  }
+			const files = await glob("**/*", {
+				cwd: templatePath,
+				nodir: true,
+				ignore: ignorePatterns,
+				dot: true,
+			});
 
-  private async mergeFiles(
-    targetPath: string,
-    sourcePath: string,
-    strategy: MergeStrategy,
-    data: Record<string, any>
-  ): Promise<string> {
-    const ext = path.extname(targetPath).toLowerCase();
+			const filteredFiles = files.filter((file) => {
+				// First check if the file should be ignored
+				if (
+					ignorePatterns.some((pattern) => {
+						const regex = new RegExp(pattern.replace(/\*/g, ".*"));
+						return regex.test(file);
+					})
+				) {
+					return false;
+				}
 
-    let mergedContent: string;
-    switch (ext) {
-      case ".json":
-        mergedContent = await mergeJson(targetPath, sourcePath, strategy);
-        break;
-      case ".md":
-        mergedContent = await mergeMarkdown(targetPath, sourcePath, strategy);
-        break;
-      default:
-        mergedContent = await mergeText(targetPath, sourcePath, strategy);
-    }
+				// Check each directory in the path for conditions
+				const parts = file.split(path.sep);
+				for (const part of parts) {
+					if (part.includes("[?") && part.includes("]")) {
+						// Extract the condition from the part
+						const conditionMatch = part.match(/\[[^\]]+\]/);
+						if (conditionMatch) {
+							const condition = conditionMatch[0];
+							// If any condition in the path is false, exclude the file
+							if (!this.evaluateCondition(condition, data)) {
+								return false;
+							}
+						}
+					}
+				}
 
-    // Process the merged content with EJS
-    return this.processTemplate(mergedContent, data);
-  }
+				return true;
+			});
 
-  async combine(options: TemplateOptions): Promise<void> {
-    const { targetDir, templates } = options;
+			// Transform the file paths to handle conditional folders
+			return filteredFiles.map((file) => {
+				const parts = file.split(path.sep);
+				const transformedParts = parts
+					.map((part) => {
+						if (part.includes("[?") && part.includes("]")) {
+							// Extract the condition from the part
+							const conditionMatch = part.match(/\[[^\]]+\]/);
+							if (conditionMatch) {
+								const condition = conditionMatch[0];
+								// If the part is just the condition, return empty string
+								if (part === condition) {
+									return "";
+								}
+								// Otherwise, remove the condition from the part
+								return part.replace(condition, "");
+							}
+						}
+						return part;
+					})
+					.filter(Boolean); // Remove empty strings
 
-    // Create target directory if it doesn't exist
-    await fs.mkdir(targetDir, { recursive: true });
+				return {
+					sourcePath: path.join(templatePath, file),
+					targetPath: path.join(...transformedParts),
+				};
+			});
+		} catch (error) {
+			throw new Error(`Failed to get files in template: ${error}`);
+		}
+	}
 
-    // First, collect ignore patterns and data from all templates
-    const allIgnorePatterns = new Set<string>(["node_modules/**", ".combino"]);
-    const allData: Record<string, any> = {};
+	private getMergeStrategy(filePath: string, config?: any): MergeStrategy {
+		if (config?.merge?.strategy) {
+			return config.merge.strategy;
+		}
 
-    for (const template of templates) {
-      const config = await this.readCombinoConfig(template);
-      if (config.ignore) {
-        config.ignore.forEach((pattern) => allIgnorePatterns.add(pattern));
-      }
-      if (config.data) {
-        Object.assign(allData, config.data);
-      }
-    }
+		const ext = path.extname(filePath).toLowerCase();
+		switch (ext) {
+			case ".json":
+				return "deep";
+			case ".md":
+				return "replace";
+			default:
+				return "replace";
+		}
+	}
 
-    // First, copy all files from the first template
-    const firstTemplate = templates[0];
-    const firstTemplateFiles = await this.getFilesInTemplate(
-      firstTemplate,
-      Array.from(allIgnorePatterns)
-    );
+	private async mergeFiles(
+		targetPath: string,
+		sourcePath: string,
+		strategy: MergeStrategy,
+		data: Record<string, any>
+	): Promise<string> {
+		const ext = path.extname(targetPath).toLowerCase();
 
-    for (const file of firstTemplateFiles) {
-      const sourcePath = path.join(firstTemplate, file);
-      const targetPath = path.join(targetDir, file);
-      await fs.mkdir(path.dirname(targetPath), { recursive: true });
+		let mergedContent: string;
+		switch (ext) {
+			case ".json":
+				mergedContent = await mergeJson(
+					targetPath,
+					sourcePath,
+					strategy
+				);
+				break;
+			case ".md":
+				mergedContent = await mergeMarkdown(
+					targetPath,
+					sourcePath,
+					strategy
+				);
+				break;
+			default:
+				mergedContent = await mergeText(
+					targetPath,
+					sourcePath,
+					strategy
+				);
+		}
 
-      // Read and process the source file with EJS
-      const content = await fs.readFile(sourcePath, "utf-8");
-      const processedContent = await this.processTemplate(content, allData);
-      await fs.writeFile(targetPath, processedContent);
-    }
+		// Process the merged content with EJS
+		return this.processTemplate(mergedContent, data);
+	}
 
-    // Then merge files from subsequent templates
-    for (let i = 1; i < templates.length; i++) {
-      const template = templates[i];
-      const files = await this.getFilesInTemplate(
-        template,
-        Array.from(allIgnorePatterns)
-      );
+	async combine(options: TemplateOptions): Promise<void> {
+		const { targetDir, templates, data: externalData = {} } = options;
 
-      for (const file of files) {
-        const sourcePath = path.join(template, file);
-        const targetPath = path.join(targetDir, file);
+		// Create target directory if it doesn't exist
+		await fs.mkdir(targetDir, { recursive: true });
 
-        // Create target directory if it doesn't exist
-        await fs.mkdir(path.dirname(targetPath), { recursive: true });
+		// First, collect ignore patterns and data from all templates
+		const allIgnorePatterns = new Set<string>([
+			"node_modules/**",
+			".combino",
+		]);
+		const allData: Record<string, any> = { ...externalData }; // Start with external data
 
-        // Read source file
-        const sourceContent = await this.readFile(sourcePath);
-        const strategy = this.getMergeStrategy(file, sourceContent.config);
+		for (const template of templates) {
+			const config = await this.readCombinoConfig(template);
+			if (config.ignore) {
+				config.ignore.forEach((pattern) =>
+					allIgnorePatterns.add(pattern)
+				);
+			}
+			if (config.data) {
+				Object.assign(allData, config.data); // Merge config data, allowing external data to override
+			}
+		}
 
-        try {
-          const targetContent = await this.readFile(targetPath);
-          const mergedContent = await this.mergeFiles(
-            targetPath,
-            sourcePath,
-            strategy,
-            allData
-          );
-          await fs.writeFile(targetPath, mergedContent);
-        } catch (error) {
-          // If target doesn't exist, just copy and process the source
-          const content = await fs.readFile(sourcePath, "utf-8");
-          const processedContent = await this.processTemplate(content, allData);
-          await fs.writeFile(targetPath, processedContent);
-        }
-      }
-    }
-  }
+		// First, copy all files from the first template
+		const firstTemplate = templates[0];
+		const firstTemplateFiles = await this.getFilesInTemplate(
+			firstTemplate,
+			Array.from(allIgnorePatterns),
+			allData
+		);
+
+		for (const { sourcePath, targetPath } of firstTemplateFiles) {
+			const fullTargetPath = path.join(targetDir, targetPath);
+			await fs.mkdir(path.dirname(fullTargetPath), { recursive: true });
+
+			// Read and process the source file with EJS
+			const content = await fs.readFile(sourcePath, "utf-8");
+			const processedContent = await this.processTemplate(
+				content,
+				allData
+			);
+			await fs.writeFile(fullTargetPath, processedContent);
+		}
+
+		// Then merge files from subsequent templates
+		for (let i = 1; i < templates.length; i++) {
+			const template = templates[i];
+			const files = await this.getFilesInTemplate(
+				template,
+				Array.from(allIgnorePatterns),
+				allData
+			);
+
+			for (const { sourcePath, targetPath } of files) {
+				const fullTargetPath = path.join(targetDir, targetPath);
+
+				// Create target directory if it doesn't exist
+				await fs.mkdir(path.dirname(fullTargetPath), {
+					recursive: true,
+				});
+
+				// Read source file
+				const sourceContent = await this.readFile(sourcePath);
+				const strategy = this.getMergeStrategy(
+					targetPath,
+					sourceContent.config
+				);
+
+				try {
+					const targetContent = await this.readFile(fullTargetPath);
+					const mergedContent = await this.mergeFiles(
+						fullTargetPath,
+						sourcePath,
+						strategy,
+						allData
+					);
+					await fs.writeFile(fullTargetPath, mergedContent);
+				} catch (error) {
+					// If target doesn't exist, just copy and process the source
+					const content = await fs.readFile(sourcePath, "utf-8");
+					const processedContent = await this.processTemplate(
+						content,
+						allData
+					);
+					await fs.writeFile(fullTargetPath, processedContent);
+				}
+			}
+		}
+	}
 }
 
 async function fileExists(path: string): Promise<boolean> {
-  try {
-    await fs.access(path);
-    return true;
-  } catch {
-    return false;
-  }
+	try {
+		await fs.access(path);
+		return true;
+	} catch {
+		return false;
+	}
 }

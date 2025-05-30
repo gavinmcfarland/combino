@@ -2,7 +2,7 @@
 
 ## Description
 
-This is a typescript project template react.
+This is a base project template.
 
 ## Installation
 
