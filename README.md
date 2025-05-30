@@ -1,6 +1,6 @@
 # Combino
 
-A flexible scaffolding tool that lets you combine template folders to generate custom project setups. It supports smart merging of files across formats like JSON, JavaScript, and Markdown, using simple frontmatter or config rules to control how content is combined.
+Combine multiple template folders to generate custom file and folder structures. Supports deep merging, conditional inclusion via query parameters, and configurable template data—all with minimal setup.
 
 > **Note:** This project is currently a work in progress. Features and documentation are being actively developed.
 
@@ -47,29 +47,9 @@ output/
 
 ## Template Configuration
 
-### Ignore Files
-
-You can specify files to be ignored during the combination process:
-
-```ini
-[ignore]
-package.json
-```
-
-### Template Data
-
-Supply custom data to your templates:
-
-```ini
-[data]
-plugin.name = "Plugma"
-plugin.description = "Take figma plugins to the next level"
-plugin.version = 1.0.0
-```
-
 ### Conditional Templates
 
-Combino supports conditional template inclusion based on configuration values. This allows you to create dynamic templates that adapt based on your needs.
+Templates support query parameters to conditionally include or exclude specific files and folders.
 
 #### Conditional Folders
 
@@ -84,7 +64,7 @@ templates/
 
 #### Conditional Files
 
-You can also conditionally include specific files based on configuration:
+You can also conditionally include specific files based on configuration.
 
 ```bash
 templates/
@@ -109,4 +89,24 @@ When `framework=react`:
 templates/
     base/
         App.tsx
+```
+
+### Ignore Files
+
+You can specify files to be ignored during the combination process:
+
+```ini
+[ignore]
+package.json
+```
+
+### Template Data
+
+Supply custom data to your templates:
+
+```ini
+[data]
+plugin.name = "Plugma"
+plugin.description = "Take figma plugins to the next level"
+plugin.version = 1.0.0
 ```
