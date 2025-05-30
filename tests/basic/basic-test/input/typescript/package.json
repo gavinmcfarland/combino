@@ -1,0 +1,10 @@
+{
+    "scripts": {
+        "build": "tsc",
+        "start": "ts-node src/index.ts"
+    },
+    "dependencies": {
+        "typescript": "^4.5.0",
+        "ts-node": "^10.4.0"
+    }
+}

@@ -1,0 +1,37 @@
+{
+    "name": "combino",
+    "version": "0.1.0",
+    "description": "A flexible scaffolding tool for intelligently merging template folders",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "test": "jest",
+        "lint": "eslint src/**/*.ts"
+    },
+    "keywords": [
+        "scaffolding",
+        "templates",
+        "merge",
+        "project-generation"
+    ],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "@types/deepmerge": "^2.1.0",
+        "@types/glob": "^8.1.0",
+        "@types/jest": "^29.5.0",
+        "@types/node": "^20.17.55",
+        "@typescript-eslint/eslint-plugin": "^5.0.0",
+        "@typescript-eslint/parser": "^5.0.0",
+        "eslint": "^8.0.0",
+        "jest": "^29.5.0",
+        "ts-jest": "^29.1.0",
+        "typescript": "^5.0.0"
+    },
+    "dependencies": {
+        "deepmerge": "^4.3.0",
+        "glob": "^10.0.0",
+        "gray-matter": "^4.0.3"
+    }
+}
