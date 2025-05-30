@@ -67,7 +67,25 @@ plugin.version = 1.0.0
 
 In some cases you want folders and files to be copied only if certain conditions are met.
 
-In the folowing example. The `App.svelte` will only be copied if `framework` equals `svelte`.
+In the folowing example. The `tests` folder will only be copied if `testing` equals `true`.
+
+```
+templates/
+    base/
+        tests[?testing]
+            example.test.ts
+```
+
+Output:
+
+```
+templates/
+    base/
+        tests/
+            example.test.ts
+```
+
+You don't have to provide output a folder though.
 
 ```
 templates/
@@ -78,10 +96,18 @@ templates/
             App.tsx
 ```
 
-Is `framework` equals `svelte` then this is the output.
+and will output if `framework` equals `svelte`
 
 ```
 templates/
     base/
         App.svelte
+```
+
+and will output if `framework` equals `react`.
+
+```
+templates/
+    base/
+        App.tsx
 ```
