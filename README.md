@@ -1,61 +1,77 @@
 # Combino
 
-A flexible scaffolding tool that lets you combine templates to generate custom project setups. It supports smart merging of files across formats like JSON, JavaScript, and Markdown, using simple frontmatter or config rules to control how content is combined.
+A flexible scaffolding tool that lets you combine template folders to generate custom project setups. It supports smart merging of files across formats like JSON, JavaScript, and Markdown, using simple frontmatter or config rules to control how content is combined.
 
 > **Note:** This project is currently a work in progress. Features and documentation are being actively developed.
 
-For example if you create the following template:
+## Combine folders
 
-```bash
-base/
-  README.md
-  package.json
+```js
+const combino = new Combino();
+await combino.combine({
+    outputDir: "output",
+    templates: ["templates/base", "templates/typescript"],
+});
 ```
 
-and another template:
+Template 1
 
 ```bash
-svelte/
-  package.json
-  svelte.config.js
+templates/
+    base/
+        package.json
+        README.md
 ```
 
-Then using combino.
+Template 2
 
 ```bash
-project/
-  README.md # copied from base
-  package.json # deep merge with base
-  svelte.config.js # new file
+templates/
+    svelte/
+        package.json
+        svelte.config.js
+```
+
+Outputs:
+
+```bash
+ouput/
+    README.md # copied from base
+    package.json # deep merge with base
+    svelte.config.js # new file
 ```
 
 ## Configuring templates
 
-You can configure templates using frontmatter.
+### Ignore
 
-By default each file type has its own merging strategies, but you can change them.
+Ignore certain files from being copied
 
-```yaml
-merge:
-    strategy: deep | shallow | append | prepend | replace
-```
-
-## blocking/ignore files/folders
-
-Maybe there is a way to say that you want certain files to be ignored, blocked or orevented from being created.
-
-Perhaps this is included in a config file or a meta file.
-
-```toml
-[exclude]
+```ini
+[ignore]
 package.json
 ```
 
-## apply/include folders to merge
+## Data
 
-Perhaps instead of assuming the folder should merge with a base, we should specify what it should merge with?
+Supply data with templates
 
-```toml
-[include]
-../templates/base
+```ini
+[data]
+plugin.name = "Plugma"
+plugin.description = "Take figma plugins to the next level"
+plugin.version = 1.0.0
+```
+
+## Confitional files and folders
+
+In some cases you want folders and files to be copied only if certain conditions are met.
+
+In the folowing example. The `App.svelte` will only be copied if `framework` equals `svelte`.
+
+```
+templates/
+    base/
+        [?framework=svelte]
+            App.svelte
 ```

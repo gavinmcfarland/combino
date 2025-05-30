@@ -2,7 +2,7 @@
 
 ## Description
 
-This is a TypeScript project template.
+This is a base project for Plugma template.
 
 ## Installation
 

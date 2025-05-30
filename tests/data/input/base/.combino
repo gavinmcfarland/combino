@@ -1,0 +1,4 @@
+[data]
+project.name = "Plugma"
+project.description = "A plugma project"
+project.version = "1.0.0"

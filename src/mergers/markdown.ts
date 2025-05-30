@@ -2,128 +2,144 @@ import { promises as fs } from "fs";
 import { MergeStrategy } from "../types";
 
 interface MarkdownSection {
-	header: string;
-	level: number;
-	content: string;
+  header: string;
+  level: number;
+  content: string;
 }
 
 function parseMarkdown(content: string): MarkdownSection[] {
-	const sections: MarkdownSection[] = [];
-	const lines = content.split("\n");
-	let currentSection: MarkdownSection | null = null;
-	let inFrontmatter = false;
+  const sections: MarkdownSection[] = [];
+  const lines = content.split("\n");
+  let currentSection: MarkdownSection | null = null;
+  let inFrontmatter = false;
+  let currentContent: string[] = [];
 
-	for (const line of lines) {
-		// Check for frontmatter
-		if (line.trim() === "---") {
-			inFrontmatter = !inFrontmatter;
-			continue;
-		}
-		if (inFrontmatter) {
-			continue;
-		}
+  for (const line of lines) {
+    // Check for frontmatter
+    if (line.trim() === "---") {
+      inFrontmatter = !inFrontmatter;
+      continue;
+    }
+    if (inFrontmatter) {
+      continue;
+    }
 
-		// Check for headers
-		const headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
-		if (headerMatch) {
-			if (currentSection) {
-				sections.push(currentSection);
-			}
-			currentSection = {
-				header: headerMatch[2],
-				level: headerMatch[1].length,
-				content: line + "\n",
-			};
-		} else if (currentSection) {
-			currentSection.content += line + "\n";
-		}
-	}
+    // Check for headers
+    const headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
+    if (headerMatch) {
+      if (currentSection) {
+        // Join content lines and ensure there's a newline at the end
+        currentSection.content = currentContent.join("\n");
+        sections.push(currentSection);
+      }
+      currentSection = {
+        header: headerMatch[2],
+        level: headerMatch[1].length,
+        content: "",
+      };
+      currentContent = [];
+    } else if (currentSection) {
+      currentContent.push(line);
+    }
+  }
 
-	if (currentSection) {
-		sections.push(currentSection);
-	}
+  if (currentSection) {
+    // Join content lines and ensure there's a newline at the end
+    currentSection.content = currentContent.join("\n");
+    sections.push(currentSection);
+  }
 
-	return sections;
+  return sections;
 }
 
 function mergeSections(
-	targetSections: MarkdownSection[],
-	sourceSections: MarkdownSection[],
-	strategy: MergeStrategy
+  targetSections: MarkdownSection[],
+  sourceSections: MarkdownSection[],
+  strategy: MergeStrategy
 ): MarkdownSection[] {
-	if (strategy === "replace") {
-		// For replace, use the source sections only
-		return sourceSections;
-	}
+  // For replace strategy, we want to keep all target sections and only replace matching ones
+  if (strategy === "replace") {
+    const result = [...targetSections];
+    for (const sourceSection of sourceSections) {
+      const targetIndex = result.findIndex(
+        (s) => s.header === sourceSection.header
+      );
+      if (targetIndex !== -1) {
+        result[targetIndex] = {
+          ...result[targetIndex],
+          content: sourceSection.content,
+        };
+      }
+    }
+    return result;
+  }
 
-	const mergedSections = new Map<string, MarkdownSection>();
-	const sectionOrder: string[] = [];
+  // For other strategies, use the map-based approach
+  const mergedSections = new Map<string, MarkdownSection>();
+  const sectionOrder: string[] = [];
 
-	// Add all target sections first
-	for (const section of targetSections) {
-		mergedSections.set(section.header, { ...section });
-		sectionOrder.push(section.header);
-	}
+  // Add all target sections first
+  for (const section of targetSections) {
+    mergedSections.set(section.header, { ...section });
+    sectionOrder.push(section.header);
+  }
 
-	// Process source sections
-	for (const section of sourceSections) {
-		const existing = mergedSections.get(section.header);
-		if (existing) {
-			// For matching headers, use the specified strategy
-			switch (strategy) {
-				case "append":
-					existing.content += "\n\n" + section.content;
-					break;
-				case "prepend":
-					existing.content =
-						section.content + "\n\n" + existing.content;
-					break;
-			}
-		} else {
-			// For new sections, add them as is
-			mergedSections.set(section.header, { ...section });
-			sectionOrder.push(section.header);
-		}
-	}
+  // Process source sections
+  for (const section of sourceSections) {
+    const existing = mergedSections.get(section.header);
+    if (existing) {
+      // For matching headers, use the specified strategy
+      switch (strategy) {
+        case "append":
+          existing.content += "\n\n" + section.content;
+          break;
+        case "prepend":
+          existing.content = section.content + "\n\n" + existing.content;
+          break;
+      }
+    } else {
+      // For new sections, add them as is
+      mergedSections.set(section.header, { ...section });
+      sectionOrder.push(section.header);
+    }
+  }
 
-	// Return sections in the original order
-	return sectionOrder.map((header) => mergedSections.get(header)!);
+  // Return sections in the original order
+  return sectionOrder.map((header) => mergedSections.get(header)!);
 }
 
 function sectionsToMarkdown(sections: MarkdownSection[]): string {
-	return sections
-		.map((section) => {
-			const header = "#".repeat(section.level) + " " + section.header;
-			// Trim content to avoid leading/trailing blank lines
-			const content = section.content.trim();
-			return `${header}\n\n${content}`;
-		})
-		.join("\n\n")
-		.replace(/(\n\s*){3,}/g, "\n\n") // collapse 3+ newlines to 2
-		.trim(); // remove leading/trailing blank lines
+  const result =
+    sections
+      .map((section) => {
+        const header = "#".repeat(section.level) + " " + section.header;
+        // Ensure there's a newline after the header and preserve content newlines
+        const sectionContent = `${header}\n\n${section.content}`;
+
+        return sectionContent;
+      })
+      .join("\n\n")
+      .replace(/(\n\s*){3,}/g, "\n\n") // collapse 3+ newlines to 2
+      .trimEnd() + "\n"; // trim trailing whitespace and add final newline
+
+  return result;
 }
 
 export async function mergeMarkdown(
-	targetPath: string,
-	sourcePath: string,
-	strategy: MergeStrategy
+  targetPath: string,
+  sourcePath: string,
+  strategy: MergeStrategy
 ): Promise<string> {
-	const targetContent = await fs.readFile(targetPath, "utf-8");
-	const sourceContent = await fs.readFile(sourcePath, "utf-8");
+  const targetContent = await fs.readFile(targetPath, "utf-8");
+  const sourceContent = await fs.readFile(sourcePath, "utf-8");
 
-	if (strategy === "replace") {
-		// For replace, just use the source sections (without frontmatter)
-		const sourceSections = parseMarkdown(sourceContent);
-		return sectionsToMarkdown(sourceSections);
-	}
+  const targetSections = parseMarkdown(targetContent);
+  const sourceSections = parseMarkdown(sourceContent);
 
-	const targetSections = parseMarkdown(targetContent);
-	const sourceSections = parseMarkdown(sourceContent);
-
-	const mergedSections = mergeSections(
-		targetSections,
-		sourceSections,
-		strategy
-	);
-	return sectionsToMarkdown(mergedSections);
+  const mergedSections = mergeSections(
+    targetSections,
+    sourceSections,
+    strategy
+  );
+  return sectionsToMarkdown(mergedSections);
 }
