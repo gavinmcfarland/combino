@@ -1,8 +1,6 @@
-# Project Name
+# Test Project
 
-## Description
-
-This is a typescript project template react.
+A test project for conditional folder testing
 
 ## Installation
 

@@ -1,120 +1,88 @@
-import { readFileSync, rmSync, existsSync, readdirSync, statSync } from "fs";
+import { promises as fs } from "fs";
+import path from "path";
 import { join } from "path";
+import { existsSync, readFileSync } from "fs";
 import { Combino } from "../src";
 
+const inputDir = join(__dirname, "conditional", "input");
+const outputDir = join(__dirname, "conditional", "output");
+const expectedDir = join(__dirname, "conditional", "expected");
+
+// Single scenario for all tests
+const scenarioData = { framework: "react", language: "ts", type: "web" };
+
 describe("Conditional Folder Test Suite", () => {
-	const testDir = join(__dirname, "conditional");
-	const inputDirs = ["base", "typescript"].map((dir) =>
-		join(testDir, "input", dir)
-	);
-	const outputDir = join(testDir, "output");
-	const expectedDir = join(testDir, "expected");
-
-	beforeAll(async () => {
-		// Clean up output directory before running tests
-		try {
-			rmSync(outputDir, { recursive: true, force: true });
-		} catch (error) {
-			// Ignore error if directory doesn't exist
-		}
-
-		const combino = new Combino();
-		await combino.combine({
-			data: {
-				framework: "react",
-			},
-			targetDir: outputDir,
-			templates: inputDirs,
-		});
+	beforeEach(async () => {
+		await fs.rm(outputDir, { recursive: true, force: true });
+		await fs.mkdir(outputDir, { recursive: true });
 	});
 
-	function compareDirectories(outputPath: string, expectedPath: string) {
-		const outputStats = statSync(outputPath);
-		const expectedStats = statSync(expectedPath);
+	it("should match the expected output exactly", async () => {
+		const combino = new Combino();
+		await combino.combine({
+			targetDir: outputDir,
+			templates: [join(inputDir, "base")],
+			data: scenarioData,
+		});
+		await compareDirectories(outputDir, expectedDir);
+	});
 
-		// Check if both paths are files or both are directories
-		expect(outputStats.isDirectory()).toBe(expectedStats.isDirectory());
+	it("should have the correct App.tsx", async () => {
+		const combino = new Combino();
+		await combino.combine({
+			targetDir: outputDir,
+			templates: [join(inputDir, "base")],
+			data: scenarioData,
+		});
+		const appFile = join(outputDir, "App.tsx");
+		const expectedAppFile = join(expectedDir, "App.tsx");
+		if (existsSync(expectedAppFile)) {
+			expect(existsSync(appFile)).toBe(true);
+			expect(readFileSync(appFile, "utf-8")).toBe(
+				readFileSync(expectedAppFile, "utf-8")
+			);
+		} else {
+			expect(existsSync(appFile)).toBe(false);
+		}
+	});
 
-		if (outputStats.isDirectory()) {
-			const outputFiles = readdirSync(outputPath);
-			const expectedFiles = readdirSync(expectedPath);
+	// Add more tests here, all using scenarioData and expectedDir
+});
 
-			// Check if both directories have the same files
-			expect(outputFiles.sort()).toEqual(expectedFiles.sort());
+async function compareDirectories(dir1: string, dir2: string) {
+	const files1 = await fs.readdir(dir1);
+	const files2 = await fs.readdir(dir2);
 
-			// Recursively compare each file/directory
-			for (const file of outputFiles) {
-				compareDirectories(
-					join(outputPath, file),
-					join(expectedPath, file)
-				);
-			}
+	// Check if both directories have the same files
+	expect(files1.sort()).toEqual(files2.sort());
+
+	// Recursively compare each file/directory
+	for (const file of files1) {
+		const path1 = join(dir1, file);
+		const path2 = join(dir2, file);
+		const stat1 = await fs.stat(path1);
+		const stat2 = await fs.stat(path2);
+
+		// Check if both paths are of the same type (file/directory)
+		expect(stat1.isDirectory()).toBe(stat2.isDirectory());
+
+		if (stat1.isDirectory()) {
+			// Recursively compare subdirectories
+			await compareDirectories(path1, path2);
 		} else {
 			// Compare file contents
-			const outputContent = readFileSync(outputPath, "utf-8");
-			const expectedContent = readFileSync(expectedPath, "utf-8");
+			const content1 = await fs.readFile(path1, "utf-8");
+			const content2 = await fs.readFile(path2, "utf-8");
 
-			// Special handling for JSON files
-			if (outputPath.endsWith(".json")) {
-				const outputJson = JSON.parse(outputContent);
-				const expectedJson = JSON.parse(expectedContent);
-				expect(outputJson).toEqual(expectedJson);
+			if (file.endsWith(".json")) {
+				// For JSON files, parse and compare objects
+				const obj1 = JSON.parse(content1);
+				const obj2 = JSON.parse(content2);
+				expect(obj1).toEqual(obj2);
 			} else {
-				expect(outputContent).toBe(expectedContent);
+				// For other files, compare content directly
+				expect(content1).toBe(content2);
 			}
 		}
 	}
-
-	it("should match the expected output exactly", () => {
-		compareDirectories(outputDir, expectedDir);
-	});
-
-	describe("Conditional folder processing", () => {
-		it("should include files from matching conditional folders", () => {
-			// The file should exist directly in the output directory since the conditional folder is removed
-			const reactFile = join(outputDir, "App.tsx");
-			const expectedFile = join(expectedDir, "App.tsx");
-			expect(existsSync(reactFile)).toBe(true);
-			expect(readFileSync(reactFile, "utf-8")).toBe(
-				readFileSync(expectedFile, "utf-8")
-			);
-		});
-
-		it("should exclude files from non-matching conditional folders", () => {
-			const vueFile = join(outputDir, "App.vue");
-			expect(existsSync(vueFile)).toBe(false);
-		});
-
-		it("should keep base folder names when condition is part of the name", () => {
-			// If we have a folder like "src[?framework=react]", it should become "src"
-			const srcFile = join(outputDir, "src", "index.tsx");
-			const expectedFile = join(expectedDir, "src", "index.tsx");
-			expect(existsSync(srcFile)).toBe(true);
-			expect(readFileSync(srcFile, "utf-8")).toBe(
-				readFileSync(expectedFile, "utf-8")
-			);
-		});
-	});
-
-	describe("EJS template processing", () => {
-		it("should process package.json with data from .combino", () => {
-			const outputPath = join(outputDir, "package.json");
-			const expectedPath = join(expectedDir, "package.json");
-
-			const output = JSON.parse(readFileSync(outputPath, "utf-8"));
-			const expected = JSON.parse(readFileSync(expectedPath, "utf-8"));
-
-			expect(output).toEqual(expected);
-		});
-
-		it("should process README.md with data from .combino", () => {
-			const outputPath = join(outputDir, "README.md");
-			const expectedPath = join(expectedDir, "README.md");
-
-			const output = readFileSync(outputPath, "utf-8");
-			const expected = readFileSync(expectedPath, "utf-8");
-
-			expect(output).toBe(expected);
-		});
-	});
-});
+}

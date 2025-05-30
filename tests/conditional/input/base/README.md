@@ -1,8 +1,6 @@
-# Project Name
+# <%= project.name %>
 
-## Description
-
-This is a base project template.
+<%= project.description %>
 
 ## Installation
 

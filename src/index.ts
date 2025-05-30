@@ -91,14 +91,41 @@ export class Combino {
 		// Remove the [? and ] from the condition
 		const cleanCondition = condition.slice(2, -1);
 
-		// Split on = to get the key and value
-		const [key, value] = cleanCondition.split("=").map((s) => s.trim());
+		// Split on OR operator first
+		const orConditions = cleanCondition.split("|").map((c) => c.trim());
 
-		// Get the actual value from the data object
-		const actualValue = key.split(".").reduce((obj, k) => obj?.[k], data);
+		// If any OR condition is true, return true
+		return orConditions.some((orCondition) => {
+			// Split on AND operator
+			const andConditions = orCondition.split("&").map((c) => c.trim());
 
-		// Compare the values, converting both to strings for comparison
-		return String(actualValue) === value;
+			// All AND conditions must be true
+			return andConditions.every((andCondition) => {
+				// Check for not equals operator
+				if (andCondition.includes("!=")) {
+					const [key, value] = andCondition
+						.split("!=")
+						.map((s) => s.trim());
+					const actualValue = key
+						.split(".")
+						.reduce((obj, k) => obj?.[k], data);
+					return String(actualValue) !== value;
+				}
+
+				// Check for equals operator
+				if (andCondition.includes("=")) {
+					const [key, value] = andCondition
+						.split("=")
+						.map((s) => s.trim());
+					const actualValue = key
+						.split(".")
+						.reduce((obj, k) => obj?.[k], data);
+					return String(actualValue) === value;
+				}
+
+				return false;
+			});
+		});
 	}
 
 	private async getFilesInTemplate(
@@ -147,8 +174,11 @@ export class Combino {
 				return true;
 			});
 
+			// Debug: print filtered files
+			console.log("Filtered files:", filteredFiles);
+
 			// Transform the file paths to handle conditional folders
-			return filteredFiles.map((file) => {
+			const mappedFiles = filteredFiles.map((file) => {
 				const parts = file.split(path.sep);
 				const transformedParts = parts
 					.map((part) => {
@@ -174,6 +204,11 @@ export class Combino {
 					targetPath: path.join(...transformedParts),
 				};
 			});
+
+			// Debug: print mapped files
+			console.log("Mapped files:", mappedFiles);
+
+			return mappedFiles;
 		} catch (error) {
 			throw new Error(`Failed to get files in template: ${error}`);
 		}
