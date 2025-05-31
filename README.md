@@ -86,7 +86,7 @@ App.tsx
 
 ## Configuration
 
-Use a `.combino` config file to customize how templates are combined.
+Use a `.combino` config file to customise how templates are combined.
 
 ### Example `.combino` file
 
@@ -123,7 +123,7 @@ Use [key] placeholders in filenames or folder names to rename them dynamically.
 
 Example:
 
-```pgsql
+```bash
 templates/
   base/
     [name]/
@@ -164,6 +164,6 @@ combino [templates...] [options]
 - `templates...` One or more template folders (first has lowest priority, last wins)
 
 **Options**
-- `--output <dir>`	Output directory for the generated result. (Default: ./output)
 - `--data.key=value`	Inline key-value data to use for templating, conditions, and naming.
-- `--config <path>`	Path to a .combino config file (INI or JSON).
+- `-o`, `--output <dir>`	Output directory for the generated result. (Default: ./output)
+- `-c`, `--config <path>`	Path to a .combino config file (INI or JSON).
