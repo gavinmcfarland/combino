@@ -1,5 +1,7 @@
 # Ideas
 
+If any of the path parameter evaluate to false, then the path fails and doesnt get created.
+
 ```bash
 framework=svelte
 src-[framework] → scr-svelte/
@@ -17,5 +19,6 @@ index.[region="eu"?"eu":"us"].html → index.eu.html
 darkMode=dark
 theme-[darkMode?"dark":"light"].css  → theme-dark.css
 
-
+hasDashboard=false
+dashboard[hasDashboard?"-admin",""] → dashboard
 ```
