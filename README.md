@@ -9,7 +9,7 @@ Combine multiple template folders to generate custom file and folder structures.
 ## Quick Start
 
 ```bash
-combino ./templates/base ./templates/testing
+combino ./templates/base ./templates/svelte
 ```
 
 ---
