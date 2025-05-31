@@ -103,6 +103,46 @@ plugin.version = 1.0.0
 * **\[ignore]**: Prevent specific files from being merged or copied.
 * **\[data]**: Provide custom data for use in templates.
 
+## Templating file contents
+
+Use EJS syntax `<%= %>` inside file contents.
+
+```md
+# README.md
+
+# <%= plugin.name %>
+
+<%= plugin.description %>
+```
+
+Combined with a `.combino` file or `--data.plugin.name`, this is rendered at generation time.
+
+## Naming rules
+
+Use [key] placeholders in filenames or folder names to rename them dynamically.
+
+Example:
+
+```pgsql
+templates/
+  base/
+    [name]/
+      index.[extension]
+```
+
+With:
+
+```bash
+combino base --data.name=my-plugin --data.extension=ts
+```
+
+The output is:
+
+```perl
+my-plugin/
+  index.ts
+```
+
 ## Combining programmatically 
 
 ```js
@@ -112,3 +152,17 @@ await combino.combine({
   templates: ["templates/base", "templates/typescript"],
 });
 ```
+
+## CLI Usage (coming soon
+
+
+```bash
+combino [templates...] [options]
+
+**Templates**
+- `templates...` One or more template folders (first has lowest priority, last wins)
+
+**Options**
+- `--output <dir>`	Output directory for the generated result. (Default: ./output)
+- `--data.key=value`	Inline key-value data to use for templating, conditions, and naming.
+- `--config <path>`	Path to a .combino config file (INI or JSON).
