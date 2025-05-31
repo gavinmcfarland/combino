@@ -138,7 +138,7 @@ combino base --data.name=my-plugin --data.extension=ts
 
 The output is:
 
-```perl
+```bash
 my-plugin/
   index.ts
 ```
@@ -158,6 +158,7 @@ await combino.combine({
 
 ```bash
 combino [templates...] [options]
+```
 
 **Templates**
 - `templates...` One or more template folders (first has lowest priority, last wins)
