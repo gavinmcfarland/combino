@@ -143,6 +143,18 @@ my-plugin/
   index.ts
 ```
 
+## File Merge Strategies
+
+Suppoed fine-grained control over how files are merged by allowing per-pattern strategy configuration in your `.combino` file.
+
+```ini
+[merge]
+strategy = replace
+
+[merge:*.json]
+strategy = deep
+```
+
 ## Combining programmatically 
 
 ```js
