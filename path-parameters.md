@@ -40,7 +40,7 @@ region=eu
 index.[?region="eu":"eu","us"].html → index.eu.html
 
 darkMode=dark
-theme-[?darkMode:dark","light"].css  → theme-dark.css
+theme-[?darkMode:"dark","light"].css  → theme-dark.css
 
 hasDashboard=false
 dashboard[?hasDashboard:"-admin",""] → dashboard
