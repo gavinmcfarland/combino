@@ -48,12 +48,12 @@ Files and folders can be conditionally included or excluded using query paramete
 
 #### Example: Conditional Folder
 
-Only include `tests/` if `testing=true`:
+Only include `tests/` if `testing==true`:
 
 ```bash
 templates/
   base/
-    tests[?testing]/
+    tests[testing]/
       example.test.ts
 ```
 
@@ -64,19 +64,19 @@ Include a file based on `framework` value:
 ```bash
 templates/
   base/
-    [?framework=svelte]
+    [framework=="svelte"]
       App.svelte
-    [?framework=react]
+    [framework=="react"]
       App.tsx
 ```
 
-If `framework=svelte`, the output includes:
+If `framework=="svelte"`, the output includes:
 
 ```bash
 App.svelte
 ```
 
-If `framework=react`, the output includes:
+If `framework=="react"`, the output includes:
 
 ```bash
 App.tsx
