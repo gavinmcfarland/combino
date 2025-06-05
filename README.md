@@ -211,7 +211,7 @@ await combino.combine({
 });
 ```
 
-## CLI Usage (coming soon)
+## CLI Usage
 
 ```bash
 combino [templates...] [options]
@@ -223,6 +223,14 @@ combino [templates...] [options]
 
 **Options**
 
--   `--data.key=value` Inline key-value data to use for templating, conditions, and naming.
--   `-o`, `--output <dir>` Output directory for the generated result. (Default: ./output)
--   `-c`, `--config <path>` Path to a .combino config file (INI or JSON).
+-   `-o, --output <dir>` Output directory for the generated result (Default: ./output)
+-   `-c, --config <path>` Path to a .combino config file (INI or JSON)
+-   `--data <key=value>` Inline key-value data to use for templating, conditions, and naming
+
+### Examples
+
+Basic usage with multiple templates:
+
+```bash
+combino ./templates/base ./templates/svelte --data framework=svelte --data language=ts -o ./my-project
+```

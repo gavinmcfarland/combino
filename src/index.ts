@@ -9,6 +9,7 @@ import { TemplateOptions, FileContent, MergeStrategy } from "./types";
 import { mergeJson } from "./mergers/json";
 import { mergeMarkdown } from "./mergers/markdown";
 import { mergeText } from "./mergers/text";
+import * as ini from "ini";
 
 interface CombinoConfig {
 	ignore?: string[];
@@ -69,6 +70,41 @@ export class Combino {
 
 			return config;
 		} catch (error) {
+			return {};
+		}
+	}
+
+	private async readConfigFile(
+		configPath: string
+	): Promise<{ merge?: any; data?: Record<string, any> }> {
+		try {
+			const content = await fs.readFile(configPath, "utf-8");
+			const parsedConfig = ini.parse(content);
+			const config: { merge?: any; data?: Record<string, any> } = {};
+
+			// Extract data section and structure it properly
+			if (parsedConfig.data) {
+				config.data = {};
+				// Convert flat data structure to nested
+				Object.entries(parsedConfig.data).forEach(([key, value]) => {
+					const keys = key.split(".");
+					let current = config.data!;
+					for (let i = 0; i < keys.length - 1; i++) {
+						current[keys[i]] = current[keys[i]] || {};
+						current = current[keys[i]];
+					}
+					current[keys[keys.length - 1]] = value;
+				});
+			}
+
+			// Extract merge config
+			if (parsedConfig.merge) {
+				config.merge = parsedConfig.merge;
+			}
+
+			return config;
+		} catch (error) {
+			console.error("Error reading config file:", error);
 			return {};
 		}
 	}
@@ -269,7 +305,12 @@ export class Combino {
 	}
 
 	async combine(options: TemplateOptions): Promise<void> {
-		const { targetDir, templates, data: externalData = {} } = options;
+		const {
+			targetDir,
+			templates,
+			data: externalData = {},
+			configFile,
+		} = options;
 
 		// Create target directory if it doesn't exist
 		await fs.mkdir(targetDir, { recursive: true });
@@ -280,6 +321,18 @@ export class Combino {
 			".combino",
 		]);
 		const allData: Record<string, any> = { ...externalData }; // Start with external data
+
+		// Load config file if specified
+		if (configFile) {
+			const configPath = path.resolve(configFile);
+			const config = await this.readConfigFile(configPath);
+			if (config.data) {
+				Object.assign(allData, config.data);
+			}
+			if (config.merge) {
+				options.config = config.merge;
+			}
+		}
 
 		for (const template of templates) {
 			const config = await this.readCombinoConfig(template);
