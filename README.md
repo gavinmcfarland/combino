@@ -44,7 +44,7 @@ output/
 
 ### Conditional Inclusion
 
-Files and folders can be conditionally included or excluded using JavaScript expressions.
+Files and folders can be conditionally included or excluded using JavaScript expressions. Conditions can use comparison operators (`==`, `!=`, `>`, `<`, `>=`, `<=`) and logical operators (`&&`, `||`).
 
 #### Example: Conditional Folder
 
@@ -81,6 +81,39 @@ If `framework=="react"`, the output includes:
 ```bash
 App.tsx
 ```
+
+#### Example: Complex Conditions
+
+You can use logical operators to create more complex conditions:
+
+```bash
+templates/
+  base/
+    # Include for React or Vue
+    react-or-vue[framework=="react"||framework=="vue"]/
+      App.tsx
+
+    # Include only for React with TypeScript
+    react-and-ts[framework=="react"&&language=="ts"]/
+      App.tsx
+
+    # Include for everything except Vue
+    not-vue[framework!="vue"]/
+      App.tsx
+```
+
+#### Example: Conditional File Extensions
+
+You can also make file extensions conditional:
+
+```bash
+templates/
+  base/
+    src/
+      index.[language=="ts"?"tsx":"jsx"]
+```
+
+If `language=="ts"`, the output will be `index.tsx`, otherwise `index.jsx`.
 
 ---
 
@@ -178,7 +211,7 @@ await combino.combine({
 });
 ```
 
-## CLI Usage (coming soon
+## CLI Usage (coming soon)
 
 ```bash
 combino [templates...] [options]
