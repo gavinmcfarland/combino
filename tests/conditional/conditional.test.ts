@@ -2,11 +2,11 @@ import { promises as fs } from "fs";
 import path from "path";
 import { join } from "path";
 import { existsSync, readFileSync } from "fs";
-import { Combino } from "../src";
+import { Combino } from "../../src";
 
-const inputDir = join(__dirname, "conditional", "input");
-const outputDir = join(__dirname, "conditional", "output");
-const expectedDir = join(__dirname, "conditional", "expected");
+const inputDir = join(__dirname, "input");
+const outputDir = join(__dirname, "output");
+const expectedDir = join(__dirname, "expected");
 
 // Single scenario for all tests
 const scenarioData = { framework: "react", language: "ts", type: "web" };
@@ -81,7 +81,13 @@ async function compareDirectories(dir1: string, dir2: string) {
 				expect(obj1).toEqual(obj2);
 			} else {
 				// For other files, compare content directly
-				expect(content1).toBe(content2);
+				try {
+					expect(content1).toBe(content2);
+				} catch (error) {
+					throw new Error(
+						`Files differ at ${path1}:\nExpected: ${content2}\nReceived: ${content1}`
+					);
+				}
 			}
 		}
 	}

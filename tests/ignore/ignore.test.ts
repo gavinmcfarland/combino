@@ -1,9 +1,9 @@
 import { readFileSync, rmSync } from "fs";
 import { join } from "path";
-import { Combino } from "../src";
+import { Combino } from "../../src";
 
-describe("Basic Test Suite", () => {
-	const testDir = join(__dirname, "basic");
+describe("Ignore Test Suite", () => {
+	const testDir = __dirname;
 	const inputDirs = ["base", "typescript"].map((dir) =>
 		join(testDir, "input", dir)
 	);
@@ -21,14 +21,17 @@ describe("Basic Test Suite", () => {
 		await combino.combine({
 			targetDir: outputDir,
 			templates: inputDirs,
-			data: {
-				framework: "react",
-			},
 		});
 	});
 
-	describe("Markdown file merging", () => {
-		it("should correctly merge markdown files from multiple input folders", () => {
+	describe("File ignoring", () => {
+		it("should ignore files specified in .combino", () => {
+			// The package.json file should not be in the output because it's listed in .combino
+			const outputPath = join(outputDir, "package.json");
+			expect(() => readFileSync(outputPath, "utf-8")).toThrow();
+		});
+
+		it("should still process non-ignored files", () => {
 			const outputPath = join(outputDir, "README.md");
 			const expectedPath = join(testDir, "expected", "README.md");
 
@@ -36,18 +39,6 @@ describe("Basic Test Suite", () => {
 			const expected = readFileSync(expectedPath, "utf-8");
 
 			expect(output).toBe(expected);
-		});
-	});
-
-	describe("JSON file merging", () => {
-		it("should correctly merge JSON files from multiple input folders", () => {
-			const outputPath = join(outputDir, "package.json");
-			const expectedPath = join(testDir, "expected", "package.json");
-
-			const output = JSON.parse(readFileSync(outputPath, "utf-8"));
-			const expected = JSON.parse(readFileSync(expectedPath, "utf-8"));
-
-			expect(output).toEqual(expected);
 		});
 	});
 });

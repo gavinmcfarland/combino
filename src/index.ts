@@ -4,6 +4,7 @@ import { glob } from "glob";
 import matter from "gray-matter";
 import deepmerge from "deepmerge";
 import ejs from "ejs";
+import { Parser } from "expr-eval";
 import { TemplateOptions, FileContent, MergeStrategy } from "./types";
 import { mergeJson } from "./mergers/json";
 import { mergeMarkdown } from "./mergers/markdown";
@@ -88,44 +89,41 @@ export class Combino {
 		condition: string,
 		data: Record<string, any>
 	): boolean {
-		// Remove the [? and ] from the condition
-		const cleanCondition = condition.slice(2, -1);
+		try {
+			// Remove the [ and ] from the condition
+			const cleanCondition = condition.slice(1, -1);
 
-		// Split on OR operator first
-		const orConditions = cleanCondition.split("|").map((c) => c.trim());
+			// Replace operators to be compatible with expr-eval
+			const parsedCondition = cleanCondition
+				.replace(/&&/g, " and ")
+				.replace(/\|\|/g, " or ");
 
-		// If any OR condition is true, return true
-		return orConditions.some((orCondition) => {
-			// Split on AND operator
-			const andConditions = orCondition.split("&").map((c) => c.trim());
+			// console.log("Evaluating condition:", parsedCondition);
+			// console.log("With data:", data);
 
-			// All AND conditions must be true
-			return andConditions.every((andCondition) => {
-				// Check for not equals operator
-				if (andCondition.includes("!=")) {
-					const [key, value] = andCondition
-						.split("!=")
-						.map((s) => s.trim());
-					const actualValue = key
-						.split(".")
-						.reduce((obj, k) => obj?.[k], data);
-					return String(actualValue) !== value;
+			// Create a parser instance
+			const parser = new Parser();
+
+			// Create a scope with the data
+			const scope = Object.entries(data).reduce((acc, [key, value]) => {
+				// Handle nested properties
+				const keys = key.split(".");
+				let current = acc;
+				for (let i = 0; i < keys.length - 1; i++) {
+					current[keys[i]] = current[keys[i]] || {};
+					current = current[keys[i]];
 				}
+				current[keys[keys.length - 1]] = value;
+				return acc;
+			}, {} as Record<string, any>);
 
-				// Check for equals operator
-				if (andCondition.includes("=")) {
-					const [key, value] = andCondition
-						.split("=")
-						.map((s) => s.trim());
-					const actualValue = key
-						.split(".")
-						.reduce((obj, k) => obj?.[k], data);
-					return String(actualValue) === value;
-				}
-
-				return false;
-			});
-		});
+			// Parse and evaluate the expression
+			const expr = parser.parse(parsedCondition);
+			return expr.evaluate(scope);
+		} catch (error) {
+			console.error("Error evaluating condition:", error);
+			return false;
+		}
 	}
 
 	private async getFilesInTemplate(
@@ -134,8 +132,8 @@ export class Combino {
 		data: Record<string, any>
 	): Promise<{ sourcePath: string; targetPath: string }[]> {
 		try {
-			console.log("Template path:", templatePath);
-			console.log("Ignore patterns:", ignorePatterns);
+			// console.log("Template path:", templatePath);
+			// console.log("Ignore patterns:", ignorePatterns);
 
 			const files = await glob("**/*", {
 				cwd: templatePath,
@@ -158,7 +156,7 @@ export class Combino {
 				// Check each directory in the path for conditions
 				const parts = file.split(path.sep);
 				for (const part of parts) {
-					if (part.includes("[?") && part.includes("]")) {
+					if (part.includes("[") && part.includes("]")) {
 						// Extract the condition from the part
 						const conditionMatch = part.match(/\[[^\]]+\]/);
 						if (conditionMatch) {
@@ -175,14 +173,14 @@ export class Combino {
 			});
 
 			// Debug: print filtered files
-			console.log("Filtered files:", filteredFiles);
+			// console.log("Filtered files:", filteredFiles);
 
 			// Transform the file paths to handle conditional folders
 			const mappedFiles = filteredFiles.map((file) => {
 				const parts = file.split(path.sep);
 				const transformedParts = parts
 					.map((part) => {
-						if (part.includes("[?") && part.includes("]")) {
+						if (part.includes("[") && part.includes("]")) {
 							// Extract the condition from the part
 							const conditionMatch = part.match(/\[[^\]]+\]/);
 							if (conditionMatch) {
@@ -206,7 +204,7 @@ export class Combino {
 			});
 
 			// Debug: print mapped files
-			console.log("Mapped files:", mappedFiles);
+			// console.log("Mapped files:", mappedFiles);
 
 			return mappedFiles;
 		} catch (error) {

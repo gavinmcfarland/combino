@@ -100,8 +100,8 @@ plugin.description = "Take figma plugins to the next level"
 plugin.version = 1.0.0
 ```
 
-* **\[ignore]**: Prevent specific files from being merged or copied.
-* **\[data]**: Provide custom data for use in templates.
+-   **\[ignore]**: Prevent specific files from being merged or copied.
+-   **\[data]**: Provide custom data for use in templates.
 
 ## Templating file contents
 
@@ -162,33 +162,34 @@ strategy = deep
 conflict = skip | error | rename
 ```
 
-If using `conflict=rename`, Combino will auto-rename files to avoid overwriting.
+If using `conflict=rename`, Combino will auto-rename files to avoid overwriting:
 
 ```bash
 logo.png → logo-1.png
 ```
 
-## Combining programmatically 
+## Combining programmatically
 
 ```js
 const combino = new Combino();
 await combino.combine({
-  outputDir: "output",
-  templates: ["templates/base", "templates/typescript"],
+    outputDir: "output",
+    templates: ["templates/base", "templates/typescript"],
 });
 ```
 
 ## CLI Usage (coming soon
-
 
 ```bash
 combino [templates...] [options]
 ```
 
 **Templates**
-- `templates...` One or more template folders (first has lowest priority, last wins)
+
+-   `templates...` One or more template folders (first has lowest priority, last wins)
 
 **Options**
-- `--data.key=value`	Inline key-value data to use for templating, conditions, and naming.
-- `-o`, `--output <dir>`	Output directory for the generated result. (Default: ./output)
-- `-c`, `--config <path>`	Path to a .combino config file (INI or JSON).
+
+-   `--data.key=value` Inline key-value data to use for templating, conditions, and naming.
+-   `-o`, `--output <dir>` Output directory for the generated result. (Default: ./output)
+-   `-c`, `--config <path>` Path to a .combino config file (INI or JSON).
