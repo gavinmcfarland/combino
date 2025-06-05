@@ -132,9 +132,6 @@ export class Combino {
 		data: Record<string, any>
 	): Promise<{ sourcePath: string; targetPath: string }[]> {
 		try {
-			// console.log("Template path:", templatePath);
-			// console.log("Ignore patterns:", ignorePatterns);
-
 			const files = await glob("**/*", {
 				cwd: templatePath,
 				nodir: true,
@@ -153,7 +150,7 @@ export class Combino {
 					return false;
 				}
 
-				// Check each directory in the path for conditions
+				// Check each directory and file part in the path for conditions
 				const parts = file.split(path.sep);
 				for (const part of parts) {
 					if (part.includes("[") && part.includes("]")) {
@@ -172,10 +169,7 @@ export class Combino {
 				return true;
 			});
 
-			// Debug: print filtered files
-			// console.log("Filtered files:", filteredFiles);
-
-			// Transform the file paths to handle conditional folders
+			// Transform the file paths to handle conditional folders and file extensions
 			const mappedFiles = filteredFiles.map((file) => {
 				const parts = file.split(path.sep);
 				const transformedParts = parts
@@ -188,6 +182,17 @@ export class Combino {
 								// If the part is just the condition, return empty string
 								if (part === condition) {
 									return "";
+								}
+								// If it's a file extension condition, evaluate and return the result
+								if (part.includes(".")) {
+									const [name, ext] = part.split(".");
+									if (ext.includes("[")) {
+										const result = this.evaluateCondition(
+											condition,
+											data
+										);
+										return `${name}.${result}`;
+									}
 								}
 								// Otherwise, remove the condition from the part
 								return part.replace(condition, "");
@@ -202,9 +207,6 @@ export class Combino {
 					targetPath: path.join(...transformedParts),
 				};
 			});
-
-			// Debug: print mapped files
-			// console.log("Mapped files:", mappedFiles);
 
 			return mappedFiles;
 		} catch (error) {

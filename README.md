@@ -44,7 +44,7 @@ output/
 
 ### Conditional Inclusion
 
-Files and folders can be conditionally included or excluded using query parameters.
+Files and folders can be conditionally included or excluded using JavaScript expressions.
 
 #### Example: Conditional Folder
 
@@ -162,7 +162,7 @@ strategy = deep
 conflict = skip | error | rename
 ```
 
-If using `conflict=rename`, Combino will auto-rename files to avoid overwriting:
+If using `conflict = rename`, Combino will auto-rename files to avoid overwriting:
 
 ```bash
 logo.png → logo-1.png
