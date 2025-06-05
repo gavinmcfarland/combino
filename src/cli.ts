@@ -29,7 +29,7 @@ program
 		"Path to a .combino config file (INI or JSON)"
 	)
 	.option(
-		"-d, --data <key=value>",
+		"--data <key=value>",
 		"Inline key-value data to use for templating, conditions, and naming",
 		collectData
 	)
@@ -104,12 +104,29 @@ program
 		}
 	});
 
-function collectData(value: string, previous: Record<string, string> = {}) {
-	const [key, val] = value.split("=");
-	if (!key || !val) {
-		throw new Error(`Invalid data format: ${value}. Expected key=value`);
+function collectData(
+	value: string,
+	previous: Record<string, any> = {}
+): Record<string, any> {
+	// Try to parse as JSON first
+	try {
+		const jsonData = JSON.parse(value);
+		if (typeof jsonData === "object" && jsonData !== null) {
+			return { ...previous, ...jsonData };
+		}
+	} catch {
+		// If not valid JSON, try key=value format
+		const [key, val] = value.split("=");
+		if (!key || !val) {
+			throw new Error(
+				`Invalid data format: ${value}. Expected key=value or valid JSON object`
+			);
+		}
+		return { ...previous, [key]: val };
 	}
-	return { ...previous, [key]: val };
+	throw new Error(
+		`Invalid data format: ${value}. Expected key=value or valid JSON object`
+	);
 }
 
 program.parse();
