@@ -6,6 +6,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.mergeJson = mergeJson;
 const fs_1 = require("fs");
 const deepmerge_1 = __importDefault(require("deepmerge"));
+// Custom array merge function that deduplicates items
+const arrayMerge = (targetArray, sourceArray) => {
+    return [...new Set([...targetArray, ...sourceArray])];
+};
 async function mergeJson(targetPath, sourcePath, strategy) {
     const targetContent = await fs_1.promises.readFile(targetPath, "utf-8");
     const sourceContent = await fs_1.promises.readFile(sourcePath, "utf-8");
@@ -14,7 +18,9 @@ async function mergeJson(targetPath, sourcePath, strategy) {
     let merged;
     switch (strategy) {
         case "deep":
-            merged = (0, deepmerge_1.default)(targetJson, sourceJson);
+            merged = (0, deepmerge_1.default)(targetJson, sourceJson, {
+                arrayMerge,
+            });
             break;
         case "shallow":
             merged = { ...targetJson, ...sourceJson };

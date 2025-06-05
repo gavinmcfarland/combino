@@ -47,7 +47,7 @@ program
     .argument("<templates...>", "One or more template folders (first has lowest priority, last wins)")
     .option("-o, --output <dir>", "Output directory for the generated result", "./output")
     .option("-c, --config <path>", "Path to a .combino config file (INI or JSON)")
-    .option("-d, --data <key=value>", "Inline key-value data to use for templating, conditions, and naming", collectData)
+    .option("--data <key=value>", "Inline key-value data to use for templating, conditions, and naming", collectData)
     .action(async (templates, options) => {
     try {
         const combino = new index_1.Combino();
@@ -112,10 +112,21 @@ program
     }
 });
 function collectData(value, previous = {}) {
-    const [key, val] = value.split("=");
-    if (!key || !val) {
-        throw new Error(`Invalid data format: ${value}. Expected key=value`);
+    // Try to parse as JSON first
+    try {
+        const jsonData = JSON.parse(value);
+        if (typeof jsonData === "object" && jsonData !== null) {
+            return { ...previous, ...jsonData };
+        }
     }
-    return { ...previous, [key]: val };
+    catch {
+        // If not valid JSON, try key=value format
+        const [key, val] = value.split("=");
+        if (!key || !val) {
+            throw new Error(`Invalid data format: ${value}. Expected key=value or valid JSON object`);
+        }
+        return { ...previous, [key]: val };
+    }
+    throw new Error(`Invalid data format: ${value}. Expected key=value or valid JSON object`);
 }
 program.parse();

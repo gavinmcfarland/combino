@@ -2,6 +2,11 @@ import { promises as fs } from "fs";
 import deepmerge from "deepmerge";
 import { MergeStrategy } from "../types";
 
+// Custom array merge function that deduplicates items
+const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
+	return [...new Set([...targetArray, ...sourceArray])];
+};
+
 export async function mergeJson(
 	targetPath: string,
 	sourcePath: string,
@@ -16,7 +21,9 @@ export async function mergeJson(
 	let merged: any;
 	switch (strategy) {
 		case "deep":
-			merged = deepmerge(targetJson, sourceJson);
+			merged = deepmerge(targetJson, sourceJson, {
+				arrayMerge,
+			});
 			break;
 		case "shallow":
 			merged = { ...targetJson, ...sourceJson };
