@@ -15,4 +15,5 @@ export interface TemplateOptions {
     targetDir: string;
     templates: string[];
     config?: MergeConfig;
+    data?: Record<string, any>;
 }

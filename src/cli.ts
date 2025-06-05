@@ -37,6 +37,7 @@ program
 		try {
 			const combino = new Combino();
 			const config: any = {};
+			let templateData: Record<string, any> = {};
 
 			// Load config file if specified
 			if (options.config) {
@@ -46,19 +47,48 @@ program
 					process.exit(1);
 				}
 				const configContent = fs.readFileSync(configPath, "utf-8");
-				Object.assign(config, ini.parse(configContent));
+				const parsedConfig = ini.parse(configContent);
+
+				// Extract data section and structure it properly
+				if (parsedConfig.data) {
+					// Convert flat data structure to nested
+					Object.entries(parsedConfig.data).forEach(
+						([key, value]) => {
+							const keys = key.split(".");
+							let current = templateData;
+							for (let i = 0; i < keys.length - 1; i++) {
+								current[keys[i]] = current[keys[i]] || {};
+								current = current[keys[i]];
+							}
+							current[keys[keys.length - 1]] = value;
+						}
+					);
+				}
+
+				// Extract merge config
+				if (parsedConfig.merge) {
+					config.merge = parsedConfig.merge;
+				}
 			}
 
 			// Merge command line data with config data
 			if (options.data) {
-				config.data = { ...config.data, ...options.data };
+				Object.entries(options.data).forEach(([key, value]) => {
+					const keys = key.split(".");
+					let current = templateData;
+					for (let i = 0; i < keys.length - 1; i++) {
+						current[keys[i]] = current[keys[i]] || {};
+						current = current[keys[i]];
+					}
+					current[keys[keys.length - 1]] = value;
+				});
 			}
 
 			const templateOptions: TemplateOptions = {
 				targetDir: options.output,
 				templates: templates,
 				config: config.merge,
-				data: config.data,
+				data: templateData,
 			};
 
 			await combino.combine(templateOptions);

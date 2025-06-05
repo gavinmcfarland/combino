@@ -1,6 +1,9 @@
 import { TemplateOptions } from "./types";
 export declare class Combino {
     private readFile;
+    private readCombinoConfig;
+    private processTemplate;
+    private evaluateCondition;
     private getFilesInTemplate;
     private getMergeStrategy;
     private mergeFiles;

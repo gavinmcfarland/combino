@@ -1,0 +1,14 @@
+{
+    "name": "combino-sandbox",
+    "version": "1.0.0",
+    "description": "Sandbox example for Combino CLI usage.",
+    "main": "index.js",
+    "scripts": {
+        "generate:ts": "node ../../dist/cli.js templates/base templates/typescript -o output/ts-project -c example.combino -d language=ts",
+        "generate:js": "node ../../dist/cli.js templates/base templates/typescript -o output/js-project -c example.combino -d language=js",
+        "generate": "npm run generate:ts && npm run generate:js"
+    },
+    "dependencies": {
+        "combino": "file:../../"
+    }
+}

@@ -88,7 +88,7 @@ export class Combino {
 	private evaluateCondition(
 		condition: string,
 		data: Record<string, any>
-	): boolean {
+	): string | boolean {
 		try {
 			// Remove the [ and ] from the condition
 			const cleanCondition = condition.slice(1, -1);
@@ -97,9 +97,6 @@ export class Combino {
 			const parsedCondition = cleanCondition
 				.replace(/&&/g, " and ")
 				.replace(/\|\|/g, " or ");
-
-			// console.log("Evaluating condition:", parsedCondition);
-			// console.log("With data:", data);
 
 			// Create a parser instance
 			const parser = new Parser();
@@ -159,7 +156,11 @@ export class Combino {
 						if (conditionMatch) {
 							const condition = conditionMatch[0];
 							// If any condition in the path is false, exclude the file
-							if (!this.evaluateCondition(condition, data)) {
+							const result = this.evaluateCondition(
+								condition,
+								data
+							);
+							if (typeof result === "boolean" && !result) {
 								return false;
 							}
 						}
@@ -183,19 +184,20 @@ export class Combino {
 								if (part === condition) {
 									return "";
 								}
-								// If it's a file extension condition, evaluate and return the result
-								if (part.includes(".")) {
-									const [name, ext] = part.split(".");
-									if (ext.includes("[")) {
-										const result = this.evaluateCondition(
-											condition,
-											data
-										);
-										return `${name}.${result}`;
-									}
+
+								// Evaluate the condition and get the result
+								const result = this.evaluateCondition(
+									condition,
+									data
+								);
+
+								// If it's a boolean result, remove the condition
+								if (typeof result === "boolean") {
+									return part.replace(condition, "");
 								}
-								// Otherwise, remove the condition from the part
-								return part.replace(condition, "");
+
+								// If it's a string result (from ternary), use it
+								return part.replace(condition, result);
 							}
 						}
 						return part;
