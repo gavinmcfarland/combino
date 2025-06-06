@@ -11,6 +11,6 @@
         "generate:programmatic": "node programmatic.js"
     },
     "dependencies": {
-        "combino": "file:../../"
+        "combino": "file:../"
     }
 }
