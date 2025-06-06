@@ -14,6 +14,7 @@ import * as ini from "ini";
 interface CombinoConfig {
 	ignore?: string[];
 	data?: Record<string, any>;
+	merge?: Record<string, Record<string, any>>;
 }
 
 export class Combino {
@@ -46,6 +47,14 @@ export class Combino {
 						config.ignore = [];
 					} else if (currentSection === "data") {
 						config.data = {};
+					} else if (currentSection.startsWith("merge:")) {
+						// Initialize merge config if it doesn't exist
+						if (!config.merge) {
+							config.merge = {};
+						}
+						// Extract the pattern from the section name
+						const pattern = currentSection.slice(6); // Remove "merge:"
+						config.merge[pattern] = {};
 					}
 				} else if (currentSection === "ignore" && config.ignore) {
 					config.ignore.push(trimmedLine);
@@ -64,6 +73,19 @@ export class Combino {
 							current = current[keys[i]];
 						}
 						current[keys[keys.length - 1]] = cleanValue;
+					}
+				} else if (
+					currentSection?.startsWith("merge:") &&
+					config.merge
+				) {
+					const [key, value] = trimmedLine
+						.split("=")
+						.map((s) => s.trim());
+					if (key && value) {
+						// Remove quotes from value if present
+						const cleanValue = value.replace(/^["']|["']$/g, "");
+						const pattern = currentSection.slice(6); // Remove "merge:"
+						config.merge[pattern][key] = cleanValue;
 					}
 				}
 			}
@@ -253,16 +275,25 @@ export class Combino {
 	}
 
 	private getMergeStrategy(filePath: string, config?: any): MergeStrategy {
-		if (config?.merge?.strategy) {
-			return config.merge.strategy;
+		// Check for merge strategy in the config
+		if (config?.merge) {
+			// Check each pattern in the merge config
+			for (const [pattern, settings] of Object.entries(config.merge)) {
+				// Convert glob pattern to regex
+				const regex = new RegExp(pattern.replace(/\*/g, ".*"));
+				if (regex.test(filePath)) {
+					return (settings as any).strategy;
+				}
+			}
 		}
 
+		// Fall back to default strategies
 		const ext = path.extname(filePath).toLowerCase();
 		switch (ext) {
 			case ".json":
 				return "deep";
 			case ".md":
-				return "replace";
+				return "shallow";
 			default:
 				return "replace";
 		}
@@ -321,6 +352,7 @@ export class Combino {
 			".combino",
 		]);
 		const allData: Record<string, any> = { ...externalData }; // Start with external data
+		const templateConfigs: CombinoConfig[] = []; // Store all template configs
 
 		// Load config if specified
 		if (typeof config === "string" && (await fileExists(config))) {
@@ -336,6 +368,7 @@ export class Combino {
 
 		for (const template of templates) {
 			const config = await this.readCombinoConfig(template);
+			templateConfigs.push(config);
 			if (config.ignore) {
 				config.ignore.forEach((pattern) =>
 					allIgnorePatterns.add(pattern)
@@ -370,6 +403,7 @@ export class Combino {
 		// Then merge files from subsequent templates
 		for (let i = 1; i < templates.length; i++) {
 			const template = templates[i];
+			const templateConfig = templateConfigs[i];
 			const files = await this.getFilesInTemplate(
 				template,
 				Array.from(allIgnorePatterns),
@@ -386,9 +420,17 @@ export class Combino {
 
 				// Read source file
 				const sourceContent = await this.readFile(sourcePath);
+				// Merge template config with source file config
+				const mergedConfig = {
+					...templateConfig,
+					merge: {
+						...templateConfig.merge,
+						...sourceContent.config?.merge,
+					},
+				};
 				const strategy = this.getMergeStrategy(
 					targetPath,
-					sourceContent.config
+					mergedConfig
 				);
 
 				try {

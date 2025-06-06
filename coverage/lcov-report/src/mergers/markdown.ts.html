@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">67.74% </span>
+                <span class="strong">69.69% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>42/62</span>
+                <span class='fraction'>46/66</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">53.84% </span>
+                <span class="strong">57.14% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>7/13</span>
+                <span class='fraction'>8/14</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">68.85% </span>
+                <span class="strong">70.76% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>42/61</span>
+                <span class='fraction'>46/65</span>
             </div>
         
             
@@ -208,8 +208,18 @@
 <a name='L143'></a><a href='#L143'>143</a>
 <a name='L144'></a><a href='#L144'>144</a>
 <a name='L145'></a><a href='#L145'>145</a>
-<a name='L146'></a><a href='#L146'>146</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -305,6 +315,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -335,13 +346,20 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -355,148 +373,157 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { promises as fs } from "fs";
 import { MergeStrategy } from "../types";
+import matter from "gray-matter";
 &nbsp;
 interface MarkdownSection {
-  header: string;
-  level: number;
-  content: string;
+	header: string;
+	level: number;
+	content: string;
 }
 &nbsp;
 function parseMarkdown(content: string): MarkdownSection[] {
-  const sections: MarkdownSection[] = [];
-  const lines = content.split("\n");
-  let currentSection: MarkdownSection | null = null;
-  let inFrontmatter = false;
-  let currentContent: string[] = [];
+	const sections: MarkdownSection[] = [];
+	const lines = content.split("\n");
+	let currentSection: MarkdownSection | null = null;
+	let inFrontmatter = false;
+	let currentContent: string[] = [];
 &nbsp;
-  for (const line of lines) {
-    // Check for frontmatter
-    <span class="missing-if-branch" title="if path not taken" >I</span>if (line.trim() === "---") {
-<span class="cstat-no" title="statement not covered" >      inFrontmatter = !inFrontmatter;</span>
-<span class="cstat-no" title="statement not covered" >      continue;</span>
-    }
-    <span class="missing-if-branch" title="if path not taken" >I</span>if (inFrontmatter) {
-<span class="cstat-no" title="statement not covered" >      continue;</span>
-    }
+	for (const line of lines) {
+		// Check for frontmatter
+		<span class="missing-if-branch" title="if path not taken" >I</span>if (line.trim() === "---") {
+<span class="cstat-no" title="statement not covered" >			inFrontmatter = !inFrontmatter;</span>
+<span class="cstat-no" title="statement not covered" >			continue;</span>
+		}
+		<span class="missing-if-branch" title="if path not taken" >I</span>if (inFrontmatter) {
+<span class="cstat-no" title="statement not covered" >			continue;</span>
+		}
 &nbsp;
-    // Check for headers
-    const headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
-    if (headerMatch) {
-      if (currentSection) {
-        // Join content lines and ensure there's a newline at the end
-        currentSection.content = currentContent.join("\n");
-        sections.push(currentSection);
-      }
-      currentSection = {
-        header: headerMatch[2],
-        level: headerMatch[1].length,
-        content: "",
-      };
-      currentContent = [];
-    } else if (currentSection) {
-      currentContent.push(line);
-    }
-  }
+		// Check for headers
+		const headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
+		if (headerMatch) {
+			if (currentSection) {
+				// Join content lines and ensure there's a newline at the end
+				currentSection.content = currentContent.join("\n");
+				sections.push(currentSection);
+			}
+			currentSection = {
+				header: headerMatch[2],
+				level: headerMatch[1].length,
+				content: "",
+			};
+			currentContent = [];
+		} else if (currentSection) {
+			currentContent.push(line);
+		}
+	}
 &nbsp;
-  if (currentSection) {
-    // Join content lines and ensure there's a newline at the end
-    currentSection.content = currentContent.join("\n");
-    sections.push(currentSection);
-  }
+	if (currentSection) {
+		// Join content lines and ensure there's a newline at the end
+		currentSection.content = currentContent.join("\n");
+		sections.push(currentSection);
+	}
 &nbsp;
-  return sections;
+	return sections;
 }
 &nbsp;
 function mergeSections(
-  targetSections: MarkdownSection[],
-  sourceSections: MarkdownSection[],
-  strategy: MergeStrategy
+	targetSections: MarkdownSection[],
+	sourceSections: MarkdownSection[],
+	strategy: MergeStrategy
 ): MarkdownSection[] {
-  // For replace strategy, we want to keep all target sections and only replace matching ones
-  if (strategy === "replace") {
-    const result = [...targetSections];
-    for (const sourceSection of sourceSections) {
-      const targetIndex = result.findIndex(
-        (s) =&gt; s.header === sourceSection.header
-      );
-      if (targetIndex !== -1) {
-        result[targetIndex] = {
-          ...result[targetIndex],
-          content: sourceSection.content,
-        };
-      }
-    }
-    return result;
-  }
+	// For shallow strategy, we want to keep all target sections and only replace matching ones
+	if (strategy === "shallow") {
+		const result = [...targetSections];
+		for (const sourceSection of sourceSections) {
+			const targetIndex = result.findIndex(
+				(s) =&gt; s.header === sourceSection.header
+			);
+			if (targetIndex !== -1) {
+				result[targetIndex] = {
+					...result[targetIndex],
+					content: sourceSection.content,
+				};
+			}
+		}
+		return result;
+	}
 &nbsp;
-  // For other strategies, use the map-based approach
-  const mergedSections = <span class="cstat-no" title="statement not covered" >new Map&lt;string, MarkdownSection&gt;();</span>
-  const sectionOrder: string[] = <span class="cstat-no" title="statement not covered" >[];</span>
+	// For other strategies, use the map-based approach
+	const mergedSections = <span class="cstat-no" title="statement not covered" >new Map&lt;string, MarkdownSection&gt;();</span>
+	const sectionOrder: string[] = <span class="cstat-no" title="statement not covered" >[];</span>
 &nbsp;
-  // Add all target sections first
-<span class="cstat-no" title="statement not covered" >  for (const section of targetSections) {</span>
-<span class="cstat-no" title="statement not covered" >    mergedSections.set(section.header, { ...section });</span>
-<span class="cstat-no" title="statement not covered" >    sectionOrder.push(section.header);</span>
-  }
+	// Add all target sections first
+<span class="cstat-no" title="statement not covered" >	for (const section of targetSections) {</span>
+<span class="cstat-no" title="statement not covered" >		mergedSections.set(section.header, { ...section });</span>
+<span class="cstat-no" title="statement not covered" >		sectionOrder.push(section.header);</span>
+	}
 &nbsp;
-  // Process source sections
-<span class="cstat-no" title="statement not covered" >  for (const section of sourceSections) {</span>
-    const existing = <span class="cstat-no" title="statement not covered" >mergedSections.get(section.header);</span>
-<span class="cstat-no" title="statement not covered" >    if (existing) {</span>
-      // For matching headers, use the specified strategy
-<span class="cstat-no" title="statement not covered" >      switch (strategy) {</span>
-        case "append":
-<span class="cstat-no" title="statement not covered" >          existing.content += "\n\n" + section.content;</span>
-<span class="cstat-no" title="statement not covered" >          break;</span>
-        case "prepend":
-<span class="cstat-no" title="statement not covered" >          existing.content = section.content + "\n\n" + existing.content;</span>
-<span class="cstat-no" title="statement not covered" >          break;</span>
-      }
-    } else {
-      // For new sections, add them as is
-<span class="cstat-no" title="statement not covered" >      mergedSections.set(section.header, { ...section });</span>
-<span class="cstat-no" title="statement not covered" >      sectionOrder.push(section.header);</span>
-    }
-  }
+	// Process source sections
+<span class="cstat-no" title="statement not covered" >	for (const section of sourceSections) {</span>
+		const existing = <span class="cstat-no" title="statement not covered" >mergedSections.get(section.header);</span>
+<span class="cstat-no" title="statement not covered" >		if (existing) {</span>
+			// For matching headers, use the specified strategy
+<span class="cstat-no" title="statement not covered" >			switch (strategy) {</span>
+				case "append":
+<span class="cstat-no" title="statement not covered" >					existing.content += "\n\n" + section.content;</span>
+<span class="cstat-no" title="statement not covered" >					break;</span>
+				case "prepend":
+<span class="cstat-no" title="statement not covered" >					existing.content =</span>
+						section.content + "\n\n" + existing.content;
+<span class="cstat-no" title="statement not covered" >					break;</span>
+			}
+		} else {
+			// For new sections, add them as is
+<span class="cstat-no" title="statement not covered" >			mergedSections.set(section.header, { ...section });</span>
+<span class="cstat-no" title="statement not covered" >			sectionOrder.push(section.header);</span>
+		}
+	}
 &nbsp;
-  // Return sections in the original order
-<span class="cstat-no" title="statement not covered" >  return sectionOrder.map(<span class="fstat-no" title="function not covered" >(h</span>eader) =&gt; <span class="cstat-no" title="statement not covered" >mergedSections.get(header)!)</span>;</span>
+	// Return sections in the original order
+<span class="cstat-no" title="statement not covered" >	return sectionOrder.map(<span class="fstat-no" title="function not covered" >(h</span>eader) =&gt; <span class="cstat-no" title="statement not covered" >mergedSections.get(header)!)</span>;</span>
 }
 &nbsp;
 function sectionsToMarkdown(sections: MarkdownSection[]): string {
-  const result =
-    sections
-      .map((section) =&gt; {
-        const header = "#".repeat(section.level) + " " + section.header;
-        // Ensure there's a newline after the header and preserve content newlines
-        const sectionContent = `${header}\n\n${section.content}`;
+	const result =
+		sections
+			.map((section) =&gt; {
+				const header = "#".repeat(section.level) + " " + section.header;
+				// Ensure there's a newline after the header and preserve content newlines
+				const sectionContent = `${header}\n\n${section.content}`;
 &nbsp;
-        return sectionContent;
-      })
-      .join("\n\n")
-      .replace(/(\n\s*){3,}/g, "\n\n") // collapse 3+ newlines to 2
-      .trimEnd() + "\n"; // trim trailing whitespace and add final newline
+				return sectionContent;
+			})
+			.join("\n\n")
+			.replace(/(\n\s*){3,}/g, "\n\n") // collapse 3+ newlines to 2
+			.trimEnd() + "\n"; // trim trailing whitespace and add final newline
 &nbsp;
-  return result;
+	return result;
 }
 &nbsp;
 export async function mergeMarkdown(
-  targetPath: string,
-  sourcePath: string,
-  strategy: MergeStrategy
+	existingPath: string, // Path to the existing file (target)
+	newPath: string, // Path to the new file (source)
+	strategy: MergeStrategy
 ): Promise&lt;string&gt; {
-  const targetContent = await fs.readFile(targetPath, "utf-8");
-  const sourceContent = await fs.readFile(sourcePath, "utf-8");
+	const existingContent = await fs.readFile(existingPath, "utf-8");
+	const newContent = await fs.readFile(newPath, "utf-8");
 &nbsp;
-  const targetSections = parseMarkdown(targetContent);
-  const sourceSections = parseMarkdown(sourceContent);
+	// For replace strategy, return the new content directly
+	if (strategy === "replace") {
+		// Process frontmatter and return the content
+		const { content } = matter(newContent);
+		return content;
+	}
 &nbsp;
-  const mergedSections = mergeSections(
-    targetSections,
-    sourceSections,
-    strategy
-  );
-  return sectionsToMarkdown(mergedSections);
+	const existingSections = parseMarkdown(existingContent);
+	const newSections = parseMarkdown(newContent);
+&nbsp;
+	const mergedSections = mergeSections(
+		existingSections,
+		newSections,
+		strategy
+	);
+	return sectionsToMarkdown(mergedSections);
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -505,7 +532,7 @@ export async function mergeMarkdown(
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-06T09:10:14.443Z
+                at 2025-06-06T09:31:07.842Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

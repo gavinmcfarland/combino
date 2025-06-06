@@ -1,0 +1,2 @@
+[merge:*.md]
+strategy = replace
