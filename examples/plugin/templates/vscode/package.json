@@ -1,0 +1,24 @@
+{
+    "dependencies": {
+        "vscode": "^1.1.37"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.76.0",
+        "@vscode/test-electron": "^2.3.2"
+    },
+    "engines": {
+        "vscode": "^1.76.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [],
+    "contributes": {
+        "commands": [
+            {
+                "command": "<%= name %>.helloWorld",
+                "title": "Hello World"
+            }
+        ]
+    }
+}

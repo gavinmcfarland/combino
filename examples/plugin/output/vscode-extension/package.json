@@ -1,0 +1,43 @@
+{
+  "name": "code-assistant",
+  "version": "1.0.0",
+  "description": "AI-powered code assistant for VS Code",
+  "type": "module",
+  "author": "Dev Team",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write \"src/**/*.ts\""
+  },
+  "devDependencies": {
+    "@types/node": "^18.15.11",
+    "tsx": "^3.12.7",
+    "typescript": "^5.0.4",
+    "prettier": "^2.8.8",
+    "eslint": "^8.40.0",
+    "jest": "^29.5.0",
+    "@types/jest": "^29.5.1",
+    "@types/vscode": "^1.76.0",
+    "@vscode/test-electron": "^2.3.2"
+  },
+  "dependencies": {
+    "vscode": "^1.1.37"
+  },
+  "engines": {
+    "vscode": "^1.76.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      {
+        "command": "code-assistant.helloWorld",
+        "title": "Hello World"
+      }
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+    "dependencies": {
+        "@figma/plugin-typings": "^1.64.0"
+    },
+    "devDependencies": {
+        "vite": "^4.3.9",
+        "@vitejs/plugin-react": "^4.0.0"
+    },
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite"
+    }
+}

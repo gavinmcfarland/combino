@@ -5,11 +5,17 @@ import matter from "gray-matter";
 import deepmerge from "deepmerge";
 import ejs from "ejs";
 import { Parser } from "expr-eval";
-import { TemplateOptions, FileContent, MergeStrategy } from "./types.js";
+import {
+	TemplateOptions,
+	FileContent,
+	MergeStrategy,
+	TemplateConfig,
+} from "./types.js";
 import { mergeJson } from "./mergers/json.js";
 import { mergeMarkdown } from "./mergers/markdown.js";
 import { mergeText } from "./mergers/text.js";
 import * as ini from "ini";
+import { fileURLToPath } from "url";
 
 interface CombinoConfig {
 	ignore?: string[];
@@ -423,6 +429,45 @@ export class Combino {
 		return this.processTemplate(mergedContent, data);
 	}
 
+	private getCallerFileLocation(): string {
+		// Get the stack trace
+		const stack = new Error().stack;
+		if (!stack) return process.cwd();
+
+		// Split the stack into lines and find the first line that's not from our internal code
+		const lines = stack.split("\n");
+		for (const line of lines) {
+			// Skip lines from our internal code
+			if (
+				line.includes("at Combino.combine") ||
+				line.includes("at Combino.getCallerFileLocation") ||
+				line.includes("at processTicksAndRejections")
+			) {
+				continue;
+			}
+
+			// Try to extract the file path
+			const match = line.match(
+				/at\s+(?:\w+\s+\()?(?:(?:file|http|https):\/\/)?([^:]+)/
+			);
+			if (match) {
+				const filePath = match[1];
+				// Convert URL to file path if needed
+				if (filePath.startsWith("file://")) {
+					return path.dirname(fileURLToPath(filePath));
+				}
+				// Handle ESM module paths
+				if (filePath.startsWith("/")) {
+					return path.dirname(filePath);
+				}
+				// Handle relative paths
+				return path.dirname(path.resolve(process.cwd(), filePath));
+			}
+		}
+
+		return process.cwd();
+	}
+
 	async combine(options: TemplateOptions): Promise<void> {
 		const {
 			outputDir,
@@ -431,15 +476,25 @@ export class Combino {
 			config,
 		} = options;
 
+		// Get the directory of the calling script
+		const callerDir = this.getCallerFileLocation();
+		console.log("Caller directory:", callerDir);
+
+		// Resolve paths relative to the caller's directory
+		const resolvedOutputDir = path.resolve(callerDir, outputDir);
+		const resolvedTemplates = templates.map((template) =>
+			path.resolve(callerDir, template)
+		);
+
 		console.log("Starting combine with options:", {
-			outputDir,
-			templates,
+			outputDir: resolvedOutputDir,
+			templates: resolvedTemplates,
 			externalData,
 			config,
 		});
 
 		// Create target directory if it doesn't exist
-		await fs.mkdir(outputDir, { recursive: true });
+		await fs.mkdir(resolvedOutputDir, { recursive: true });
 
 		// First, collect ignore patterns and data from all templates
 		const allIgnorePatterns = new Set<string>([
@@ -451,7 +506,7 @@ export class Combino {
 
 		// Load config if specified
 		if (typeof config === "string" && (await fileExists(config))) {
-			const configPath = path.resolve(config);
+			const configPath = path.resolve(callerDir, config);
 			const loadedConfig = await this.readConfigFile(configPath);
 			console.log("Loaded config from file:", loadedConfig);
 			if (loadedConfig.data) {
@@ -468,7 +523,7 @@ export class Combino {
 		}
 
 		// Collect all template configs first
-		for (const template of templates) {
+		for (const template of resolvedTemplates) {
 			const config = await this.readCombinoConfig(template);
 			console.log("Loaded template config for", template, ":", config);
 			templateConfigs.push(config);
@@ -483,7 +538,7 @@ export class Combino {
 		}
 
 		// First, copy all files from the first template
-		const firstTemplate = templates[0];
+		const firstTemplate = resolvedTemplates[0];
 		const firstTemplateFiles = await this.getFilesInTemplate(
 			firstTemplate,
 			Array.from(allIgnorePatterns),
@@ -491,7 +546,7 @@ export class Combino {
 		);
 
 		for (const { sourcePath, targetPath } of firstTemplateFiles) {
-			const fullTargetPath = path.join(outputDir, targetPath);
+			const fullTargetPath = path.join(resolvedOutputDir, targetPath);
 			await fs.mkdir(path.dirname(fullTargetPath), { recursive: true });
 
 			// Read and process the source file with EJS
@@ -504,8 +559,8 @@ export class Combino {
 		}
 
 		// Then merge files from subsequent templates
-		for (let i = 1; i < templates.length; i++) {
-			const template = templates[i];
+		for (let i = 1; i < resolvedTemplates.length; i++) {
+			const template = resolvedTemplates[i];
 			const templateConfig = templateConfigs[i];
 			console.log(
 				"Processing template",
@@ -520,7 +575,7 @@ export class Combino {
 			);
 
 			for (const { sourcePath, targetPath } of files) {
-				const fullTargetPath = path.join(outputDir, targetPath);
+				const fullTargetPath = path.join(resolvedOutputDir, targetPath);
 
 				// Create target directory if it doesn't exist
 				await fs.mkdir(path.dirname(fullTargetPath), {
