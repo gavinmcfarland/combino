@@ -5,10 +5,10 @@ import matter from "gray-matter";
 import deepmerge from "deepmerge";
 import ejs from "ejs";
 import { Parser } from "expr-eval";
-import { TemplateOptions, FileContent, MergeStrategy } from "./types";
-import { mergeJson } from "./mergers/json";
-import { mergeMarkdown } from "./mergers/markdown";
-import { mergeText } from "./mergers/text";
+import { TemplateOptions, FileContent, MergeStrategy } from "./types.js";
+import { mergeJson } from "./mergers/json.js";
+import { mergeMarkdown } from "./mergers/markdown.js";
+import { mergeText } from "./mergers/text.js";
 import * as ini from "ini";
 
 interface CombinoConfig {
@@ -459,6 +459,11 @@ export class Combino {
 			}
 			if (loadedConfig.merge) {
 				options.config = loadedConfig.merge;
+			}
+		} else if (typeof config === "object" && config !== null) {
+			// Handle config object directly
+			if (config.data) {
+				Object.assign(allData, config.data);
 			}
 		}
 

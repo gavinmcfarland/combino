@@ -1,0 +1,61 @@
+import { Combino } from 'combino';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get the directory name in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+async function generateProjects() {
+	// Create a new Combino instance
+	const combino = new Combino();
+
+	// Configuration for both projects
+	const config = {
+		data: {
+			project: {
+				name: "My Awesome Project",
+				description: "A sample project generated with Combino",
+				version: "1.0.0",
+				author: "John Doe",
+				license: "MIT"
+			}
+		},
+		merge: {
+			strategy: "deep",
+			"*.json": {
+				strategy: "deep"
+			},
+			"*.md": {
+				strategy: "replace"
+			}
+		}
+	};
+
+	// Generate TypeScript project
+	await combino.combine({
+		templates: [
+			path.join(__dirname, 'templates/base'),
+			path.join(__dirname, 'templates/typescript')
+		],
+		outputDir: path.join(__dirname, 'output/ts-project'),
+		config,
+		data: { language: 'ts' }
+	});
+
+	// Generate JavaScript project
+	await combino.combine({
+		templates: [
+			path.join(__dirname, 'templates/base'),
+			path.join(__dirname, 'templates/typescript')
+		],
+		outputDir: path.join(__dirname, 'output/js-project'),
+		config,
+		data: { language: 'js' }
+	});
+
+	console.log('Projects generated successfully!');
+}
+
+// Run the generation
+generateProjects().catch(console.error);

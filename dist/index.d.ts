@@ -1,4 +1,4 @@
-import { TemplateOptions } from "./types";
+import { TemplateOptions } from "./types.js";
 export declare class Combino {
     private readFile;
     private readCombinoConfig;

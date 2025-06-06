@@ -1,5 +1,5 @@
 import { promises as fs } from "fs";
-import { MergeStrategy } from "../types";
+import { MergeStrategy } from "../types.js";
 import matter from "gray-matter";
 
 interface MarkdownSection {

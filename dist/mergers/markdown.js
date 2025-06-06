@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.mergeMarkdown = mergeMarkdown;
-const fs_1 = require("fs");
+import { promises as fs } from "fs";
 function parseMarkdown(content) {
     const sections = [];
     const lines = content.split("\n");
@@ -44,8 +41,8 @@ function parseMarkdown(content) {
     return sections;
 }
 function mergeSections(targetSections, sourceSections, strategy) {
-    // For replace strategy, we want to keep all target sections and only replace matching ones
-    if (strategy === "replace") {
+    // For shallow strategy, we want to keep all target sections and only replace matching ones
+    if (strategy === "shallow") {
         const result = [...targetSections];
         for (const sourceSection of sourceSections) {
             const targetIndex = result.findIndex((s) => s.header === sourceSection.header);
@@ -76,7 +73,8 @@ function mergeSections(targetSections, sourceSections, strategy) {
                     existing.content += "\n\n" + section.content;
                     break;
                 case "prepend":
-                    existing.content = section.content + "\n\n" + existing.content;
+                    existing.content =
+                        section.content + "\n\n" + existing.content;
                     break;
             }
         }
@@ -102,11 +100,62 @@ function sectionsToMarkdown(sections) {
         .trimEnd() + "\n"; // trim trailing whitespace and add final newline
     return result;
 }
-async function mergeMarkdown(targetPath, sourcePath, strategy) {
-    const targetContent = await fs_1.promises.readFile(targetPath, "utf-8");
-    const sourceContent = await fs_1.promises.readFile(sourcePath, "utf-8");
-    const targetSections = parseMarkdown(targetContent);
-    const sourceSections = parseMarkdown(sourceContent);
-    const mergedSections = mergeSections(targetSections, sourceSections, strategy);
-    return sectionsToMarkdown(mergedSections);
+export async function mergeMarkdown(existingPath, // Path to the existing file (target)
+newPath, // Path to the new file (source)
+strategy) {
+    const existingContent = await fs.readFile(existingPath, "utf-8");
+    const newContent = await fs.readFile(newPath, "utf-8");
+    // For replace strategy, return the new content directly
+    if (strategy === "replace") {
+        return newContent;
+    }
+    // For shallow strategy, we want to keep all target sections and only replace matching ones
+    if (strategy === "shallow") {
+        const existingSections = parseMarkdown(existingContent);
+        const newSections = parseMarkdown(newContent);
+        const result = [...existingSections];
+        for (const sourceSection of newSections) {
+            const targetIndex = result.findIndex((s) => s.header === sourceSection.header);
+            if (targetIndex !== -1) {
+                result[targetIndex] = {
+                    ...result[targetIndex],
+                    content: sourceSection.content,
+                };
+            }
+        }
+        return sectionsToMarkdown(result);
+    }
+    // For other strategies, use the map-based approach
+    const existingSections = parseMarkdown(existingContent);
+    const newSections = parseMarkdown(newContent);
+    const mergedSections = new Map();
+    const sectionOrder = [];
+    // Add all target sections first
+    for (const section of existingSections) {
+        mergedSections.set(section.header, { ...section });
+        sectionOrder.push(section.header);
+    }
+    // Process source sections
+    for (const section of newSections) {
+        const existing = mergedSections.get(section.header);
+        if (existing) {
+            // For matching headers, use the specified strategy
+            switch (strategy) {
+                case "append":
+                    existing.content += "\n\n" + section.content;
+                    break;
+                case "prepend":
+                    existing.content =
+                        section.content + "\n\n" + existing.content;
+                    break;
+            }
+        }
+        else {
+            // For new sections, add them as is
+            mergedSections.set(section.header, { ...section });
+            sectionOrder.push(section.header);
+        }
+    }
+    // Return sections in the original order
+    return sectionsToMarkdown(sectionOrder.map((header) => mergedSections.get(header)));
 }

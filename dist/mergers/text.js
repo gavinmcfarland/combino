@@ -1,10 +1,7 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.mergeText = mergeText;
-const fs_1 = require("fs");
-async function mergeText(targetPath, sourcePath, strategy) {
-    const targetContent = await fs_1.promises.readFile(targetPath, "utf-8");
-    const sourceContent = await fs_1.promises.readFile(sourcePath, "utf-8");
+import { promises as fs } from "fs";
+export async function mergeText(targetPath, sourcePath, strategy) {
+    const targetContent = await fs.readFile(targetPath, "utf-8");
+    const sourceContent = await fs.readFile(sourcePath, "utf-8");
     switch (strategy) {
         case "append":
             return targetContent + "\n" + sourceContent;

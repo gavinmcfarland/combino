@@ -9,6 +9,7 @@ export interface MergeConfig {
 	strategy?: MergeStrategy;
 	exclude?: string[];
 	include?: string[];
+	data?: Record<string, any>;
 }
 
 export interface TemplateConfig {

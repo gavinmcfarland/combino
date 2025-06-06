@@ -1,8 +1,11 @@
 import { promises as fs } from "fs";
-import path from "path";
-import { join } from "path";
+import { join, dirname } from "path";
 import { existsSync, readFileSync } from "fs";
-import { Combino } from "../../src";
+import { fileURLToPath } from "url";
+import { Combino } from "../../src/index.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const inputDir = join(__dirname, "input");
 const outputDir = join(__dirname, "output");

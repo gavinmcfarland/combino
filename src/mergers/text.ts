@@ -1,5 +1,5 @@
 import { promises as fs } from "fs";
-import { MergeStrategy } from "../types";
+import { MergeStrategy } from "../types.js";
 
 export async function mergeText(
 	targetPath: string,

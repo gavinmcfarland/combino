@@ -1,101 +1,99 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
+import { promises as fs } from "fs";
+import path from "path";
+import { glob } from "glob";
+import matter from "gray-matter";
+import ejs from "ejs";
+import { Parser } from "expr-eval";
+import { mergeJson } from "./mergers/json.js";
+import { mergeMarkdown } from "./mergers/markdown.js";
+import { mergeText } from "./mergers/text.js";
+import * as ini from "ini";
+// Helper to flatten merge config keys
+function flattenMergeConfig(mergeObj) {
+    const flat = {};
+    for (const [key, value] of Object.entries(mergeObj)) {
+        if (typeof value === "object" &&
+            value !== null &&
+            !Array.isArray(value) &&
+            !("strategy" in value)) {
+            // Flatten one level
+            for (const [subKey, subValue] of Object.entries(value)) {
+                flat[`${key}.${subKey}`] = subValue;
+            }
+        }
+        else {
+            flat[key] = value;
+        }
     }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Combino = void 0;
-const fs_1 = require("fs");
-const path_1 = __importDefault(require("path"));
-const glob_1 = require("glob");
-const gray_matter_1 = __importDefault(require("gray-matter"));
-const ejs_1 = __importDefault(require("ejs"));
-const expr_eval_1 = require("expr-eval");
-const json_1 = require("./mergers/json");
-const markdown_1 = require("./mergers/markdown");
-const text_1 = require("./mergers/text");
-const ini = __importStar(require("ini"));
-class Combino {
+    return flat;
+}
+// Helper to manually parse [merge:...] sections from ini-like config text
+function parseMergeSections(configText) {
+    const merge = {};
+    const sectionRegex = /^\[merge:([^\]]+)\]$/gm;
+    let match;
+    while ((match = sectionRegex.exec(configText))) {
+        const pattern = match[1];
+        const start = match.index + match[0].length;
+        const end = (() => {
+            const nextSection = configText.slice(start).search(/^\[.*\]$/m);
+            return nextSection === -1 ? configText.length : start + nextSection;
+        })();
+        const body = configText.slice(start, end).trim();
+        const lines = body.split(/\r?\n/).filter(Boolean);
+        const settings = {};
+        for (const line of lines) {
+            const eqIdx = line.indexOf("=");
+            if (eqIdx !== -1) {
+                const key = line.slice(0, eqIdx).trim();
+                const value = line.slice(eqIdx + 1).trim();
+                settings[key] = value;
+            }
+        }
+        if (Object.keys(settings).length > 0) {
+            merge[pattern] = settings;
+        }
+    }
+    return merge;
+}
+export class Combino {
     async readFile(filePath) {
-        const content = await fs_1.promises.readFile(filePath, "utf-8");
-        const { data, content: fileContent } = (0, gray_matter_1.default)(content);
+        const content = await fs.readFile(filePath, "utf-8");
+        const { data, content: fileContent } = matter(content);
         return {
             content: fileContent,
             config: data,
         };
     }
     async readCombinoConfig(templatePath) {
-        const configPath = path_1.default.join(templatePath, ".combino");
+        const configPath = path.join(templatePath, ".combino");
         try {
-            const content = await fs_1.promises.readFile(configPath, "utf-8");
-            const lines = content.split("\n");
+            const content = await fs.readFile(configPath, "utf-8");
+            const parsedConfig = ini.parse(content);
             const config = {};
-            let currentSection = null;
-            for (const line of lines) {
-                const trimmedLine = line.trim();
-                if (!trimmedLine)
-                    continue;
-                if (trimmedLine.startsWith("[") && trimmedLine.endsWith("]")) {
-                    currentSection = trimmedLine.slice(1, -1);
-                    if (currentSection === "ignore") {
-                        config.ignore = [];
+            // Extract ignore section - handle as a list of values
+            if (parsedConfig.ignore) {
+                config.ignore = Object.keys(parsedConfig.ignore);
+            }
+            // Extract data section and structure it properly
+            if (parsedConfig.data) {
+                config.data = {};
+                // Convert flat data structure to nested
+                Object.entries(parsedConfig.data).forEach(([key, value]) => {
+                    const keys = key.split(".");
+                    let current = config.data;
+                    for (let i = 0; i < keys.length - 1; i++) {
+                        current[keys[i]] = current[keys[i]] || {};
+                        current = current[keys[i]];
                     }
-                    else if (currentSection === "data") {
-                        config.data = {};
-                    }
-                }
-                else if (currentSection === "ignore" && config.ignore) {
-                    config.ignore.push(trimmedLine);
-                }
-                else if (currentSection === "data" && config.data) {
-                    const [key, value] = trimmedLine
-                        .split("=")
-                        .map((s) => s.trim());
-                    if (key && value) {
-                        // Remove quotes from value if present
-                        const cleanValue = value.replace(/^["']|["']$/g, "");
-                        // Handle nested properties (e.g., "project.name")
-                        const keys = key.split(".");
-                        let current = config.data;
-                        for (let i = 0; i < keys.length - 1; i++) {
-                            current[keys[i]] = current[keys[i]] || {};
-                            current = current[keys[i]];
-                        }
-                        current[keys[keys.length - 1]] = cleanValue;
-                    }
-                }
+                    current[keys[keys.length - 1]] = value;
+                });
+            }
+            // Manually parse [merge:...] sections
+            config.merge = parseMergeSections(content);
+            // Also support [merge] catch-all section from ini
+            if (parsedConfig.merge && typeof parsedConfig.merge === "object") {
+                config.merge = { ...config.merge, "*": parsedConfig.merge };
             }
             return config;
         }
@@ -105,7 +103,7 @@ class Combino {
     }
     async readConfigFile(configPath) {
         try {
-            const content = await fs_1.promises.readFile(configPath, "utf-8");
+            const content = await fs.readFile(configPath, "utf-8");
             const parsedConfig = ini.parse(content);
             const config = {};
             // Extract data section and structure it properly
@@ -122,9 +120,11 @@ class Combino {
                     current[keys[keys.length - 1]] = value;
                 });
             }
-            // Extract merge config
-            if (parsedConfig.merge) {
-                config.merge = parsedConfig.merge;
+            // Manually parse [merge:...] sections
+            config.merge = parseMergeSections(content);
+            // Also support [merge] catch-all section from ini
+            if (parsedConfig.merge && typeof parsedConfig.merge === "object") {
+                config.merge = { ...config.merge, "*": parsedConfig.merge };
             }
             return config;
         }
@@ -135,7 +135,7 @@ class Combino {
     }
     async processTemplate(content, data) {
         try {
-            return await ejs_1.default.render(content, data, { async: true });
+            return await ejs.render(content, data, { async: true });
         }
         catch (error) {
             console.error("Error processing template:", error);
@@ -151,7 +151,7 @@ class Combino {
                 .replace(/&&/g, " and ")
                 .replace(/\|\|/g, " or ");
             // Create a parser instance
-            const parser = new expr_eval_1.Parser();
+            const parser = new Parser();
             // Create a scope with the data
             const scope = Object.entries(data).reduce((acc, [key, value]) => {
                 // Handle nested properties
@@ -175,7 +175,7 @@ class Combino {
     }
     async getFilesInTemplate(templatePath, ignorePatterns, data) {
         try {
-            const files = await (0, glob_1.glob)("**/*", {
+            const files = await glob("**/*", {
                 cwd: templatePath,
                 nodir: true,
                 ignore: ignorePatterns,
@@ -190,7 +190,7 @@ class Combino {
                     return false;
                 }
                 // Check each directory and file part in the path for conditions
-                const parts = file.split(path_1.default.sep);
+                const parts = file.split(path.sep);
                 for (const part of parts) {
                     if (part.includes("[") && part.includes("]")) {
                         // Extract the condition from the part
@@ -209,7 +209,7 @@ class Combino {
             });
             // Transform the file paths to handle conditional folders and file extensions
             const mappedFiles = filteredFiles.map((file) => {
-                const parts = file.split(path_1.default.sep);
+                const parts = file.split(path.sep);
                 const transformedParts = parts
                     .map((part) => {
                     if (part.includes("[") && part.includes("]")) {
@@ -235,8 +235,8 @@ class Combino {
                 })
                     .filter(Boolean); // Remove empty strings
                 return {
-                    sourcePath: path_1.default.join(templatePath, file),
-                    targetPath: path_1.default.join(...transformedParts),
+                    sourcePath: path.join(templatePath, file),
+                    targetPath: path.join(...transformedParts),
                 };
             });
             return mappedFiles;
@@ -246,49 +246,93 @@ class Combino {
         }
     }
     getMergeStrategy(filePath, config) {
-        if (config?.merge?.strategy) {
-            return config.merge.strategy;
+        console.log("Getting merge strategy for", filePath, "with config:", config);
+        // Check for merge strategy in the config
+        if (config?.merge) {
+            // Check each pattern in the merge config
+            for (const [pattern, settings] of Object.entries(config.merge)) {
+                // Convert glob pattern to regex, handling brace expansion
+                const expandedPattern = pattern.replace(/\{([^}]+)\}/g, (match, p1) => {
+                    // Split the options in the braces and escape them
+                    const options = p1
+                        .split(",")
+                        .map((opt) => opt
+                        .trim()
+                        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+                    return `(${options.join("|")})`;
+                });
+                // Convert * to .* and ensure the pattern matches the entire string
+                const regex = new RegExp(`^${expandedPattern.replace(/\*/g, ".*")}$`);
+                console.log("Checking pattern", pattern, "against", filePath, "result:", regex.test(filePath));
+                if (regex.test(filePath)) {
+                    console.log("Found matching pattern", pattern, "with settings:", settings);
+                    // If settings has a strategy property, use it directly
+                    const typedSettings = settings;
+                    if (typedSettings.strategy) {
+                        return typedSettings.strategy;
+                    }
+                    // Handle nested structure for file extensions
+                    const ext = path.extname(filePath).toLowerCase().slice(1); // Remove the dot
+                    const nestedSettings = settings;
+                    if (nestedSettings[ext]?.strategy) {
+                        return nestedSettings[ext].strategy;
+                    }
+                    // If no extension-specific strategy, use the pattern's strategy
+                    return nestedSettings.strategy;
+                }
+            }
         }
-        const ext = path_1.default.extname(filePath).toLowerCase();
+        // Fall back to default strategies
+        const ext = path.extname(filePath).toLowerCase();
+        console.log("No matching pattern found, using default strategy for extension", ext);
         switch (ext) {
             case ".json":
                 return "deep";
             case ".md":
-                return "replace";
+                return "shallow";
             default:
                 return "replace";
         }
     }
     async mergeFiles(targetPath, sourcePath, strategy, data) {
-        const ext = path_1.default.extname(targetPath).toLowerCase();
+        const ext = path.extname(targetPath).toLowerCase();
         let mergedContent;
         switch (ext) {
             case ".json":
-                mergedContent = await (0, json_1.mergeJson)(targetPath, sourcePath, strategy);
+                mergedContent = await mergeJson(targetPath, sourcePath, strategy);
                 break;
             case ".md":
-                mergedContent = await (0, markdown_1.mergeMarkdown)(targetPath, sourcePath, strategy);
+                mergedContent = await mergeMarkdown(targetPath, sourcePath, strategy);
                 break;
             default:
-                mergedContent = await (0, text_1.mergeText)(targetPath, sourcePath, strategy);
+                mergedContent = await mergeText(targetPath, sourcePath, strategy);
         }
+        console.log("mergedContent", targetPath, sourcePath, strategy);
         // Process the merged content with EJS
         return this.processTemplate(mergedContent, data);
     }
     async combine(options) {
         const { outputDir, templates, data: externalData = {}, config, } = options;
+        console.log("Starting combine with options:", {
+            outputDir,
+            templates,
+            externalData,
+            config,
+        });
         // Create target directory if it doesn't exist
-        await fs_1.promises.mkdir(outputDir, { recursive: true });
+        await fs.mkdir(outputDir, { recursive: true });
         // First, collect ignore patterns and data from all templates
         const allIgnorePatterns = new Set([
             "node_modules/**",
             ".combino",
         ]);
         const allData = { ...externalData }; // Start with external data
+        const templateConfigs = []; // Store all template configs
         // Load config if specified
         if (typeof config === "string" && (await fileExists(config))) {
-            const configPath = path_1.default.resolve(config);
+            const configPath = path.resolve(config);
             const loadedConfig = await this.readConfigFile(configPath);
+            console.log("Loaded config from file:", loadedConfig);
             if (loadedConfig.data) {
                 Object.assign(allData, loadedConfig.data);
             }
@@ -296,8 +340,17 @@ class Combino {
                 options.config = loadedConfig.merge;
             }
         }
+        else if (typeof config === "object" && config !== null) {
+            // Handle config object directly
+            if (config.data) {
+                Object.assign(allData, config.data);
+            }
+        }
+        // Collect all template configs first
         for (const template of templates) {
             const config = await this.readCombinoConfig(template);
+            console.log("Loaded template config for", template, ":", config);
+            templateConfigs.push(config);
             if (config.ignore) {
                 config.ignore.forEach((pattern) => allIgnorePatterns.add(pattern));
             }
@@ -309,45 +362,56 @@ class Combino {
         const firstTemplate = templates[0];
         const firstTemplateFiles = await this.getFilesInTemplate(firstTemplate, Array.from(allIgnorePatterns), allData);
         for (const { sourcePath, targetPath } of firstTemplateFiles) {
-            const fullTargetPath = path_1.default.join(outputDir, targetPath);
-            await fs_1.promises.mkdir(path_1.default.dirname(fullTargetPath), { recursive: true });
+            const fullTargetPath = path.join(outputDir, targetPath);
+            await fs.mkdir(path.dirname(fullTargetPath), { recursive: true });
             // Read and process the source file with EJS
-            const content = await fs_1.promises.readFile(sourcePath, "utf-8");
+            const content = await fs.readFile(sourcePath, "utf-8");
             const processedContent = await this.processTemplate(content, allData);
-            await fs_1.promises.writeFile(fullTargetPath, processedContent);
+            await fs.writeFile(fullTargetPath, processedContent);
         }
         // Then merge files from subsequent templates
         for (let i = 1; i < templates.length; i++) {
             const template = templates[i];
+            const templateConfig = templateConfigs[i];
+            console.log("Processing template", template, "with config:", templateConfig);
             const files = await this.getFilesInTemplate(template, Array.from(allIgnorePatterns), allData);
             for (const { sourcePath, targetPath } of files) {
-                const fullTargetPath = path_1.default.join(outputDir, targetPath);
+                const fullTargetPath = path.join(outputDir, targetPath);
                 // Create target directory if it doesn't exist
-                await fs_1.promises.mkdir(path_1.default.dirname(fullTargetPath), {
+                await fs.mkdir(path.dirname(fullTargetPath), {
                     recursive: true,
                 });
                 // Read source file
                 const sourceContent = await this.readFile(sourcePath);
-                const strategy = this.getMergeStrategy(targetPath, sourceContent.config);
+                // Merge template config with source file config
+                const mergedConfig = {
+                    ...templateConfig,
+                    merge: {
+                        ...templateConfig.merge,
+                        ...sourceContent.config?.merge,
+                    },
+                };
+                console.log("Merged config for", targetPath, ":", mergedConfig);
+                // Get merge strategy from template config
+                const strategy = this.getMergeStrategy(targetPath, mergedConfig);
                 try {
                     const targetContent = await this.readFile(fullTargetPath);
                     const mergedContent = await this.mergeFiles(fullTargetPath, sourcePath, strategy, allData);
-                    await fs_1.promises.writeFile(fullTargetPath, mergedContent);
+                    await fs.writeFile(fullTargetPath, mergedContent);
                 }
                 catch (error) {
                     // If target doesn't exist, just copy and process the source
-                    const content = await fs_1.promises.readFile(sourcePath, "utf-8");
+                    const content = await fs.readFile(sourcePath, "utf-8");
                     const processedContent = await this.processTemplate(content, allData);
-                    await fs_1.promises.writeFile(fullTargetPath, processedContent);
+                    await fs.writeFile(fullTargetPath, processedContent);
                 }
             }
         }
     }
 }
-exports.Combino = Combino;
 async function fileExists(path) {
     try {
-        await fs_1.promises.access(path);
+        await fs.access(path);
         return true;
     }
     catch {

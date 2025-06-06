@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { Combino } from "./index";
-import { TemplateOptions } from "./types";
+import { Combino } from "./index.js";
+import { TemplateOptions } from "./types.js";
 import * as fs from "fs";
 import * as path from "path";
 import * as ini from "ini";

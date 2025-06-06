@@ -1,6 +1,10 @@
 import { readFileSync, rmSync } from "fs";
-import { join } from "path";
-import { Combino } from "../../src";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+import { Combino } from "../../src/index.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 describe("Ignore Test Suite", () => {
 	const testDir = __dirname;
@@ -8,6 +12,7 @@ describe("Ignore Test Suite", () => {
 		join(testDir, "input", dir)
 	);
 	const outputDir = join(testDir, "output");
+	const expectedDir = join(testDir, "expected");
 
 	beforeAll(async () => {
 		// Clean up output directory before running tests
@@ -33,7 +38,7 @@ describe("Ignore Test Suite", () => {
 
 		it("should still process non-ignored files", () => {
 			const outputPath = join(outputDir, "README.md");
-			const expectedPath = join(testDir, "expected", "README.md");
+			const expectedPath = join(expectedDir, "README.md");
 
 			const output = readFileSync(outputPath, "utf-8");
 			const expected = readFileSync(expectedPath, "utf-8");

@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 import deepmerge from "deepmerge";
-import { MergeStrategy } from "../types";
+import { MergeStrategy } from "../types.js";
 
 // Custom array merge function that deduplicates items
 const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
