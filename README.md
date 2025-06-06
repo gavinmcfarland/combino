@@ -188,6 +188,17 @@ strategy = replace
 strategy = deep
 ```
 
+### Example: Using Glob Patterns with Brace Expansion
+
+You can use glob patterns with brace expansion to apply a merge strategy to multiple file types. For example, to replace both markdown and JSON files:
+
+```ini
+[merge:*.{md,json}]
+strategy = replace
+```
+
+This will apply the `replace` strategy to any file ending in `.md` or `.json`.
+
 ## File conflict strategies
 
 ```ini

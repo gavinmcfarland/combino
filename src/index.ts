@@ -17,6 +17,57 @@ interface CombinoConfig {
 	merge?: Record<string, Record<string, any>>;
 }
 
+// Helper to flatten merge config keys
+function flattenMergeConfig(mergeObj: any): Record<string, any> {
+	const flat: Record<string, any> = {};
+	for (const [key, value] of Object.entries(mergeObj)) {
+		if (
+			typeof value === "object" &&
+			value !== null &&
+			!Array.isArray(value) &&
+			!("strategy" in value)
+		) {
+			// Flatten one level
+			for (const [subKey, subValue] of Object.entries(value)) {
+				flat[`${key}.${subKey}`] = subValue;
+			}
+		} else {
+			flat[key] = value;
+		}
+	}
+	return flat;
+}
+
+// Helper to manually parse [merge:...] sections from ini-like config text
+function parseMergeSections(configText: string): Record<string, any> {
+	const merge: Record<string, any> = {};
+	const sectionRegex = /^\[merge:([^\]]+)\]$/gm;
+	let match: RegExpExecArray | null;
+	while ((match = sectionRegex.exec(configText))) {
+		const pattern = match[1];
+		const start = match.index + match[0].length;
+		const end = (() => {
+			const nextSection = configText.slice(start).search(/^\[.*\]$/m);
+			return nextSection === -1 ? configText.length : start + nextSection;
+		})();
+		const body = configText.slice(start, end).trim();
+		const lines = body.split(/\r?\n/).filter(Boolean);
+		const settings: Record<string, any> = {};
+		for (const line of lines) {
+			const eqIdx = line.indexOf("=");
+			if (eqIdx !== -1) {
+				const key = line.slice(0, eqIdx).trim();
+				const value = line.slice(eqIdx + 1).trim();
+				settings[key] = value;
+			}
+		}
+		if (Object.keys(settings).length > 0) {
+			merge[pattern] = settings;
+		}
+	}
+	return merge;
+}
+
 export class Combino {
 	private async readFile(filePath: string): Promise<FileContent> {
 		const content = await fs.readFile(filePath, "utf-8");
@@ -56,21 +107,13 @@ export class Combino {
 				});
 			}
 
-			// Extract merge config - handle sections with wildcards and catch-all
-			config.merge = {};
-			Object.entries(parsedConfig).forEach(([section, settings]) => {
-				if (section === "merge") {
-					// Handle catch-all merge section
-					if (typeof settings === "object" && settings !== null) {
-						config.merge!["*"] = settings;
-					}
-				} else if (section.startsWith("merge:")) {
-					const pattern = section.slice(6); // Remove "merge:"
-					if (typeof settings === "object" && settings !== null) {
-						config.merge![pattern] = settings;
-					}
-				}
-			});
+			// Manually parse [merge:...] sections
+			config.merge = parseMergeSections(content);
+
+			// Also support [merge] catch-all section from ini
+			if (parsedConfig.merge && typeof parsedConfig.merge === "object") {
+				config.merge = { ...config.merge, "*": parsedConfig.merge };
+			}
 
 			return config;
 		} catch (error) {
@@ -101,21 +144,13 @@ export class Combino {
 				});
 			}
 
-			// Extract merge config - handle catch-all and pattern-specific sections
-			config.merge = {};
-			Object.entries(parsedConfig).forEach(([section, settings]) => {
-				if (section === "merge") {
-					// Handle catch-all merge section
-					if (typeof settings === "object" && settings !== null) {
-						config.merge!["*"] = settings;
-					}
-				} else if (section.startsWith("merge:")) {
-					const pattern = section.slice(6); // Remove "merge:"
-					if (typeof settings === "object" && settings !== null) {
-						config.merge![pattern] = settings;
-					}
-				}
-			});
+			// Manually parse [merge:...] sections
+			config.merge = parseMergeSections(content);
+
+			// Also support [merge] catch-all section from ini
+			if (parsedConfig.merge && typeof parsedConfig.merge === "object") {
+				config.merge = { ...config.merge, "*": parsedConfig.merge };
+			}
 
 			return config;
 		} catch (error) {
@@ -278,8 +313,25 @@ export class Combino {
 		if (config?.merge) {
 			// Check each pattern in the merge config
 			for (const [pattern, settings] of Object.entries(config.merge)) {
-				// Convert glob pattern to regex
-				const regex = new RegExp(pattern.replace(/\*/g, ".*"));
+				// Convert glob pattern to regex, handling brace expansion
+				const expandedPattern = pattern.replace(
+					/\{([^}]+)\}/g,
+					(match, p1) => {
+						// Split the options in the braces and escape them
+						const options = p1
+							.split(",")
+							.map((opt: string) =>
+								opt
+									.trim()
+									.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+							);
+						return `(${options.join("|")})`;
+					}
+				);
+				// Convert * to .* and ensure the pattern matches the entire string
+				const regex = new RegExp(
+					`^${expandedPattern.replace(/\*/g, ".*")}$`
+				);
 				console.log(
 					"Checking pattern",
 					pattern,
@@ -295,17 +347,24 @@ export class Combino {
 						"with settings:",
 						settings
 					);
+					// If settings has a strategy property, use it directly
+					const typedSettings = settings as {
+						strategy?: MergeStrategy;
+					};
+					if (typedSettings.strategy) {
+						return typedSettings.strategy;
+					}
 					// Handle nested structure for file extensions
 					const ext = path.extname(filePath).toLowerCase().slice(1); // Remove the dot
-					const typedSettings = settings as Record<
+					const nestedSettings = settings as Record<
 						string,
 						{ strategy?: MergeStrategy }
 					>;
-					if (typedSettings[ext]?.strategy) {
-						return typedSettings[ext].strategy;
+					if (nestedSettings[ext]?.strategy) {
+						return nestedSettings[ext].strategy;
 					}
 					// If no extension-specific strategy, use the pattern's strategy
-					return (typedSettings as any).strategy;
+					return (nestedSettings as any).strategy;
 				}
 			}
 		}
