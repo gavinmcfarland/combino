@@ -56,10 +56,15 @@ export class Combino {
 				});
 			}
 
-			// Extract merge config - handle sections with wildcards
+			// Extract merge config - handle sections with wildcards and catch-all
 			config.merge = {};
 			Object.entries(parsedConfig).forEach(([section, settings]) => {
-				if (section.startsWith("merge:")) {
+				if (section === "merge") {
+					// Handle catch-all merge section
+					if (typeof settings === "object" && settings !== null) {
+						config.merge!["*"] = settings;
+					}
+				} else if (section.startsWith("merge:")) {
 					const pattern = section.slice(6); // Remove "merge:"
 					if (typeof settings === "object" && settings !== null) {
 						config.merge![pattern] = settings;
@@ -96,10 +101,21 @@ export class Combino {
 				});
 			}
 
-			// Extract merge config
-			if (parsedConfig.merge) {
-				config.merge = parsedConfig.merge;
-			}
+			// Extract merge config - handle catch-all and pattern-specific sections
+			config.merge = {};
+			Object.entries(parsedConfig).forEach(([section, settings]) => {
+				if (section === "merge") {
+					// Handle catch-all merge section
+					if (typeof settings === "object" && settings !== null) {
+						config.merge!["*"] = settings;
+					}
+				} else if (section.startsWith("merge:")) {
+					const pattern = section.slice(6); // Remove "merge:"
+					if (typeof settings === "object" && settings !== null) {
+						config.merge![pattern] = settings;
+					}
+				}
+			});
 
 			return config;
 		} catch (error) {
