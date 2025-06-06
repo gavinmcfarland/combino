@@ -137,18 +137,63 @@ export async function mergeMarkdown(
 
 	// For replace strategy, return the new content directly
 	if (strategy === "replace") {
-		// Process frontmatter and return the content
-		const { content } = matter(newContent);
-		return content;
+		return newContent;
 	}
 
+	// For shallow strategy, we want to keep all target sections and only replace matching ones
+	if (strategy === "shallow") {
+		const existingSections = parseMarkdown(existingContent);
+		const newSections = parseMarkdown(newContent);
+		const result = [...existingSections];
+		for (const sourceSection of newSections) {
+			const targetIndex = result.findIndex(
+				(s) => s.header === sourceSection.header
+			);
+			if (targetIndex !== -1) {
+				result[targetIndex] = {
+					...result[targetIndex],
+					content: sourceSection.content,
+				};
+			}
+		}
+		return sectionsToMarkdown(result);
+	}
+
+	// For other strategies, use the map-based approach
 	const existingSections = parseMarkdown(existingContent);
 	const newSections = parseMarkdown(newContent);
+	const mergedSections = new Map<string, MarkdownSection>();
+	const sectionOrder: string[] = [];
 
-	const mergedSections = mergeSections(
-		existingSections,
-		newSections,
-		strategy
+	// Add all target sections first
+	for (const section of existingSections) {
+		mergedSections.set(section.header, { ...section });
+		sectionOrder.push(section.header);
+	}
+
+	// Process source sections
+	for (const section of newSections) {
+		const existing = mergedSections.get(section.header);
+		if (existing) {
+			// For matching headers, use the specified strategy
+			switch (strategy) {
+				case "append":
+					existing.content += "\n\n" + section.content;
+					break;
+				case "prepend":
+					existing.content =
+						section.content + "\n\n" + existing.content;
+					break;
+			}
+		} else {
+			// For new sections, add them as is
+			mergedSections.set(section.header, { ...section });
+			sectionOrder.push(section.header);
+		}
+	}
+
+	// Return sections in the original order
+	return sectionsToMarkdown(
+		sectionOrder.map((header) => mergedSections.get(header)!)
 	);
-	return sectionsToMarkdown(mergedSections);
 }

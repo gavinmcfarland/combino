@@ -33,62 +33,39 @@ export class Combino {
 		const configPath = path.join(templatePath, ".combino");
 		try {
 			const content = await fs.readFile(configPath, "utf-8");
-			const lines = content.split("\n");
+			const parsedConfig = ini.parse(content);
 			const config: CombinoConfig = {};
 
-			let currentSection: string | null = null;
-			for (const line of lines) {
-				const trimmedLine = line.trim();
-				if (!trimmedLine) continue;
+			// Extract ignore section - handle as a list of values
+			if (parsedConfig.ignore) {
+				config.ignore = Object.keys(parsedConfig.ignore);
+			}
 
-				if (trimmedLine.startsWith("[") && trimmedLine.endsWith("]")) {
-					currentSection = trimmedLine.slice(1, -1);
-					if (currentSection === "ignore") {
-						config.ignore = [];
-					} else if (currentSection === "data") {
-						config.data = {};
-					} else if (currentSection.startsWith("merge:")) {
-						// Initialize merge config if it doesn't exist
-						if (!config.merge) {
-							config.merge = {};
-						}
-						// Extract the pattern from the section name
-						const pattern = currentSection.slice(6); // Remove "merge:"
-						config.merge[pattern] = {};
+			// Extract data section and structure it properly
+			if (parsedConfig.data) {
+				config.data = {};
+				// Convert flat data structure to nested
+				Object.entries(parsedConfig.data).forEach(([key, value]) => {
+					const keys = key.split(".");
+					let current = config.data!;
+					for (let i = 0; i < keys.length - 1; i++) {
+						current[keys[i]] = current[keys[i]] || {};
+						current = current[keys[i]];
 					}
-				} else if (currentSection === "ignore" && config.ignore) {
-					config.ignore.push(trimmedLine);
-				} else if (currentSection === "data" && config.data) {
-					const [key, value] = trimmedLine
-						.split("=")
-						.map((s) => s.trim());
-					if (key && value) {
-						// Remove quotes from value if present
-						const cleanValue = value.replace(/^["']|["']$/g, "");
-						// Handle nested properties (e.g., "project.name")
-						const keys = key.split(".");
-						let current = config.data;
-						for (let i = 0; i < keys.length - 1; i++) {
-							current[keys[i]] = current[keys[i]] || {};
-							current = current[keys[i]];
-						}
-						current[keys[keys.length - 1]] = cleanValue;
-					}
-				} else if (
-					currentSection?.startsWith("merge:") &&
-					config.merge
-				) {
-					const [key, value] = trimmedLine
-						.split("=")
-						.map((s) => s.trim());
-					if (key && value) {
-						// Remove quotes from value if present
-						const cleanValue = value.replace(/^["']|["']$/g, "");
-						const pattern = currentSection.slice(6); // Remove "merge:"
-						config.merge[pattern][key] = cleanValue;
+					current[keys[keys.length - 1]] = value;
+				});
+			}
+
+			// Extract merge config - handle sections with wildcards
+			config.merge = {};
+			Object.entries(parsedConfig).forEach(([section, settings]) => {
+				if (section.startsWith("merge:")) {
+					const pattern = section.slice(6); // Remove "merge:"
+					if (typeof settings === "object" && settings !== null) {
+						config.merge![pattern] = settings;
 					}
 				}
-			}
+			});
 
 			return config;
 		} catch (error) {
@@ -275,20 +252,54 @@ export class Combino {
 	}
 
 	private getMergeStrategy(filePath: string, config?: any): MergeStrategy {
+		console.log(
+			"Getting merge strategy for",
+			filePath,
+			"with config:",
+			config
+		);
 		// Check for merge strategy in the config
 		if (config?.merge) {
 			// Check each pattern in the merge config
 			for (const [pattern, settings] of Object.entries(config.merge)) {
 				// Convert glob pattern to regex
 				const regex = new RegExp(pattern.replace(/\*/g, ".*"));
+				console.log(
+					"Checking pattern",
+					pattern,
+					"against",
+					filePath,
+					"result:",
+					regex.test(filePath)
+				);
 				if (regex.test(filePath)) {
-					return (settings as any).strategy;
+					console.log(
+						"Found matching pattern",
+						pattern,
+						"with settings:",
+						settings
+					);
+					// Handle nested structure for file extensions
+					const ext = path.extname(filePath).toLowerCase().slice(1); // Remove the dot
+					const typedSettings = settings as Record<
+						string,
+						{ strategy?: MergeStrategy }
+					>;
+					if (typedSettings[ext]?.strategy) {
+						return typedSettings[ext].strategy;
+					}
+					// If no extension-specific strategy, use the pattern's strategy
+					return (typedSettings as any).strategy;
 				}
 			}
 		}
 
 		// Fall back to default strategies
 		const ext = path.extname(filePath).toLowerCase();
+		console.log(
+			"No matching pattern found, using default strategy for extension",
+			ext
+		);
 		switch (ext) {
 			case ".json":
 				return "deep";
@@ -331,6 +342,8 @@ export class Combino {
 				);
 		}
 
+		console.log("mergedContent", targetPath, sourcePath, strategy);
+
 		// Process the merged content with EJS
 		return this.processTemplate(mergedContent, data);
 	}
@@ -342,6 +355,13 @@ export class Combino {
 			data: externalData = {},
 			config,
 		} = options;
+
+		console.log("Starting combine with options:", {
+			outputDir,
+			templates,
+			externalData,
+			config,
+		});
 
 		// Create target directory if it doesn't exist
 		await fs.mkdir(outputDir, { recursive: true });
@@ -358,6 +378,7 @@ export class Combino {
 		if (typeof config === "string" && (await fileExists(config))) {
 			const configPath = path.resolve(config);
 			const loadedConfig = await this.readConfigFile(configPath);
+			console.log("Loaded config from file:", loadedConfig);
 			if (loadedConfig.data) {
 				Object.assign(allData, loadedConfig.data);
 			}
@@ -366,8 +387,10 @@ export class Combino {
 			}
 		}
 
+		// Collect all template configs first
 		for (const template of templates) {
 			const config = await this.readCombinoConfig(template);
+			console.log("Loaded template config for", template, ":", config);
 			templateConfigs.push(config);
 			if (config.ignore) {
 				config.ignore.forEach((pattern) =>
@@ -404,6 +427,12 @@ export class Combino {
 		for (let i = 1; i < templates.length; i++) {
 			const template = templates[i];
 			const templateConfig = templateConfigs[i];
+			console.log(
+				"Processing template",
+				template,
+				"with config:",
+				templateConfig
+			);
 			const files = await this.getFilesInTemplate(
 				template,
 				Array.from(allIgnorePatterns),
@@ -428,6 +457,9 @@ export class Combino {
 						...sourceContent.config?.merge,
 					},
 				};
+				console.log("Merged config for", targetPath, ":", mergedConfig);
+
+				// Get merge strategy from template config
 				const strategy = this.getMergeStrategy(
 					targetPath,
 					mergedConfig
