@@ -1,0 +1,18 @@
+[input.pluginType]
+type = list
+message = "Create plugin or widget?"
+choices = plugin, widget
+default = plugin
+
+[input.framework]
+type = list
+message = "Choose your framework"
+choices = svelte, react, vue
+default = svelte
+
+[input.language]
+type = list
+message = Choose a language
+choices = ts, js
+default = ts
+
