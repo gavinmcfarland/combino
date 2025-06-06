@@ -85,7 +85,7 @@ program
 			}
 
 			const templateOptions: TemplateOptions = {
-				targetDir: options.output,
+				outputDir: options.output,
 				templates: templates,
 				config: config.merge,
 				data: templateData,

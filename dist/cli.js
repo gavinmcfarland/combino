@@ -93,7 +93,7 @@ program
             });
         }
         const templateOptions = {
-            targetDir: options.output,
+            outputDir: options.output,
             templates: templates,
             config: config.merge,
             data: templateData,

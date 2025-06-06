@@ -19,7 +19,7 @@ describe("Basic Test Suite", () => {
 
 		const combino = new Combino();
 		await combino.combine({
-			targetDir: outputDir,
+			outputDir: outputDir,
 			templates: inputDirs,
 			data: {
 				framework: "react",

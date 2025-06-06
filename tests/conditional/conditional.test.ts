@@ -20,7 +20,7 @@ describe("Conditional Folder Test Suite", () => {
 	it("should match the expected output exactly", async () => {
 		const combino = new Combino();
 		await combino.combine({
-			targetDir: outputDir,
+			outputDir: outputDir,
 			templates: [join(inputDir, "base")],
 			data: scenarioData,
 		});
@@ -30,7 +30,7 @@ describe("Conditional Folder Test Suite", () => {
 	it("should have the correct App.tsx", async () => {
 		const combino = new Combino();
 		await combino.combine({
-			targetDir: outputDir,
+			outputDir: outputDir,
 			templates: [join(inputDir, "base")],
 			data: scenarioData,
 		});

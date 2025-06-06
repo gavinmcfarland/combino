@@ -11,9 +11,10 @@ export interface FileContent {
     content: string;
     config?: TemplateConfig;
 }
+export type ConfigFile = string;
 export interface TemplateOptions {
-    targetDir: string;
+    outputDir: string;
     templates: string[];
-    config?: MergeConfig;
+    config?: MergeConfig | ConfigFile;
     data?: Record<string, any>;
 }

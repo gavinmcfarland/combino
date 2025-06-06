@@ -306,14 +306,14 @@ export class Combino {
 
 	async combine(options: TemplateOptions): Promise<void> {
 		const {
-			targetDir,
+			outputDir,
 			templates,
 			data: externalData = {},
-			configFile,
+			config,
 		} = options;
 
 		// Create target directory if it doesn't exist
-		await fs.mkdir(targetDir, { recursive: true });
+		await fs.mkdir(outputDir, { recursive: true });
 
 		// First, collect ignore patterns and data from all templates
 		const allIgnorePatterns = new Set<string>([
@@ -322,15 +322,15 @@ export class Combino {
 		]);
 		const allData: Record<string, any> = { ...externalData }; // Start with external data
 
-		// Load config file if specified
-		if (configFile) {
-			const configPath = path.resolve(configFile);
-			const config = await this.readConfigFile(configPath);
-			if (config.data) {
-				Object.assign(allData, config.data);
+		// Load config if specified
+		if (typeof config === "string" && (await fileExists(config))) {
+			const configPath = path.resolve(config);
+			const loadedConfig = await this.readConfigFile(configPath);
+			if (loadedConfig.data) {
+				Object.assign(allData, loadedConfig.data);
 			}
-			if (config.merge) {
-				options.config = config.merge;
+			if (loadedConfig.merge) {
+				options.config = loadedConfig.merge;
 			}
 		}
 
@@ -355,7 +355,7 @@ export class Combino {
 		);
 
 		for (const { sourcePath, targetPath } of firstTemplateFiles) {
-			const fullTargetPath = path.join(targetDir, targetPath);
+			const fullTargetPath = path.join(outputDir, targetPath);
 			await fs.mkdir(path.dirname(fullTargetPath), { recursive: true });
 
 			// Read and process the source file with EJS
@@ -377,7 +377,7 @@ export class Combino {
 			);
 
 			for (const { sourcePath, targetPath } of files) {
-				const fullTargetPath = path.join(targetDir, targetPath);
+				const fullTargetPath = path.join(outputDir, targetPath);
 
 				// Create target directory if it doesn't exist
 				await fs.mkdir(path.dirname(fullTargetPath), {

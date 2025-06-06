@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -13,6 +46,7 @@ const expr_eval_1 = require("expr-eval");
 const json_1 = require("./mergers/json");
 const markdown_1 = require("./mergers/markdown");
 const text_1 = require("./mergers/text");
+const ini = __importStar(require("ini"));
 class Combino {
     async readFile(filePath) {
         const content = await fs_1.promises.readFile(filePath, "utf-8");
@@ -66,6 +100,36 @@ class Combino {
             return config;
         }
         catch (error) {
+            return {};
+        }
+    }
+    async readConfigFile(configPath) {
+        try {
+            const content = await fs_1.promises.readFile(configPath, "utf-8");
+            const parsedConfig = ini.parse(content);
+            const config = {};
+            // Extract data section and structure it properly
+            if (parsedConfig.data) {
+                config.data = {};
+                // Convert flat data structure to nested
+                Object.entries(parsedConfig.data).forEach(([key, value]) => {
+                    const keys = key.split(".");
+                    let current = config.data;
+                    for (let i = 0; i < keys.length - 1; i++) {
+                        current[keys[i]] = current[keys[i]] || {};
+                        current = current[keys[i]];
+                    }
+                    current[keys[keys.length - 1]] = value;
+                });
+            }
+            // Extract merge config
+            if (parsedConfig.merge) {
+                config.merge = parsedConfig.merge;
+            }
+            return config;
+        }
+        catch (error) {
+            console.error("Error reading config file:", error);
             return {};
         }
     }
@@ -212,15 +276,26 @@ class Combino {
         return this.processTemplate(mergedContent, data);
     }
     async combine(options) {
-        const { targetDir, templates, data: externalData = {} } = options;
+        const { outputDir, templates, data: externalData = {}, config, } = options;
         // Create target directory if it doesn't exist
-        await fs_1.promises.mkdir(targetDir, { recursive: true });
+        await fs_1.promises.mkdir(outputDir, { recursive: true });
         // First, collect ignore patterns and data from all templates
         const allIgnorePatterns = new Set([
             "node_modules/**",
             ".combino",
         ]);
         const allData = { ...externalData }; // Start with external data
+        // Load config if specified
+        if (typeof config === "string" && (await fileExists(config))) {
+            const configPath = path_1.default.resolve(config);
+            const loadedConfig = await this.readConfigFile(configPath);
+            if (loadedConfig.data) {
+                Object.assign(allData, loadedConfig.data);
+            }
+            if (loadedConfig.merge) {
+                options.config = loadedConfig.merge;
+            }
+        }
         for (const template of templates) {
             const config = await this.readCombinoConfig(template);
             if (config.ignore) {
@@ -234,7 +309,7 @@ class Combino {
         const firstTemplate = templates[0];
         const firstTemplateFiles = await this.getFilesInTemplate(firstTemplate, Array.from(allIgnorePatterns), allData);
         for (const { sourcePath, targetPath } of firstTemplateFiles) {
-            const fullTargetPath = path_1.default.join(targetDir, targetPath);
+            const fullTargetPath = path_1.default.join(outputDir, targetPath);
             await fs_1.promises.mkdir(path_1.default.dirname(fullTargetPath), { recursive: true });
             // Read and process the source file with EJS
             const content = await fs_1.promises.readFile(sourcePath, "utf-8");
@@ -246,7 +321,7 @@ class Combino {
             const template = templates[i];
             const files = await this.getFilesInTemplate(template, Array.from(allIgnorePatterns), allData);
             for (const { sourcePath, targetPath } of files) {
-                const fullTargetPath = path_1.default.join(targetDir, targetPath);
+                const fullTargetPath = path_1.default.join(outputDir, targetPath);
                 // Create target directory if it doesn't exist
                 await fs_1.promises.mkdir(path_1.default.dirname(fullTargetPath), {
                     recursive: true,
