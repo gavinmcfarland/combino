@@ -8,5 +8,6 @@ export declare class Combino {
     private getFilesInTemplate;
     private getMergeStrategy;
     private mergeFiles;
+    private getCallerFileLocation;
     combine(options: TemplateOptions): Promise<void>;
 }

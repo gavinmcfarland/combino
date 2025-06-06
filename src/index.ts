@@ -309,12 +309,12 @@ export class Combino {
 	}
 
 	private getMergeStrategy(filePath: string, config?: any): MergeStrategy {
-		console.log(
-			"Getting merge strategy for",
-			filePath,
-			"with config:",
-			config
-		);
+		// console.log(
+		// 	"Getting merge strategy for",
+		// 	filePath,
+		// 	"with config:",
+		// 	config
+		// );
 		// Check for merge strategy in the config
 		if (config?.merge) {
 			// Check each pattern in the merge config
@@ -338,21 +338,21 @@ export class Combino {
 				const regex = new RegExp(
 					`^${expandedPattern.replace(/\*/g, ".*")}$`
 				);
-				console.log(
-					"Checking pattern",
-					pattern,
-					"against",
-					filePath,
-					"result:",
-					regex.test(filePath)
-				);
+				// console.log(
+				// 	"Checking pattern",
+				// 	pattern,
+				// 	"against",
+				// 	filePath,
+				// 	"result:",
+				// 	regex.test(filePath)
+				// );
 				if (regex.test(filePath)) {
-					console.log(
-						"Found matching pattern",
-						pattern,
-						"with settings:",
-						settings
-					);
+					// console.log(
+					// 	"Found matching pattern",
+					// 	pattern,
+					// 	"with settings:",
+					// 	settings
+					// );
 					// If settings has a strategy property, use it directly
 					const typedSettings = settings as {
 						strategy?: MergeStrategy;
@@ -377,10 +377,10 @@ export class Combino {
 
 		// Fall back to default strategies
 		const ext = path.extname(filePath).toLowerCase();
-		console.log(
-			"No matching pattern found, using default strategy for extension",
-			ext
-		);
+		// console.log(
+		// 	"No matching pattern found, using default strategy for extension",
+		// 	ext
+		// );
 		switch (ext) {
 			case ".json":
 				return "deep";
@@ -422,8 +422,6 @@ export class Combino {
 					strategy
 				);
 		}
-
-		console.log("mergedContent", targetPath, sourcePath, strategy);
 
 		// Process the merged content with EJS
 		return this.processTemplate(mergedContent, data);
@@ -478,7 +476,7 @@ export class Combino {
 
 		// Get the directory of the calling script
 		const callerDir = this.getCallerFileLocation();
-		console.log("Caller directory:", callerDir);
+		// console.log("Caller directory:", callerDir);
 
 		// Resolve paths relative to the caller's directory
 		const resolvedOutputDir = path.resolve(callerDir, outputDir);
@@ -486,12 +484,21 @@ export class Combino {
 			path.resolve(callerDir, template)
 		);
 
-		console.log("Starting combine with options:", {
-			outputDir: resolvedOutputDir,
-			templates: resolvedTemplates,
-			externalData,
-			config,
-		});
+		// Check if all template directories exist
+		for (const template of resolvedTemplates) {
+			if (!(await fileExists(template))) {
+				console.warn(
+					`Warning: Template directory not found: ${template}`
+				);
+			}
+		}
+
+		// console.log("Starting combine with options:", {
+		// 	outputDir: resolvedOutputDir,
+		// 	templates: resolvedTemplates,
+		// 	externalData,
+		// 	config,
+		// });
 
 		// Create target directory if it doesn't exist
 		await fs.mkdir(resolvedOutputDir, { recursive: true });
@@ -508,7 +515,7 @@ export class Combino {
 		if (typeof config === "string" && (await fileExists(config))) {
 			const configPath = path.resolve(callerDir, config);
 			const loadedConfig = await this.readConfigFile(configPath);
-			console.log("Loaded config from file:", loadedConfig);
+			// console.log("Loaded config from file:", loadedConfig);
 			if (loadedConfig.data) {
 				Object.assign(allData, loadedConfig.data);
 			}
@@ -525,7 +532,7 @@ export class Combino {
 		// Collect all template configs first
 		for (const template of resolvedTemplates) {
 			const config = await this.readCombinoConfig(template);
-			console.log("Loaded template config for", template, ":", config);
+			// console.log("Loaded template config for", template, ":", config);
 			templateConfigs.push(config);
 			if (config.ignore) {
 				config.ignore.forEach((pattern) =>
@@ -562,12 +569,12 @@ export class Combino {
 		for (let i = 1; i < resolvedTemplates.length; i++) {
 			const template = resolvedTemplates[i];
 			const templateConfig = templateConfigs[i];
-			console.log(
-				"Processing template",
-				template,
-				"with config:",
-				templateConfig
-			);
+			// console.log(
+			// 	"Processing template",
+			// 	template,
+			// 	"with config:",
+			// 	templateConfig
+			// );
 			const files = await this.getFilesInTemplate(
 				template,
 				Array.from(allIgnorePatterns),
@@ -592,7 +599,7 @@ export class Combino {
 						...sourceContent.config?.merge,
 					},
 				};
-				console.log("Merged config for", targetPath, ":", mergedConfig);
+				// console.log("Merged config for", targetPath, ":", mergedConfig);
 
 				// Get merge strategy from template config
 				const strategy = this.getMergeStrategy(
