@@ -7,44 +7,23 @@ import chalk from 'chalk';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-async function getExampleChoices() {
+async function getExampleChoices(type) {
 	const examplesDir = path.join(__dirname, 'examples');
 	const choices = [];
 
-	// Read plugin and widget directories
-	const pluginDir = path.join(examplesDir, 'plugin');
-	const widgetDir = path.join(examplesDir, 'widget');
-
-	// Get plugin examples
 	try {
-		const pluginExamples = await fs.readdir(pluginDir);
-		for (const example of pluginExamples) {
-			const stats = await fs.stat(path.join(pluginDir, example));
+		const examples = await fs.readdir(path.join(examplesDir, type));
+		for (const example of examples) {
+			const stats = await fs.stat(path.join(examplesDir, type, example));
 			if (stats.isDirectory()) {
 				choices.push({
-					name: `${chalk.cyan('Plugin')}: ${example.charAt(0).toUpperCase() + example.slice(1).replace(/-/g, ' ')}`,
-					value: `plugin/${example}`
+					name: example.charAt(0).toUpperCase() + example.slice(1).replace(/-/g, ' '),
+					value: example
 				});
 			}
 		}
 	} catch (error) {
-		console.warn('Warning: Could not read plugin examples directory:', error.message);
-	}
-
-	// Get widget examples
-	try {
-		const widgetExamples = await fs.readdir(widgetDir);
-		for (const example of widgetExamples) {
-			const stats = await fs.stat(path.join(widgetDir, example));
-			if (stats.isDirectory()) {
-				choices.push({
-					name: `${chalk.green('Widget')}: ${example.charAt(0).toUpperCase() + example.slice(1).replace(/-/g, ' ')}`,
-					value: `widget/${example}`
-				});
-			}
-		}
-	} catch (error) {
-		console.warn('Warning: Could not read widget examples directory:', error.message);
+		console.warn(`Warning: Could not read ${type} examples directory:`, error.message);
 	}
 
 	return choices;
@@ -52,9 +31,6 @@ async function getExampleChoices() {
 
 async function generateWebFramework() {
 	const combino = new Combino();
-
-	// Get dynamic example choices
-	const exampleChoices = await getExampleChoices();
 
 	// Prompt for user input
 	const answers = await inquirer.prompt([
@@ -73,8 +49,25 @@ async function generateWebFramework() {
 		},
 		{
 			type: 'list',
+			name: 'type',
+			message: 'Create plugin or widget?',
+			choices: [
+				{ name: chalk.cyan('Plugin'), value: 'plugin' },
+				{ name: chalk.green('Widget'), value: 'widget' }
+			],
+			default: 'plugin'
+		}
+	]);
+
+	// Get examples for the selected type
+	const exampleChoices = await getExampleChoices(answers.type);
+
+	// Prompt for specific example
+	const { example } = await inquirer.prompt([
+		{
+			type: 'list',
 			name: 'example',
-			message: 'Choose an example',
+			message: `Choose a ${answers.type} example`,
 			choices: exampleChoices,
 			default: exampleChoices[0]?.value
 		}
@@ -91,24 +84,21 @@ async function generateWebFramework() {
 	}
 
 	// Add example template
-	templates.push(path.join(__dirname, `examples/${answers.example}`));
-
-	// Extract example type (plugin/widget) from the path
-	const exampleType = answers.example.split('/')[0];
+	templates.push(path.join(__dirname, `examples/${answers.type}/${example}`));
 
 	// Generate the project
 	await combino.combine({
-		outputDir: path.join(__dirname, `output/${answers.framework}-${exampleType}`),
+		outputDir: path.join(__dirname, `output/${answers.framework}-${answers.type}`),
 		templates,
 		data: {
 			framework: answers.framework,
 			language: answers.typescript ? 'ts' : 'js',
-			name: `my-figma-${exampleType}`,
-			description: `A Figma ${exampleType} with ${answers.framework} and ${answers.typescript ? 'TypeScript' : 'JavaScript'}`
+			name: `my-figma-${answers.type}`,
+			description: `A Figma ${answers.type} with ${answers.framework} and ${answers.typescript ? 'TypeScript' : 'JavaScript'}`
 		}
 	});
 
-	console.log(`Successfully generated ${answers.framework} ${exampleType} in output/${answers.framework}-${exampleType}`);
+	console.log(`Successfully generated ${answers.framework} ${answers.type} in output/${answers.framework}-${answers.type}`);
 }
 
 generateWebFramework().catch(console.error);
