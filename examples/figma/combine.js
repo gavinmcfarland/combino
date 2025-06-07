@@ -139,7 +139,7 @@ async function generateWebFramework() {
 	const namePrompt = new Input({
 		name: 'name',
 		message: `${type.charAt(0).toUpperCase() + type.slice(1)} name?`,
-		initial: `my-figma-${type}`
+		initial: `my-figma-${framework}-${type}`
 	});
 
 	const name = await namePrompt.run();
@@ -165,7 +165,8 @@ async function generateWebFramework() {
 			framework,
 			language: typescript ? 'ts' : 'js',
 			name,
-			description: `A Figma ${type} with ${framework} and ${typescript ? 'TypeScript' : 'JavaScript'}`
+			description: `A Figma ${type} with ${framework} and ${typescript ? 'TypeScript' : 'JavaScript'}`,
+			typescript: typescript
 		}
 	});
 
