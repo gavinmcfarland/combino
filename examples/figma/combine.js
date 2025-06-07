@@ -2,7 +2,7 @@ import { Combino } from '../../dist/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import pkg from 'enquirer';
-const { Select, Confirm } = pkg;
+const { Select, Confirm, Input } = pkg;
 import fs from 'fs/promises';
 import chalk from 'chalk';
 
@@ -11,6 +11,38 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Helper function to strip ANSI color codes
 function stripAnsi(str) {
 	return str.replace(/\x1B\[\d+m/g, '');
+}
+
+async function getFrameworkChoices() {
+	const frameworksDir = path.join(__dirname, 'templates/frameworks');
+	const choices = [];
+
+	try {
+		const frameworks = await fs.readdir(frameworksDir);
+
+		for (const framework of frameworks) {
+			const fullPath = path.join(frameworksDir, framework);
+			const stats = await fs.stat(fullPath);
+
+			if (stats.isDirectory()) {
+				choices.push({
+					message: framework.charAt(0).toUpperCase() + framework.slice(1),
+					name: framework,
+					value: framework
+				});
+			}
+		}
+	} catch (error) {
+		console.error('Error reading frameworks directory:', error);
+		// Fallback to default choices if directory can't be read
+		return [
+			{ message: 'React', name: 'react', value: 'react' },
+			{ message: 'Svelte', name: 'svelte', value: 'svelte' },
+			{ message: 'Vue', name: 'vue', value: 'vue' }
+		];
+	}
+
+	return choices;
 }
 
 async function getExampleChoices(type) {
@@ -52,12 +84,14 @@ async function getExampleChoices(type) {
 async function generateWebFramework() {
 	const combino = new Combino();
 
+
 	// Framework selection
+	const frameworkChoices = await getFrameworkChoices();
 	const frameworkPrompt = new Select({
 		name: 'framework',
 		message: 'Choose your framework',
-		choices: ['react', 'svelte', 'vue'],
-		initial: 'react'
+		choices: frameworkChoices,
+		initial: 0
 	});
 
 	// TypeScript confirmation
@@ -80,7 +114,6 @@ async function generateWebFramework() {
 
 	// Get user choices
 	const framework = await frameworkPrompt.run();
-	const typescript = await typescriptPrompt.run();
 	const type = await typePrompt.run();
 
 	// Get examples for the selected type
@@ -100,6 +133,16 @@ async function generateWebFramework() {
 	});
 
 	const example = await examplePrompt.run();
+	const typescript = await typescriptPrompt.run();
+
+	// Name prompt
+	const namePrompt = new Input({
+		name: 'name',
+		message: `${type.charAt(0).toUpperCase() + type.slice(1)} name?`,
+		initial: `my-figma-${type}`
+	});
+
+	const name = await namePrompt.run();
 
 	// Prepare template paths based on user choices
 	const templates = [
@@ -111,24 +154,22 @@ async function generateWebFramework() {
 		templates.push(path.join(__dirname, "templates/typescript"));
 	}
 
-	console.log(path.join(__dirname, `templates/examples/${type}/${example}`))
 	// Add example template
 	templates.push(path.join(__dirname, `templates/examples/${type}/${example}`));
 
 	// Generate the project
 	await combino.combine({
-		outputDir: path.join(__dirname, `output/${framework}-${type}`),
+		outputDir: path.join(__dirname, `output/${name}`),
 		templates,
 		data: {
 			framework,
 			language: typescript ? 'ts' : 'js',
-			name: `my-figma-${type}`,
-			description: `A Figma ${type} with ${framework} and ${typescript ? 'TypeScript' : 'JavaScript'}`,
-			typescript: typescript
+			name,
+			description: `A Figma ${type} with ${framework} and ${typescript ? 'TypeScript' : 'JavaScript'}`
 		}
 	});
 
-	console.log(`Successfully generated ${framework} ${type} in output/${framework}-${type}`);
+	console.log(`Successfully generated ${framework} ${type} in output/${name}`);
 }
 
 generateWebFramework().catch(console.error);
