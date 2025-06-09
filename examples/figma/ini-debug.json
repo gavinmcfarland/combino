@@ -1,8 +1,8 @@
 {
-  "rawContent": "[data]\nframework.plugins[] = {\"name\":\"ui\",\"import\":\"@figma/plugin-typings\"}\nframework.plugins[] = {\"name\":\"React\",\"import\":\"react\"}\nframework.plugins[] = {\"name\":\"ReactDOM\",\"import\":\"react-dom\"}\n",
+  "rawContent": "[data]\nvite.plugins[] = {\"name\":\"ui\",\"import\":\"@figma/plugin-typings\"}\nvite.plugins[] = {\"name\":\"React\",\"import\":\"react\"}\nvite.plugins[] = {\"name\":\"ReactDOM\",\"import\":\"react-dom\"}\n",
   "parsedConfig": {
     "data": {
-      "framework.plugins": [
+      "vite.plugins": [
         "{\"name\":\"ui\",\"import\":\"@figma/plugin-typings\"}",
         "{\"name\":\"React\",\"import\":\"react\"}",
         "{\"name\":\"ReactDOM\",\"import\":\"react-dom\"}"
@@ -11,7 +11,7 @@
   },
   "finalConfig": {
     "data": {
-      "framework": {
+      "vite": {
         "plugins": [
           {
             "name": "ui",
@@ -30,5 +30,5 @@
     },
     "merge": {}
   },
-  "timestamp": "2025-06-09T13:31:22.021Z"
+  "timestamp": "2025-06-09T13:59:47.216Z"
 }

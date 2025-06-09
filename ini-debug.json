@@ -1,0 +1,21 @@
+{
+  "rawContent": "[merge:*.md]\nstrategy = replace\n",
+  "parsedConfig": {
+    "merge:*": {
+      "md": {
+        "strategy": "replace"
+      }
+    }
+  },
+  "finalConfig": {
+    "merge": {
+      "*.md": {
+        "strategy": "replace"
+      }
+    },
+    "data": {
+      "project": "test-project"
+    }
+  },
+  "timestamp": "2025-06-09T13:50:39.993Z"
+}

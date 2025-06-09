@@ -75,29 +75,6 @@ function parseMergeSections(configText: string): Record<string, any> {
 	return merge;
 }
 
-// Helper to debug INI parsing
-function debugIniParsing(
-	content: string,
-	parsedConfig: any,
-	finalConfig?: any
-) {
-	console.log("Debug function called");
-	const debugPath = path.join(process.cwd(), "ini-debug.json");
-	console.log("Debug path:", debugPath);
-	const debugData = {
-		rawContent: content,
-		parsedConfig,
-		finalConfig,
-		timestamp: new Date().toISOString(),
-	};
-	try {
-		fsSync.writeFileSync(debugPath, JSON.stringify(debugData, null, 2));
-		console.log(`Debug data written to ${debugPath}`);
-	} catch (error) {
-		console.error("Error writing debug file:", error);
-	}
-}
-
 export class Combino {
 	private async readFile(filePath: string): Promise<FileContent> {
 		const content = await fs.readFile(filePath, "utf-8");
@@ -115,9 +92,8 @@ export class Combino {
 		console.log("Reading config from:", configPath);
 		try {
 			const content = await fs.readFile(configPath, "utf-8");
-			console.log("Raw config content:", content);
+
 			const parsedConfig = ini.parse(content);
-			console.log("Parsed config:", parsedConfig);
 
 			const config: CombinoConfig = {};
 
@@ -159,9 +135,6 @@ export class Combino {
 			if (parsedConfig.merge && typeof parsedConfig.merge === "object") {
 				config.merge = { ...config.merge, "*": parsedConfig.merge };
 			}
-
-			// Add debug logging with final config
-			debugIniParsing(content, parsedConfig, config);
 
 			return config;
 		} catch (error) {
@@ -224,6 +197,10 @@ export class Combino {
 		data: Record<string, any>
 	): string | boolean {
 		try {
+			// Add logging to see what data we're working with
+			console.log("Evaluating condition:", condition);
+			console.log("With data:", JSON.stringify(data, null, 2));
+
 			// Remove the [ and ] from the condition
 			const cleanCondition = condition.slice(1, -1);
 
@@ -248,9 +225,14 @@ export class Combino {
 				return acc;
 			}, {} as Record<string, any>);
 
+			// Log the scope being used for evaluation
+			console.log("Evaluation scope:", JSON.stringify(scope, null, 2));
+
 			// Parse and evaluate the expression
 			const expr = parser.parse(parsedCondition);
-			return expr.evaluate(scope);
+			const result = expr.evaluate(scope);
+			console.log("Condition result:", result);
+			return result;
 		} catch (error) {
 			console.error("Error evaluating condition:", error);
 			return false;
@@ -263,12 +245,20 @@ export class Combino {
 		data: Record<string, any>
 	): Promise<{ sourcePath: string; targetPath: string }[]> {
 		try {
+			// Log the data being used for file processing
+			console.log(
+				"Processing template with data:",
+				JSON.stringify(data, null, 2)
+			);
+
 			const files = await glob("**/*", {
 				cwd: templatePath,
 				nodir: true,
 				ignore: ignorePatterns,
 				dot: true,
 			});
+
+			console.log("Found files:", files);
 
 			const filteredFiles = files.filter((file) => {
 				// First check if the file should be ignored
@@ -289,12 +279,18 @@ export class Combino {
 						const conditionMatch = part.match(/\[[^\]]+\]/);
 						if (conditionMatch) {
 							const condition = conditionMatch[0];
+							console.log("Checking condition for file:", file);
+							console.log("Condition:", condition);
 							// If any condition in the path is false, exclude the file
 							const result = this.evaluateCondition(
 								condition,
 								data
 							);
 							if (typeof result === "boolean" && !result) {
+								console.log(
+									"File excluded due to condition:",
+									file
+								);
 								return false;
 							}
 						}
@@ -303,6 +299,8 @@ export class Combino {
 
 				return true;
 			});
+
+			console.log("Filtered files:", filteredFiles);
 
 			// Transform the file paths to handle conditional folders and file extensions
 			const mappedFiles = filteredFiles.map((file) => {
@@ -338,10 +336,12 @@ export class Combino {
 					})
 					.filter(Boolean); // Remove empty strings
 
-				return {
+				const result = {
 					sourcePath: path.join(templatePath, file),
 					targetPath: path.join(...transformedParts),
 				};
+				console.log("Mapped file:", result);
+				return result;
 			});
 
 			return mappedFiles;
