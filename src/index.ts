@@ -1,9 +1,7 @@
 import { promises as fs } from "fs";
-import * as fsSync from "fs";
 import path from "path";
 import { glob } from "glob";
 import matter from "gray-matter";
-import deepmerge from "deepmerge";
 import ejs from "ejs";
 import { Parser } from "expr-eval";
 import {

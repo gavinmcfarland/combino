@@ -1,5 +1,4 @@
 import { promises as fs } from "fs";
-import * as fsSync from "fs";
 import path from "path";
 import { glob } from "glob";
 import matter from "gray-matter";
@@ -58,25 +57,6 @@ function parseMergeSections(configText) {
     }
     return merge;
 }
-// Helper to debug INI parsing
-function debugIniParsing(content, parsedConfig, finalConfig) {
-    console.log("Debug function called");
-    const debugPath = path.join(process.cwd(), "ini-debug.json");
-    console.log("Debug path:", debugPath);
-    const debugData = {
-        rawContent: content,
-        parsedConfig,
-        finalConfig,
-        timestamp: new Date().toISOString(),
-    };
-    try {
-        fsSync.writeFileSync(debugPath, JSON.stringify(debugData, null, 2));
-        console.log(`Debug data written to ${debugPath}`);
-    }
-    catch (error) {
-        console.error("Error writing debug file:", error);
-    }
-}
 export class Combino {
     async readFile(filePath) {
         const content = await fs.readFile(filePath, "utf-8");
@@ -130,8 +110,6 @@ export class Combino {
             if (parsedConfig.merge && typeof parsedConfig.merge === "object") {
                 config.merge = { ...config.merge, "*": parsedConfig.merge };
             }
-            // Add debug logging with final config
-            debugIniParsing(content, parsedConfig, config);
             return config;
         }
         catch (error) {
