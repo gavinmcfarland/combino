@@ -98,36 +98,6 @@ function debugIniParsing(
 	}
 }
 
-// Helper to parse array syntax in INI files
-function parseArraySyntax(content: string): any[] {
-	// Remove the [ and ] and trim
-	const arrayContent = content.slice(1, -1).trim();
-	if (!arrayContent) return [];
-
-	// Split by object separator
-	const objects = arrayContent
-		.split("---")
-		.map((obj) => obj.trim())
-		.filter(Boolean);
-
-	return objects.map((obj) => {
-		const result: Record<string, any> = {};
-		// Split into lines and parse each key-value pair
-		obj.split("\n").forEach((line) => {
-			const trimmed = line.trim();
-			if (!trimmed) return;
-
-			const eqIdx = trimmed.indexOf("=");
-			if (eqIdx === -1) return;
-
-			const key = trimmed.slice(0, eqIdx).trim();
-			const value = trimmed.slice(eqIdx + 1).trim();
-			result[key] = value;
-		});
-		return result;
-	});
-}
-
 export class Combino {
 	private async readFile(filePath: string): Promise<FileContent> {
 		const content = await fs.readFile(filePath, "utf-8");
@@ -167,14 +137,15 @@ export class Combino {
 						current[keys[i]] = current[keys[i]] || {};
 						current = current[keys[i]];
 					}
-					// Check if value is an array syntax
-					if (
-						typeof value === "string" &&
-						value.trim().startsWith("[") &&
-						value.trim().endsWith("]")
-					) {
-						current[keys[keys.length - 1]] =
-							parseArraySyntax(value);
+					// If the value is an array, try to parse each element as JSON
+					if (Array.isArray(value)) {
+						current[keys[keys.length - 1]] = value.map((item) => {
+							try {
+								return JSON.parse(item);
+							} catch {
+								return item;
+							}
+						});
 					} else {
 						current[keys[keys.length - 1]] = value;
 					}
