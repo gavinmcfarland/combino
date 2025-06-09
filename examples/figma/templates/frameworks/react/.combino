@@ -1,0 +1,4 @@
+[data]
+framework.plugins[] = {"name":"ui","import":"@figma/plugin-typings"}
+framework.plugins[] = {"name":"React","import":"react"}
+framework.plugins[] = {"name":"ReactDOM","import":"react-dom"}

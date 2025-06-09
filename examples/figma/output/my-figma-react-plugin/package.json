@@ -1,3 +1,17 @@
 {
-    "name": "dev-mode"
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.100.2",
+    "plugma": "2.0.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.14",
+    "typescript": "~5.6.2"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "name": "basic"
 }

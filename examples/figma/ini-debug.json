@@ -1,0 +1,34 @@
+{
+  "rawContent": "[data]\nframework.plugins[] = {\"name\":\"ui\",\"import\":\"@figma/plugin-typings\"}\nframework.plugins[] = {\"name\":\"React\",\"import\":\"react\"}\nframework.plugins[] = {\"name\":\"ReactDOM\",\"import\":\"react-dom\"}\n",
+  "parsedConfig": {
+    "data": {
+      "framework.plugins": [
+        "{\"name\":\"ui\",\"import\":\"@figma/plugin-typings\"}",
+        "{\"name\":\"React\",\"import\":\"react\"}",
+        "{\"name\":\"ReactDOM\",\"import\":\"react-dom\"}"
+      ]
+    }
+  },
+  "finalConfig": {
+    "data": {
+      "framework": {
+        "plugins": [
+          {
+            "name": "ui",
+            "import": "@figma/plugin-typings"
+          },
+          {
+            "name": "React",
+            "import": "react"
+          },
+          {
+            "name": "ReactDOM",
+            "import": "react-dom"
+          }
+        ]
+      }
+    },
+    "merge": {}
+  },
+  "timestamp": "2025-06-09T11:54:38.799Z"
+}

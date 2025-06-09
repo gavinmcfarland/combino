@@ -1,4 +1,5 @@
 import { promises as fs } from "fs";
+import * as fsSync from "fs";
 import path from "path";
 import { glob } from "glob";
 import matter from "gray-matter";
@@ -74,6 +75,59 @@ function parseMergeSections(configText: string): Record<string, any> {
 	return merge;
 }
 
+// Helper to debug INI parsing
+function debugIniParsing(
+	content: string,
+	parsedConfig: any,
+	finalConfig?: any
+) {
+	console.log("Debug function called");
+	const debugPath = path.join(process.cwd(), "ini-debug.json");
+	console.log("Debug path:", debugPath);
+	const debugData = {
+		rawContent: content,
+		parsedConfig,
+		finalConfig,
+		timestamp: new Date().toISOString(),
+	};
+	try {
+		fsSync.writeFileSync(debugPath, JSON.stringify(debugData, null, 2));
+		console.log(`Debug data written to ${debugPath}`);
+	} catch (error) {
+		console.error("Error writing debug file:", error);
+	}
+}
+
+// Helper to parse array syntax in INI files
+function parseArraySyntax(content: string): any[] {
+	// Remove the [ and ] and trim
+	const arrayContent = content.slice(1, -1).trim();
+	if (!arrayContent) return [];
+
+	// Split by object separator
+	const objects = arrayContent
+		.split("---")
+		.map((obj) => obj.trim())
+		.filter(Boolean);
+
+	return objects.map((obj) => {
+		const result: Record<string, any> = {};
+		// Split into lines and parse each key-value pair
+		obj.split("\n").forEach((line) => {
+			const trimmed = line.trim();
+			if (!trimmed) return;
+
+			const eqIdx = trimmed.indexOf("=");
+			if (eqIdx === -1) return;
+
+			const key = trimmed.slice(0, eqIdx).trim();
+			const value = trimmed.slice(eqIdx + 1).trim();
+			result[key] = value;
+		});
+		return result;
+	});
+}
+
 export class Combino {
 	private async readFile(filePath: string): Promise<FileContent> {
 		const content = await fs.readFile(filePath, "utf-8");
@@ -88,9 +142,13 @@ export class Combino {
 		templatePath: string
 	): Promise<CombinoConfig> {
 		const configPath = path.join(templatePath, ".combino");
+		console.log("Reading config from:", configPath);
 		try {
 			const content = await fs.readFile(configPath, "utf-8");
+			console.log("Raw config content:", content);
 			const parsedConfig = ini.parse(content);
+			console.log("Parsed config:", parsedConfig);
+
 			const config: CombinoConfig = {};
 
 			// Extract ignore section - handle as a list of values
@@ -109,7 +167,17 @@ export class Combino {
 						current[keys[i]] = current[keys[i]] || {};
 						current = current[keys[i]];
 					}
-					current[keys[keys.length - 1]] = value;
+					// Check if value is an array syntax
+					if (
+						typeof value === "string" &&
+						value.trim().startsWith("[") &&
+						value.trim().endsWith("]")
+					) {
+						current[keys[keys.length - 1]] =
+							parseArraySyntax(value);
+					} else {
+						current[keys[keys.length - 1]] = value;
+					}
 				});
 			}
 
@@ -120,6 +188,9 @@ export class Combino {
 			if (parsedConfig.merge && typeof parsedConfig.merge === "object") {
 				config.merge = { ...config.merge, "*": parsedConfig.merge };
 			}
+
+			// Add debug logging with final config
+			debugIniParsing(content, parsedConfig, config);
 
 			return config;
 		} catch (error) {
