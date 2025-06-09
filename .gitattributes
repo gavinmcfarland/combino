@@ -1,2 +1,3 @@
 *.combino linguist-language=INI
 *.\[typescript\?\"ts\":\"js\"\] linguist-language=TypeScript
+*.\[typescript\?\"tsx\":\"jsx\"\] linguist-language=TSX
