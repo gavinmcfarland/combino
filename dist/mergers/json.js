@@ -7,8 +7,9 @@ const arrayMerge = (targetArray, sourceArray) => {
 export async function mergeJson(targetPath, sourcePath, strategy) {
     const targetContent = await fs.readFile(targetPath, "utf-8");
     const sourceContent = await fs.readFile(sourcePath, "utf-8");
-    const targetJson = JSON.parse(targetContent);
-    const sourceJson = JSON.parse(sourceContent);
+    // Handle empty or blank files by treating them as empty objects
+    const targetJson = targetContent.trim() ? JSON.parse(targetContent) : {};
+    const sourceJson = sourceContent.trim() ? JSON.parse(sourceContent) : {};
     let merged;
     switch (strategy) {
         case "deep":

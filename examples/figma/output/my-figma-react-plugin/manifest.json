@@ -1,0 +1,15 @@
+{
+  "id": "com.my-figma-react-plugin",
+  "name": "my-figma-react-plugin",
+  "main": "src/main/main.ts",
+  "ui": "src/ui/ui.ts",
+  "editorType": [
+    "figma",
+    "figjam"
+  ],
+  "networkAccess": {
+    "allowedDomains": [
+      "none"
+    ]
+  }
+}

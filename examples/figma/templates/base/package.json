@@ -1,6 +1,10 @@
 {
+    "name": "<%- name %>",
+    "private": true,
+    "type": "module",
     "devDependencies": {
+        "vite": "^5.4.10",
         "@figma/plugin-typings": "^1.100.2",
-        "plugma": "2.0.0"
+        "plugma": "^<%- versions.plugma %>"
     }
 }
