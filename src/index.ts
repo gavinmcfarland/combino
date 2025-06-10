@@ -20,6 +20,7 @@ interface CombinoConfig {
 	ignore?: string[];
 	data?: Record<string, any>;
 	merge?: Record<string, Record<string, any>>;
+	extend?: string[];
 }
 
 // Helper to flatten merge config keys
@@ -71,6 +72,24 @@ function parseMergeSections(configText: string): Record<string, any> {
 		}
 	}
 	return merge;
+}
+
+// Helper to parse [extend] section from ini-like config text
+function parseExtendSection(configText: string): string[] {
+	const extend: string[] = [];
+	const sectionRegex = /^\[extend\]$/gm;
+	let match: RegExpExecArray | null;
+	while ((match = sectionRegex.exec(configText))) {
+		const start = match.index + match[0].length;
+		const end = (() => {
+			const nextSection = configText.slice(start).search(/^\[.*\]$/m);
+			return nextSection === -1 ? configText.length : start + nextSection;
+		})();
+		const body = configText.slice(start, end).trim();
+		const lines = body.split(/\r?\n/).filter(Boolean);
+		extend.push(...lines);
+	}
+	return extend;
 }
 
 export class Combino {
@@ -191,6 +210,9 @@ export class Combino {
 			if (parsedConfig.merge && typeof parsedConfig.merge === "object") {
 				config.merge = { ...config.merge, "*": parsedConfig.merge };
 			}
+
+			// Parse [extend] section
+			config.extend = parseExtendSection(content);
 
 			return config;
 		} catch (error) {
@@ -574,7 +596,6 @@ export class Combino {
 
 		// Get the directory of the calling script
 		const callerDir = this.getCallerFileLocation();
-		// console.log("Caller directory:", callerDir);
 
 		// Resolve paths relative to the caller's directory
 		const resolvedOutputDir = path.resolve(callerDir, outputDir);
@@ -591,13 +612,6 @@ export class Combino {
 			}
 		}
 
-		// console.log("Starting combine with options:", {
-		// 	outputDir: resolvedOutputDir,
-		// 	templates: resolvedTemplates,
-		// 	externalData,
-		// 	config,
-		// });
-
 		// Create target directory if it doesn't exist
 		await fs.mkdir(resolvedOutputDir, { recursive: true });
 
@@ -608,12 +622,12 @@ export class Combino {
 		]);
 		const allData: Record<string, any> = { ...externalData }; // Start with external data
 		const templateConfigs: CombinoConfig[] = []; // Store all template configs
+		const allTemplates: string[] = []; // Store all templates including extended ones
 
 		// Load config if specified
 		if (typeof config === "string" && (await fileExists(config))) {
 			const configPath = path.resolve(callerDir, config);
 			const loadedConfig = await this.readConfigFile(configPath);
-			// console.log("Loaded config from file:", loadedConfig);
 			if (loadedConfig.data) {
 				Object.assign(allData, loadedConfig.data);
 			}
@@ -627,10 +641,9 @@ export class Combino {
 			}
 		}
 
-		// Collect all template configs first
+		// First pass: collect all template configs and extended templates
 		for (const template of resolvedTemplates) {
 			const config = await this.readCombinoConfig(template);
-			// console.log("Loaded template config for", template, ":", config);
 			templateConfigs.push(config);
 			if (config.ignore) {
 				config.ignore.forEach((pattern) =>
@@ -638,41 +651,46 @@ export class Combino {
 				);
 			}
 			if (config.data) {
-				Object.assign(allData, config.data); // Merge config data, allowing external data to override
+				Object.assign(allData, config.data);
+			}
+
+			// Process extended templates
+			if (config.extend) {
+				for (const extendPath of config.extend) {
+					const resolvedExtendPath = path.resolve(
+						template,
+						extendPath
+					);
+					if (await fileExists(resolvedExtendPath)) {
+						const extendConfig = await this.readCombinoConfig(
+							resolvedExtendPath
+						);
+						templateConfigs.push(extendConfig);
+						if (extendConfig.ignore) {
+							extendConfig.ignore.forEach((pattern) =>
+								allIgnorePatterns.add(pattern)
+							);
+						}
+						if (extendConfig.data) {
+							Object.assign(allData, extendConfig.data);
+						}
+						// Add extended template to the list
+						allTemplates.push(resolvedExtendPath);
+					} else {
+						console.warn(
+							`Warning: Extended template not found: ${resolvedExtendPath}`
+						);
+					}
+				}
 			}
 		}
 
-		// First, copy all files from the first template
-		const firstTemplate = resolvedTemplates[0];
-		const firstTemplateFiles = await this.getFilesInTemplate(
-			firstTemplate,
-			Array.from(allIgnorePatterns),
-			allData
-		);
+		// Add main templates after extended ones (so they override extended templates)
+		allTemplates.push(...resolvedTemplates);
 
-		for (const { sourcePath, targetPath } of firstTemplateFiles) {
-			const fullTargetPath = path.join(resolvedOutputDir, targetPath);
-			await fs.mkdir(path.dirname(fullTargetPath), { recursive: true });
-
-			// Read and process the source file with EJS
-			const sourceContent = await this.readFile(sourcePath);
-			// Merge file's front matter data with template data
-			const fileData = {
-				...allData,
-				...(sourceContent.config?.data
-					? sourceContent.config.data
-					: {}),
-			};
-			const processedContent = await this.processTemplate(
-				sourceContent.content,
-				fileData
-			);
-			await fs.writeFile(fullTargetPath, processedContent);
-		}
-
-		// Then merge files from subsequent templates
-		for (let i = 1; i < resolvedTemplates.length; i++) {
-			const template = resolvedTemplates[i];
+		// Process all templates in order
+		for (let i = 0; i < allTemplates.length; i++) {
+			const template = allTemplates[i];
 			const templateConfig = templateConfigs[i];
 			const files = await this.getFilesInTemplate(
 				template,

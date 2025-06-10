@@ -6,7 +6,10 @@ export interface MergeConfig {
     data?: Record<string, any>;
 }
 export interface TemplateConfig {
-    merge?: MergeConfig;
+    ignore?: string[];
+    data?: Record<string, any>;
+    merge?: Record<string, Record<string, any>>;
+    extend?: string[];
 }
 export interface FileContent {
     content: string;

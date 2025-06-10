@@ -57,13 +57,82 @@ function parseMergeSections(configText) {
     }
     return merge;
 }
+// Helper to parse [extend] section from ini-like config text
+function parseExtendSection(configText) {
+    const extend = [];
+    const sectionRegex = /^\[extend\]$/gm;
+    let match;
+    while ((match = sectionRegex.exec(configText))) {
+        const start = match.index + match[0].length;
+        const end = (() => {
+            const nextSection = configText.slice(start).search(/^\[.*\]$/m);
+            return nextSection === -1 ? configText.length : start + nextSection;
+        })();
+        const body = configText.slice(start, end).trim();
+        const lines = body.split(/\r?\n/).filter(Boolean);
+        extend.push(...lines);
+    }
+    return extend;
+}
 export class Combino {
     async readFile(filePath) {
         const content = await fs.readFile(filePath, "utf-8");
         const { data, content: fileContent } = matter(content);
+        const config = {};
+        // Try to read companion .combino file
+        const companionPath = `${filePath}.combino`;
+        try {
+            const companionContent = await fs.readFile(companionPath, "utf-8");
+            const parsedConfig = ini.parse(companionContent);
+            // Extract data section and structure it properly
+            if (parsedConfig.data) {
+                config.data = {};
+                // Convert flat data structure to nested
+                Object.entries(parsedConfig.data).forEach(([key, value]) => {
+                    const keys = key.split(".");
+                    let current = config.data;
+                    for (let i = 0; i < keys.length - 1; i++) {
+                        current[keys[i]] = current[keys[i]] || {};
+                        current = current[keys[i]];
+                    }
+                    // Try to parse the value as JSON first
+                    try {
+                        const parsedValue = JSON.parse(value);
+                        current[keys[keys.length - 1]] = parsedValue;
+                    }
+                    catch {
+                        // If not valid JSON, use the value as is
+                        current[keys[keys.length - 1]] = value;
+                    }
+                });
+            }
+            // Manually parse [merge:...] sections
+            config.merge = parseMergeSections(companionContent);
+            // Also support [merge] catch-all section from ini
+            if (parsedConfig.merge && typeof parsedConfig.merge === "object") {
+                config.merge = { ...config.merge, "*": parsedConfig.merge };
+            }
+        }
+        catch (error) {
+            // If no companion file exists, fall back to front matter
+            if (data) {
+                if (typeof data === "object" &&
+                    data !== null &&
+                    "data" in data) {
+                    config.data = data.data;
+                }
+                else {
+                    config.data = data;
+                }
+            }
+            // Extract merge section if it exists
+            if (data?.merge) {
+                config.merge = data.merge;
+            }
+        }
         return {
             content: fileContent,
-            config: data,
+            config,
         };
     }
     async readCombinoConfig(templatePath) {
@@ -110,6 +179,8 @@ export class Combino {
             if (parsedConfig.merge && typeof parsedConfig.merge === "object") {
                 config.merge = { ...config.merge, "*": parsedConfig.merge };
             }
+            // Parse [extend] section
+            config.extend = parseExtendSection(content);
             return config;
         }
         catch (error) {
@@ -451,6 +522,25 @@ export class Combino {
             if (config.data) {
                 Object.assign(allData, config.data); // Merge config data, allowing external data to override
             }
+            // Process extended templates
+            if (config.extend) {
+                for (const extendPath of config.extend) {
+                    const resolvedExtendPath = path.resolve(template, extendPath);
+                    if (await fileExists(resolvedExtendPath)) {
+                        const extendConfig = await this.readCombinoConfig(resolvedExtendPath);
+                        templateConfigs.push(extendConfig);
+                        if (extendConfig.ignore) {
+                            extendConfig.ignore.forEach((pattern) => allIgnorePatterns.add(pattern));
+                        }
+                        if (extendConfig.data) {
+                            Object.assign(allData, extendConfig.data);
+                        }
+                    }
+                    else {
+                        console.warn(`Warning: Extended template not found: ${resolvedExtendPath}`);
+                    }
+                }
+            }
         }
         // First, copy all files from the first template
         const firstTemplate = resolvedTemplates[0];
@@ -459,20 +549,21 @@ export class Combino {
             const fullTargetPath = path.join(resolvedOutputDir, targetPath);
             await fs.mkdir(path.dirname(fullTargetPath), { recursive: true });
             // Read and process the source file with EJS
-            const content = await fs.readFile(sourcePath, "utf-8");
-            const processedContent = await this.processTemplate(content, allData);
+            const sourceContent = await this.readFile(sourcePath);
+            // Merge file's front matter data with template data
+            const fileData = {
+                ...allData,
+                ...(sourceContent.config?.data
+                    ? sourceContent.config.data
+                    : {}),
+            };
+            const processedContent = await this.processTemplate(sourceContent.content, fileData);
             await fs.writeFile(fullTargetPath, processedContent);
         }
         // Then merge files from subsequent templates
         for (let i = 1; i < resolvedTemplates.length; i++) {
             const template = resolvedTemplates[i];
             const templateConfig = templateConfigs[i];
-            // console.log(
-            // 	"Processing template",
-            // 	template,
-            // 	"with config:",
-            // 	templateConfig
-            // );
             const files = await this.getFilesInTemplate(template, Array.from(allIgnorePatterns), allData);
             for (const { sourcePath, targetPath } of files) {
                 const fullTargetPath = path.join(resolvedOutputDir, targetPath);
@@ -490,18 +581,30 @@ export class Combino {
                         ...sourceContent.config?.merge,
                     },
                 };
-                // console.log("Merged config for", targetPath, ":", mergedConfig);
                 // Get merge strategy from template config
                 const strategy = this.getMergeStrategy(targetPath, mergedConfig);
                 try {
                     const targetContent = await this.readFile(fullTargetPath);
-                    const mergedContent = await this.mergeFiles(fullTargetPath, sourcePath, strategy, allData);
+                    // Merge file's front matter data with template data
+                    const fileData = {
+                        ...allData,
+                        ...(sourceContent.config?.data
+                            ? sourceContent.config.data
+                            : {}),
+                    };
+                    const mergedContent = await this.mergeFiles(fullTargetPath, sourcePath, strategy, fileData);
                     await fs.writeFile(fullTargetPath, mergedContent);
                 }
                 catch (error) {
                     // If target doesn't exist, just copy and process the source
-                    const content = await fs.readFile(sourcePath, "utf-8");
-                    const processedContent = await this.processTemplate(content, allData);
+                    // Merge file's front matter data with template data
+                    const fileData = {
+                        ...allData,
+                        ...(sourceContent.config?.data
+                            ? sourceContent.config.data
+                            : {}),
+                    };
+                    const processedContent = await this.processTemplate(sourceContent.content, fileData);
                     await fs.writeFile(fullTargetPath, processedContent);
                 }
             }

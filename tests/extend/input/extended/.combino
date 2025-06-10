@@ -1,0 +1,6 @@
+[extend]
+../base
+
+[data]
+project.name = "extended-project"
+project.description = "An extended project"

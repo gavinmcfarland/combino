@@ -16,6 +16,7 @@ export interface TemplateConfig {
 	ignore?: string[];
 	data?: Record<string, any>;
 	merge?: Record<string, Record<string, any>>;
+	extend?: string[];
 }
 
 export interface FileContent {
