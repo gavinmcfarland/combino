@@ -136,6 +136,36 @@ plugin.version = 1.0.0
 -   **\[ignore]**: Prevent specific files from being merged or copied.
 -   **\[data]**: Provide custom data for use in templates.
 
+### Template Inclusion
+
+You can include other templates in your `.combino` file using the `[include]` section. This allows you to compose templates by including base templates that can be extended or overridden.
+
+#### Example: Including Base Templates
+
+```ini
+[include]
+../base
+../common
+
+[data]
+project.name = "my-project"
+project.description = "A custom project"
+```
+
+In this example:
+
+-   The template includes files from `../base` and `../common` directories
+-   Files from included templates are processed first
+-   Files in the current template can override files from included templates
+-   Data from included templates is merged with the current template's data
+
+This is useful for:
+
+-   Creating a base template with common files and configurations
+-   Building specialized templates that extend the base
+-   Composing templates from multiple sources
+-   Maintaining a single source of truth for shared files
+
 ## Templating file contents
 
 Use EJS syntax `<%= %>` inside file contents.
