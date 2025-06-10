@@ -1,2 +1,5 @@
 [include]
 ../../base
+<% if framework == "react" %>
+../../react/components/ = scr/components
+<% endif %>
