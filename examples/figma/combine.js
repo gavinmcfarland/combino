@@ -146,7 +146,6 @@ async function generateWebFramework() {
 
 	// Prepare template paths based on user choices
 	const templates = [
-		path.join(__dirname, "templates/base"),
 		path.join(__dirname, `templates/frameworks/${framework}`)
 	];
 

@@ -9,6 +9,7 @@ const __dirname = dirname(__filename);
 describe("Include Test Suite", () => {
 	const testDir = __dirname;
 	const inputDir = join(testDir, "input", "included");
+	const overrideDir = join(testDir, "input", "override");
 	const outputDir = join(testDir, "output");
 	const expectedDir = join(testDir, "expected");
 
@@ -23,7 +24,7 @@ describe("Include Test Suite", () => {
 		const combino = new Combino();
 		await combino.combine({
 			outputDir: outputDir,
-			templates: [inputDir],
+			templates: [inputDir, overrideDir],
 			data: {
 				project: {
 					name: "extended-project",
@@ -52,6 +53,18 @@ describe("Include Test Suite", () => {
 			const expected = JSON.parse(readFileSync(expectedPath, "utf-8"));
 
 			expect(output).toEqual(expected);
+		});
+
+		it("should correctly handle template overrides with multiple templates", () => {
+			const outputPath = join(outputDir, "package.json");
+			const expectedPath = join(expectedDir, "package.json");
+
+			const output = JSON.parse(readFileSync(outputPath, "utf-8"));
+			const expected = JSON.parse(readFileSync(expectedPath, "utf-8"));
+
+			// Verify that override template takes precedence
+			expect(output).toEqual(expected);
+			expect(output.name).toBe("override-project");
 		});
 	});
 });
