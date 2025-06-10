@@ -6,9 +6,9 @@ import { Combino } from "../../src/index.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-describe("Extend Test Suite", () => {
+describe("Include Test Suite", () => {
 	const testDir = __dirname;
-	const inputDir = join(testDir, "input", "extended");
+	const inputDir = join(testDir, "input", "included");
 	const outputDir = join(testDir, "output");
 	const expectedDir = join(testDir, "expected");
 
@@ -33,8 +33,8 @@ describe("Extend Test Suite", () => {
 		});
 	});
 
-	describe("File merging with extension", () => {
-		it("should correctly merge markdown files from base and extended templates", () => {
+	describe("File merging with inclusion", () => {
+		it("should correctly merge markdown files from base and included templates", () => {
 			const outputPath = join(outputDir, "README.md");
 			const expectedPath = join(expectedDir, "README.md");
 
@@ -44,7 +44,7 @@ describe("Extend Test Suite", () => {
 			expect(output).toBe(expected);
 		});
 
-		it("should correctly merge JSON files from base and extended templates", () => {
+		it("should correctly merge JSON files from base and included templates", () => {
 			const outputPath = join(outputDir, "package.json");
 			const expectedPath = join(expectedDir, "package.json");
 

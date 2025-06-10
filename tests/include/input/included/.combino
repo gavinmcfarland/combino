@@ -1,4 +1,4 @@
-[extend]
+[include]
 ../base
 
 [data]

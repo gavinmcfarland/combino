@@ -20,7 +20,7 @@ interface CombinoConfig {
 	ignore?: string[];
 	data?: Record<string, any>;
 	merge?: Record<string, Record<string, any>>;
-	extend?: string[];
+	include?: string[];
 }
 
 // Helper to flatten merge config keys
@@ -74,10 +74,10 @@ function parseMergeSections(configText: string): Record<string, any> {
 	return merge;
 }
 
-// Helper to parse [extend] section from ini-like config text
-function parseExtendSection(configText: string): string[] {
-	const extend: string[] = [];
-	const sectionRegex = /^\[extend\]$/gm;
+// Helper to parse [include] section from ini-like config text
+function parseIncludeSection(configText: string): string[] {
+	const include: string[] = [];
+	const sectionRegex = /^\[include\]$/gm;
 	let match: RegExpExecArray | null;
 	while ((match = sectionRegex.exec(configText))) {
 		const start = match.index + match[0].length;
@@ -87,9 +87,9 @@ function parseExtendSection(configText: string): string[] {
 		})();
 		const body = configText.slice(start, end).trim();
 		const lines = body.split(/\r?\n/).filter(Boolean);
-		extend.push(...lines);
+		include.push(...lines);
 	}
-	return extend;
+	return include;
 }
 
 export class Combino {
@@ -211,8 +211,8 @@ export class Combino {
 				config.merge = { ...config.merge, "*": parsedConfig.merge };
 			}
 
-			// Parse [extend] section
-			config.extend = parseExtendSection(content);
+			// Parse [include] section
+			config.include = parseIncludeSection(content);
 
 			return config;
 		} catch (error) {
@@ -622,7 +622,7 @@ export class Combino {
 		]);
 		const allData: Record<string, any> = { ...externalData }; // Start with external data
 		const templateConfigs: CombinoConfig[] = []; // Store all template configs
-		const allTemplates: string[] = []; // Store all templates including extended ones
+		const allTemplates: string[] = []; // Store all templates including included ones
 
 		// Load config if specified
 		if (typeof config === "string" && (await fileExists(config))) {
@@ -641,7 +641,7 @@ export class Combino {
 			}
 		}
 
-		// First pass: collect all template configs and extended templates
+		// First pass: collect all template configs and included templates
 		for (const template of resolvedTemplates) {
 			const config = await this.readCombinoConfig(template);
 			templateConfigs.push(config);
@@ -654,38 +654,38 @@ export class Combino {
 				Object.assign(allData, config.data);
 			}
 
-			// Process extended templates
-			if (config.extend) {
-				for (const extendPath of config.extend) {
-					const resolvedExtendPath = path.resolve(
+			// Process included templates
+			if (config.include) {
+				for (const includePath of config.include) {
+					const resolvedIncludePath = path.resolve(
 						template,
-						extendPath
+						includePath
 					);
-					if (await fileExists(resolvedExtendPath)) {
-						const extendConfig = await this.readCombinoConfig(
-							resolvedExtendPath
+					if (await fileExists(resolvedIncludePath)) {
+						const includeConfig = await this.readCombinoConfig(
+							resolvedIncludePath
 						);
-						templateConfigs.push(extendConfig);
-						if (extendConfig.ignore) {
-							extendConfig.ignore.forEach((pattern) =>
+						templateConfigs.push(includeConfig);
+						if (includeConfig.ignore) {
+							includeConfig.ignore.forEach((pattern) =>
 								allIgnorePatterns.add(pattern)
 							);
 						}
-						if (extendConfig.data) {
-							Object.assign(allData, extendConfig.data);
+						if (includeConfig.data) {
+							Object.assign(allData, includeConfig.data);
 						}
-						// Add extended template to the list
-						allTemplates.push(resolvedExtendPath);
+						// Add included template to the list
+						allTemplates.push(resolvedIncludePath);
 					} else {
 						console.warn(
-							`Warning: Extended template not found: ${resolvedExtendPath}`
+							`Warning: Included template not found: ${resolvedIncludePath}`
 						);
 					}
 				}
 			}
 		}
 
-		// Add main templates after extended ones (so they override extended templates)
+		// Add main templates after included ones (so they override included templates)
 		allTemplates.push(...resolvedTemplates);
 
 		// Process all templates in order
