@@ -72,7 +72,7 @@ my-plugin/
 
 Files and folders can be conditionally included or excluded using JavaScript expressions. Conditions can use comparison operators (`==`, `!=`, `>`, `<`, `>=`, `<=`) and logical operators (`&&`, `||`).
 
-#### Example: Conditional Folder
+#### Conditional Folder
 
 Only include `tests/` if `testing==true`:
 
@@ -83,7 +83,7 @@ templates/
       example.test.ts
 ```
 
-#### Example: Conditional File
+#### Conditional Files
 
 Include a file based on `framework` value:
 
@@ -108,7 +108,7 @@ If `framework=="react"`, the output includes:
 App.tsx
 ```
 
-#### Example: Complex Conditions
+#### Complex Conditions
 
 You can use logical operators to create more complex conditions:
 
@@ -128,7 +128,7 @@ templates/
       App.tsx
 ```
 
-#### Example: Conditional File Extensions
+#### Conditional File Extensions
 
 You can also make file extensions conditional:
 
@@ -141,7 +141,7 @@ templates/
 
 If `language=="ts"`, the output will be `index.tsx`, otherwise `index.jsx`.
 
-### Templating file contents
+### Templating File Contents
 
 Use EJS syntax `<%= %>` inside file contents.
 
@@ -159,7 +159,7 @@ Combined with a `.combino` file or `--data.plugin.name`, this is rendered at gen
 
 Use a `.combino` config file to customise how templates are combined.
 
-### Example `.combino` file
+**Example `.combino` file**
 
 ```ini
 [ignore]
@@ -175,7 +175,7 @@ plugin.version = 1.0.0
 
 You can include other templates in your `.combino` file using the `[include]` section. This allows you to compose templates by including base templates that can be extended or overridden.
 
-#### Example: Including Base Templates
+#### Including Base Templates
 
 ```ini
 [include]
@@ -187,7 +187,7 @@ You can include other templates in your `.combino` file using the `[include]` se
 
 Supports fine-grained control over how files are merged by allowing per-pattern strategy configuration in your `.combino` file.
 
-#### Merge strategies
+#### Merge Strategies
 
 ```ini
 [merge]
@@ -200,7 +200,7 @@ strategy = deep
 strategy = replace
 ```
 
-#### Conflict management
+#### Conflict Management
 
 ```ini
 [merge:*.json]
@@ -224,7 +224,7 @@ plugin.description = "Take figma plugins to the next level"
 plugin.version = 1.0.0
 ```
 
-## Combining programmatically
+## Combining Programmatically
 
 ```js
 const combino = new Combino();
