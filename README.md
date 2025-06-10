@@ -42,6 +42,32 @@ output/
 
 ## Template Logic
 
+### Naming rules
+
+Use [key] placeholders in filenames or folder names to rename them dynamically.
+
+Example:
+
+```bash
+templates/
+  base/
+    [name]/
+      index.[extension]
+```
+
+With:
+
+```bash
+combino base --data.name=my-plugin --data.extension=ts
+```
+
+The output is:
+
+```bash
+my-plugin/
+  index.ts
+```
+
 ### Conditional Inclusion
 
 Files and folders can be conditionally included or excluded using JavaScript expressions. Conditions can use comparison operators (`==`, `!=`, `>`, `<`, `>=`, `<=`) and logical operators (`&&`, `||`).
@@ -115,7 +141,19 @@ templates/
 
 If `language=="ts"`, the output will be `index.tsx`, otherwise `index.jsx`.
 
----
+### Templating file contents
+
+Use EJS syntax `<%= %>` inside file contents.
+
+```md
+# README.md
+
+# <%= plugin.name %>
+
+<%= plugin.description %>
+```
+
+Combined with a `.combino` file or `--data.plugin.name`, this is rendered at generation time.
 
 ## Configuration
 
@@ -133,10 +171,7 @@ plugin.description = "Take figma plugins to the next level"
 plugin.version = 1.0.0
 ```
 
--   **\[ignore]**: Prevent specific files from being merged or copied.
--   **\[data]**: Provide custom data for use in templates.
-
-### Template Inclusion
+### [include]
 
 You can include other templates in your `.combino` file using the `[include]` section. This allows you to compose templates by including base templates that can be extended or overridden.
 
@@ -146,69 +181,13 @@ You can include other templates in your `.combino` file using the `[include]` se
 [include]
 ../base
 ../common
-
-[data]
-project.name = "my-project"
-project.description = "A custom project"
 ```
 
-In this example:
-
--   The template includes files from `../base` and `../common` directories
--   Files from included templates are processed first
--   Files in the current template can override files from included templates
--   Data from included templates is merged with the current template's data
-
-This is useful for:
-
--   Creating a base template with common files and configurations
--   Building specialized templates that extend the base
--   Composing templates from multiple sources
--   Maintaining a single source of truth for shared files
-
-## Templating file contents
-
-Use EJS syntax `<%= %>` inside file contents.
-
-```md
-# README.md
-
-# <%= plugin.name %>
-
-<%= plugin.description %>
-```
-
-Combined with a `.combino` file or `--data.plugin.name`, this is rendered at generation time.
-
-## Naming rules
-
-Use [key] placeholders in filenames or folder names to rename them dynamically.
-
-Example:
-
-```bash
-templates/
-  base/
-    [name]/
-      index.[extension]
-```
-
-With:
-
-```bash
-combino base --data.name=my-plugin --data.extension=ts
-```
-
-The output is:
-
-```bash
-my-plugin/
-  index.ts
-```
-
-## File Merge Strategies
+### [merge]
 
 Supports fine-grained control over how files are merged by allowing per-pattern strategy configuration in your `.combino` file.
+
+#### Merge strategies
 
 ```ini
 [merge]
@@ -216,20 +195,12 @@ strategy = replace
 
 [merge:*.json]
 strategy = deep
-```
 
-### Example: Using Glob Patterns with Brace Expansion
-
-You can use glob patterns with brace expansion to apply a merge strategy to multiple file types. For example, to replace both markdown and JSON files:
-
-```ini
 [merge:*.{md,json}]
 strategy = replace
 ```
 
-This will apply the `replace` strategy to any file ending in `.md` or `.json`.
-
-## File conflict strategies
+#### Conflict management
 
 ```ini
 [merge:*.json]
@@ -240,6 +211,17 @@ If using `conflict = rename`, Combino will auto-rename files to avoid overwritin
 
 ```bash
 logo.png → logo-1.png
+```
+
+### [data]
+
+Pass custom data to the template folders and files.
+
+```ini
+[data]
+plugin.name = "Plugma"
+plugin.description = "Take figma plugins to the next level"
+plugin.version = 1.0.0
 ```
 
 ## Combining programmatically
