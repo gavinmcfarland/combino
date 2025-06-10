@@ -1,5 +1,7 @@
 [include]
 ../../base
-<% if framework == "react" %>
-../../react/components/ = scr/components
-<% endif %>
+<% if (framework === "react") { %>
+../../react/components/ = src/components
+<% } else if (framework === "vue") { %>
+../../vue/components/ = src/components
+<% } %>
