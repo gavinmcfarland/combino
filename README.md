@@ -1,6 +1,6 @@
 # Combino
 
-Combine multiple template folders to generate custom file and folder structures. Supports deep merging, conditional inclusion via query parameters, and configurable template data—all with minimal setup.
+Combine multiple template folders to generate custom file and folder structures. Supports deep merging, conditional inclusion using comparison operators and logical opporators, and configurable template data—all with minimal setup.
 
 > **Note:** This project is a work in progress. Features and documentation are still being developed.
 
@@ -74,7 +74,7 @@ Files and folders can be conditionally included or excluded using JavaScript exp
 
 #### Conditional Folder
 
-Only include `tests/` if `testing==true`:
+Only include `tests/` if `--data.testing`:
 
 ```bash
 templates/
@@ -96,13 +96,13 @@ templates/
       App.tsx
 ```
 
-If `framework=="svelte"`, the output includes:
+If `--data.framework=svelte`, the output includes:
 
 ```bash
 App.svelte
 ```
 
-If `framework=="react"`, the output includes:
+If `--data.framework=react`, the output includes:
 
 ```bash
 App.tsx
@@ -139,7 +139,7 @@ templates/
       index.[language=="ts"?"tsx":"jsx"]
 ```
 
-If `language=="ts"`, the output will be `index.tsx`, otherwise `index.jsx`.
+If `--data.language=ts`, the output will be `index.tsx`, otherwise `index.jsx`.
 
 ### Templating File Contents
 
@@ -153,27 +153,22 @@ Use EJS syntax `<%= %>` inside file contents.
 <%= plugin.description %>
 ```
 
-Combined with a `.combino` file or `--data.plugin.name`, this is rendered at generation time.
-
 ## Configuration
 
 Use a `.combino` config file to customise how templates are combined.
 
 ### [include]
 
-You can include other templates in your `.combino` file using the `[include]` section. This allows you to compose templates by including base templates that can be extended or overridden.
-
-#### Including Base Templates
+Compose templates from other files and folders by specifying the path names to include.
 
 ```ini
 [include]
 ../base
-../common
 ```
 
 ### [merge]
 
-Supports fine-grained control over how files are merged by allowing per-pattern strategy configuration in your `.combino` file.
+Control how files are merged with per-pattern strategy configuration.
 
 #### Merge Strategies
 
@@ -203,7 +198,7 @@ logo.png → logo-1.png
 
 ### [data]
 
-Pass custom data to the template folders and files.
+Pass custom data to template folders and files.
 
 ```ini
 [data]
@@ -238,7 +233,7 @@ combino [templates...] [options]
 -   `-c, --config <path>` Path to a .combino config file (INI or JSON)
 -   `--data <key=value>` Inline key-value data to use for templating, conditions, and naming
 
-### Examples
+### Example
 
 Basic usage with multiple templates:
 
