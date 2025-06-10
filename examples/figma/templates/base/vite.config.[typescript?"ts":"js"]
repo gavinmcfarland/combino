@@ -1,9 +1,9 @@
 import { defineConfig } from "vite";
-<%- framework.plugins.map(plugin => `import { ${plugin.name} } from "${plugin.import}";`).join('\n') %>
+<%- typeof vite !== 'undefined' ? vite.plugins.map(plugin => `import { ${plugin.name} } from "${plugin.import}";`).join('\n') : '' %>
 
 // https://vite.dev/config/
 export default defineConfig(({ context }) => {
 	return {
-		plugins: context === 'ui' ? [ <%- framework.plugins.map(plugin => `${plugin.name}()`).join(', ') %> ] : []
+		plugins: context === 'ui' ? [<% if (typeof vite !== 'undefined') { %><%- vite.plugins.map(plugin => `${plugin.name}()`).join(', ') %><% } %>] : []
 	};
 });
