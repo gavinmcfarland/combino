@@ -159,18 +159,6 @@ Combined with a `.combino` file or `--data.plugin.name`, this is rendered at gen
 
 Use a `.combino` config file to customise how templates are combined.
 
-**Example `.combino` file**
-
-```ini
-[ignore]
-package.json
-
-[data]
-plugin.name = "Plugma"
-plugin.description = "Take figma plugins to the next level"
-plugin.version = 1.0.0
-```
-
 ### [include]
 
 You can include other templates in your `.combino` file using the `[include]` section. This allows you to compose templates by including base templates that can be extended or overridden.
