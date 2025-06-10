@@ -77,9 +77,67 @@ export class Combino {
 	private async readFile(filePath: string): Promise<FileContent> {
 		const content = await fs.readFile(filePath, "utf-8");
 		const { data, content: fileContent } = matter(content);
+
+		const config: CombinoConfig = {};
+
+		// Try to read companion .combino file
+		const companionPath = `${filePath}.combino`;
+		try {
+			const companionContent = await fs.readFile(companionPath, "utf-8");
+			const parsedConfig = ini.parse(companionContent);
+
+			// Extract data section and structure it properly
+			if (parsedConfig.data) {
+				config.data = {};
+				// Convert flat data structure to nested
+				Object.entries(parsedConfig.data).forEach(([key, value]) => {
+					const keys = key.split(".");
+					let current = config.data!;
+					for (let i = 0; i < keys.length - 1; i++) {
+						current[keys[i]] = current[keys[i]] || {};
+						current = current[keys[i]];
+					}
+					// Try to parse the value as JSON first
+					try {
+						const parsedValue = JSON.parse(value as string);
+						current[keys[keys.length - 1]] = parsedValue;
+					} catch {
+						// If not valid JSON, use the value as is
+						current[keys[keys.length - 1]] = value;
+					}
+				});
+			}
+
+			// Manually parse [merge:...] sections
+			config.merge = parseMergeSections(companionContent);
+
+			// Also support [merge] catch-all section from ini
+			if (parsedConfig.merge && typeof parsedConfig.merge === "object") {
+				config.merge = { ...config.merge, "*": parsedConfig.merge };
+			}
+		} catch (error) {
+			// If no companion file exists, fall back to front matter
+			if (data) {
+				if (
+					typeof data === "object" &&
+					data !== null &&
+					"data" in data
+				) {
+					config.data = (data as any).data;
+				} else {
+					config.data = data;
+				}
+			}
+
+			// Extract merge section if it exists
+			if (data?.merge) {
+				config.merge = data.merge;
+			}
+		}
+
 		return {
 			content: fileContent,
-			config: data as any,
+			config,
 		};
 	}
 
@@ -597,10 +655,17 @@ export class Combino {
 			await fs.mkdir(path.dirname(fullTargetPath), { recursive: true });
 
 			// Read and process the source file with EJS
-			const content = await fs.readFile(sourcePath, "utf-8");
+			const sourceContent = await this.readFile(sourcePath);
+			// Merge file's front matter data with template data
+			const fileData = {
+				...allData,
+				...(sourceContent.config?.data
+					? sourceContent.config.data
+					: {}),
+			};
 			const processedContent = await this.processTemplate(
-				content,
-				allData
+				sourceContent.content,
+				fileData
 			);
 			await fs.writeFile(fullTargetPath, processedContent);
 		}
@@ -609,12 +674,6 @@ export class Combino {
 		for (let i = 1; i < resolvedTemplates.length; i++) {
 			const template = resolvedTemplates[i];
 			const templateConfig = templateConfigs[i];
-			// console.log(
-			// 	"Processing template",
-			// 	template,
-			// 	"with config:",
-			// 	templateConfig
-			// );
 			const files = await this.getFilesInTemplate(
 				template,
 				Array.from(allIgnorePatterns),
@@ -639,7 +698,6 @@ export class Combino {
 						...sourceContent.config?.merge,
 					},
 				};
-				// console.log("Merged config for", targetPath, ":", mergedConfig);
 
 				// Get merge strategy from template config
 				const strategy = this.getMergeStrategy(
@@ -649,19 +707,32 @@ export class Combino {
 
 				try {
 					const targetContent = await this.readFile(fullTargetPath);
+					// Merge file's front matter data with template data
+					const fileData = {
+						...allData,
+						...(sourceContent.config?.data
+							? sourceContent.config.data
+							: {}),
+					};
 					const mergedContent = await this.mergeFiles(
 						fullTargetPath,
 						sourcePath,
 						strategy,
-						allData
+						fileData
 					);
 					await fs.writeFile(fullTargetPath, mergedContent);
 				} catch (error) {
 					// If target doesn't exist, just copy and process the source
-					const content = await fs.readFile(sourcePath, "utf-8");
+					// Merge file's front matter data with template data
+					const fileData = {
+						...allData,
+						...(sourceContent.config?.data
+							? sourceContent.config.data
+							: {}),
+					};
 					const processedContent = await this.processTemplate(
-						content,
-						allData
+						sourceContent.content,
+						fileData
 					);
 					await fs.writeFile(fullTargetPath, processedContent);
 				}
