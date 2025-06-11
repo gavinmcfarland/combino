@@ -4,16 +4,6 @@ Combino is a composable scaffolding engine that lets you build fully customised 
 
 > **Note:** This project is a work in progress. Features and documentation are still being developed.
 
----
-
-## Quick Start
-
-```bash
-combino ./templates/base ./templates/svelte
-```
-
----
-
 ## Example
 
 ### Templates
@@ -27,6 +17,10 @@ templates/
   svelte/
     package.json
     svelte.config.js
+```
+
+```bash
+combino ./templates/base ./templates/svelte
 ```
 
 ### Output
