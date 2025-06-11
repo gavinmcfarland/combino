@@ -1,5 +1,6 @@
 [include]
 ../base
+../react/components = src/components
 
 [data]
 project.name = "extended-project"

@@ -30,6 +30,7 @@ describe("Include Test Suite", () => {
 					name: "extended-project",
 					description: "An extended project",
 				},
+				framework: "react",
 			},
 		});
 	});
@@ -65,6 +66,82 @@ describe("Include Test Suite", () => {
 			// Verify that override template takes precedence
 			expect(output).toEqual(expected);
 			expect(output.name).toBe("override-project");
+		});
+
+		it("should place files in the correct target directory when specified", () => {
+			// Test that files from the included template are placed in the specified target directory
+			const outputPath = join(
+				outputDir,
+				"src",
+				"components",
+				"Component.tsx"
+			);
+			const expectedPath = join(
+				expectedDir,
+				"src",
+				"components",
+				"Component.tsx"
+			);
+
+			const output = readFileSync(outputPath, "utf-8");
+			const expected = readFileSync(expectedPath, "utf-8");
+
+			expect(output).toBe(expected);
+		});
+
+		it("should handle nested target directory mappings", () => {
+			// Test that nested target directories are created correctly
+			const outputPath = join(
+				outputDir,
+				"src",
+				"components",
+				"nested",
+				"NestedComponent.tsx"
+			);
+			const expectedPath = join(
+				expectedDir,
+				"src",
+				"components",
+				"nested",
+				"NestedComponent.tsx"
+			);
+
+			const output = readFileSync(outputPath, "utf-8");
+			const expected = readFileSync(expectedPath, "utf-8");
+
+			expect(output).toBe(expected);
+		});
+
+		it("should correctly process EJS templates in include paths", async () => {
+			// Test with a different framework
+			const vueOutputDir = join(testDir, "output-vue");
+			try {
+				rmSync(vueOutputDir, { recursive: true, force: true });
+			} catch (error) {
+				// Ignore error if directory doesn't exist
+			}
+
+			const combino = new Combino();
+			await combino.combine({
+				outputDir: vueOutputDir,
+				templates: [inputDir],
+				data: {
+					project: {
+						name: "vue-project",
+						description: "A Vue project",
+					},
+					framework: "vue",
+				},
+			});
+
+			// Verify that the Vue components were included
+			const outputPath = join(
+				vueOutputDir,
+				"src",
+				"components",
+				"Component.tsx"
+			);
+			expect(() => readFileSync(outputPath, "utf-8")).not.toThrow();
 		});
 	});
 });

@@ -20,7 +20,7 @@ interface CombinoConfig {
 	ignore?: string[];
 	data?: Record<string, any>;
 	merge?: Record<string, Record<string, any>>;
-	include?: string[];
+	include?: Array<{ source: string; target?: string }>;
 }
 
 // Helper to flatten merge config keys
@@ -75,8 +75,10 @@ function parseMergeSections(configText: string): Record<string, any> {
 }
 
 // Helper to parse [include] section from ini-like config text
-function parseIncludeSection(configText: string): string[] {
-	const include: string[] = [];
+function parseIncludeSection(
+	configText: string
+): Array<{ source: string; target?: string }> {
+	const include: Array<{ source: string; target?: string }> = [];
 	const sectionRegex = /^\[include\]$/gm;
 	let match: RegExpExecArray | null;
 	while ((match = sectionRegex.exec(configText))) {
@@ -87,12 +89,19 @@ function parseIncludeSection(configText: string): string[] {
 		})();
 		const body = configText.slice(start, end).trim();
 		const lines = body.split(/\r?\n/).filter(Boolean);
-		include.push(...lines);
+		for (const line of lines) {
+			const [source, target] = line.split("=").map((s) => s.trim());
+			if (source) {
+				include.push({ source, target });
+			}
+		}
 	}
 	return include;
 }
 
 export class Combino {
+	private data: Record<string, any> = {};
+
 	private async readFile(filePath: string): Promise<FileContent> {
 		const content = await fs.readFile(filePath, "utf-8");
 		const { data, content: fileContent } = matter(content);
@@ -168,7 +177,13 @@ export class Combino {
 		try {
 			const content = await fs.readFile(configPath, "utf-8");
 
-			const parsedConfig = ini.parse(content);
+			// Process the content with EJS first
+			const processedContent = await this.processTemplate(content, {
+				framework: "react", // Default value, can be overridden by data
+				...this.data, // Include any existing data
+			});
+
+			const parsedConfig = ini.parse(processedContent);
 
 			const config: CombinoConfig = {};
 
@@ -204,7 +219,7 @@ export class Combino {
 			}
 
 			// Manually parse [merge:...] sections
-			config.merge = parseMergeSections(content);
+			config.merge = parseMergeSections(processedContent);
 
 			// Also support [merge] catch-all section from ini
 			if (parsedConfig.merge && typeof parsedConfig.merge === "object") {
@@ -212,7 +227,7 @@ export class Combino {
 			}
 
 			// Parse [include] section
-			config.include = parseIncludeSection(content);
+			config.include = parseIncludeSection(processedContent);
 
 			return config;
 		} catch (error) {
@@ -594,6 +609,9 @@ export class Combino {
 			config,
 		} = options;
 
+		// Set the data context for EJS processing
+		this.data = { ...externalData };
+
 		// Get the directory of the calling script
 		const callerDir = this.getCallerFileLocation();
 
@@ -622,7 +640,7 @@ export class Combino {
 		]);
 		const allData: Record<string, any> = { ...externalData }; // Start with external data
 		const templateConfigs: CombinoConfig[] = []; // Store all template configs
-		const allTemplates: string[] = []; // Store all templates including included ones
+		const allTemplates: Array<{ path: string; targetDir?: string }> = []; // Store all templates including included ones
 
 		// Load config if specified
 		if (typeof config === "string" && (await fileExists(config))) {
@@ -656,11 +674,8 @@ export class Combino {
 
 			// Process included templates
 			if (config.include) {
-				for (const includePath of config.include) {
-					const resolvedIncludePath = path.resolve(
-						template,
-						includePath
-					);
+				for (const { source, target } of config.include) {
+					const resolvedIncludePath = path.resolve(template, source);
 					if (await fileExists(resolvedIncludePath)) {
 						const includeConfig = await this.readCombinoConfig(
 							resolvedIncludePath
@@ -674,8 +689,11 @@ export class Combino {
 						if (includeConfig.data) {
 							Object.assign(allData, includeConfig.data);
 						}
-						// Add included template to the list
-						allTemplates.push(resolvedIncludePath);
+						// Add included template to the list with its target directory
+						allTemplates.push({
+							path: resolvedIncludePath,
+							targetDir: target,
+						});
 					} else {
 						console.warn(
 							`Warning: Included template not found: ${resolvedIncludePath}`
@@ -686,11 +704,13 @@ export class Combino {
 		}
 
 		// Add main templates after included ones (so they override included templates)
-		allTemplates.push(...resolvedTemplates);
+		allTemplates.push(
+			...resolvedTemplates.map((path) => ({ path, targetDir: undefined }))
+		);
 
 		// Process all templates in order
 		for (let i = 0; i < allTemplates.length; i++) {
-			const template = allTemplates[i];
+			const { path: template, targetDir } = allTemplates[i];
 			const templateConfig = templateConfigs[i];
 			const files = await this.getFilesInTemplate(
 				template,
@@ -699,7 +719,14 @@ export class Combino {
 			);
 
 			for (const { sourcePath, targetPath } of files) {
-				const fullTargetPath = path.join(resolvedOutputDir, targetPath);
+				// If this template has a target directory, prepend it to the target path
+				const finalTargetPath = targetDir
+					? path.join(targetDir, targetPath)
+					: targetPath;
+				const fullTargetPath = path.join(
+					resolvedOutputDir,
+					finalTargetPath
+				);
 
 				// Create target directory if it doesn't exist
 				await fs.mkdir(path.dirname(fullTargetPath), {
