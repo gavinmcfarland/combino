@@ -1,6 +1,6 @@
 # Combino
 
-Combine multiple template folders to generate custom file and folder structures. Supports deep merging, conditional inclusion using comparison operators and logical opporators, and configurable template data—all with minimal setup.
+Combino is a composable scaffolding engine that lets you build fully customised project structures by combining modular template folders with smart deep merging, dynamic conditions, and reusable logic.
 
 > **Note:** This project is a work in progress. Features and documentation are still being developed.
 
