@@ -158,6 +158,7 @@ Compose templates from other files and folders by specifying the path names to i
 ```ini
 [include]
 ../base
+../<% framework %>/components = src/components
 ```
 
 ### [merge]
