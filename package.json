@@ -27,7 +27,9 @@
         "dev": "ts-node src/cli.ts",
         "changeset": "changeset",
         "version": "changeset version",
-        "release": "changeset publish"
+        "release": "changeset publish",
+        "prepublish": "npm run test && npm run build",
+        "publish": "npm run prepublish && npm run version && npm run release"
     },
     "keywords": [
         "scaffolding",

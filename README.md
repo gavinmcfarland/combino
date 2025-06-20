@@ -96,25 +96,6 @@ npm install -g combino
         [framework=="react"]
           App.tsx
     ```
-
----
-
-- ### JSON Array Merging
-
-    Use `$key` property to merge objects in arrays by unique identifier.
-
-    ```json
-    {
-      "dependencies": [
-        {
-          "$key": "name",
-          "name": "react",
-          "version": "^18.2.0"
-        }
-      ]
-    }
-    ```
-
 ---
 
 - ### File Content Templating
@@ -167,13 +148,13 @@ npm install -g combino
 
 - ### Merging Strategies
 
-    Control how files are merged with pattern-specific strategies.
+    Files are intelligently merged by default based on their file type. You can override this behavior with pattern-specific strategies.
 
     - `deep`: Deep merge objects and arrays (default for JSON)
     - `shallow`: Shallow merge objects (default for Markdown)
     - `append`: Append content to existing files
     - `prepend`: Prepend content to existing files
-    - `replace`: Replace existing files completely (default)
+    - `replace`: Replace existing files completely (default for most file types)
 
     ```ini
     [merge:*.json]
@@ -187,6 +168,20 @@ npm install -g combino
     merge: {
       "*.json": { strategy: "deep" },
       "*.{md,yaml}": { strategy: "replace" }
+    }
+    ```
+
+    Arrays are intelligently merged by concatenating them and deduping items. Use `$key` property to merge objects in arrays by unique identifier.
+
+    ```json
+    {
+      "dependencies": [
+        {
+          "$key": "name",
+          "name": "react",
+          "version": "^18.2.0"
+        }
+      ]
     }
     ```
 
