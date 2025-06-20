@@ -135,6 +135,72 @@ templates/
 
 If `--data.language=ts`, the output will be `index.tsx`, otherwise `index.jsx`.
 
+### Key-Based Array Merging in JSON
+
+When merging JSON files, you can use the `$key` property to specify which field should be used as the unique identifier for merging objects in arrays. This is especially useful for `package.json` dependencies, TypeScript configuration references, and other structured data.
+
+#### Basic Usage
+
+```json
+{
+  "dependencies": [
+    {
+      "$key": "name",
+      "name": "react",
+      "version": "^18.2.0"
+    },
+    {
+      "$key": "name", 
+      "name": "typescript",
+      "version": "^5.0.0"
+    }
+  ]
+}
+```
+
+The `$key` property tells Combino to use the `name` field as the unique identifier. When merging with another template that has the same dependency, it will merge the properties instead of creating duplicates.
+
+#### TypeScript Configuration Example
+
+```json
+{
+  "references": [
+    {
+      "$key": "path",
+      "path": "./tsconfig.ui.json",
+      "include": ["src/**/*.svelte"],
+      "extends": "@tsconfig/svelte/tsconfig.json"
+    }
+  ]
+}
+```
+
+#### Complex Object Merging
+
+You can use different key fields for different arrays:
+
+```json
+{
+  "dependencies": [
+    {
+      "$key": "name",
+      "name": "react",
+      "version": "^18.2.0"
+    }
+  ],
+  "configurations": [
+    {
+      "$key": "id",
+      "id": "development",
+      "features": ["hot-reload", "source-maps"],
+      "port": 3000
+    }
+  ]
+}
+```
+
+When merging, objects with the same key value will have their properties merged, while new objects will be added to the array. The `$key` property itself is removed from the final output.
+
 ### Templating File Contents
 
 Use EJS syntax `<%= %>` inside file contents.
