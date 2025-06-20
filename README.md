@@ -128,9 +128,9 @@ npm install -g combino
 
 ---
 
-- ### Template Composition
+- ### Template Inclusion
 
-    Include additional templates with dynamic paths and target mapping.
+    Compose temapltes with dynamic paths and target mapping.
 
     ```ini
     [include]
@@ -141,7 +141,7 @@ npm install -g combino
     ```js
     include: [
       { source: '../base' },
-      { source: '../<% framework %>/components', target: 'src/components' }
+      { source: `../${framework}/components`, target: 'src/components' }
     ]
     ```
 
