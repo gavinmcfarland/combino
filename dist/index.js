@@ -435,12 +435,12 @@ export class Combino {
                 return "replace";
         }
     }
-    async mergeFiles(targetPath, sourcePath, strategy, data) {
+    async mergeFiles(targetPath, sourcePath, strategy, data, baseTemplatePath) {
         const ext = path.extname(targetPath).toLowerCase();
         let mergedContent;
         switch (ext) {
             case ".json":
-                mergedContent = await mergeJson(targetPath, sourcePath, strategy);
+                mergedContent = await mergeJson(targetPath, sourcePath, strategy, baseTemplatePath);
                 break;
             case ".md":
                 mergedContent = await mergeMarkdown(targetPath, sourcePath, strategy);
@@ -579,6 +579,15 @@ export class Combino {
                     },
                 };
                 const strategy = this.getMergeStrategy(targetPath, mergedConfig);
+                // Find the first template that contains this file for property order preservation
+                let baseTemplatePath;
+                for (const tpl of allTemplates) {
+                    const potentialBasePath = path.join(tpl.path, targetPath);
+                    if (await fileExists(potentialBasePath)) {
+                        baseTemplatePath = potentialBasePath;
+                        break;
+                    }
+                }
                 try {
                     const targetContent = await this.readFile(fullTargetPath);
                     const fileData = {
@@ -587,7 +596,7 @@ export class Combino {
                             ? sourceContent.config.data
                             : {}),
                     };
-                    const mergedContent = await this.mergeFiles(fullTargetPath, sourcePath, strategy, fileData);
+                    const mergedContent = await this.mergeFiles(fullTargetPath, sourcePath, strategy, fileData, baseTemplatePath);
                     await fs.writeFile(fullTargetPath, mergedContent);
                 }
                 catch (error) {

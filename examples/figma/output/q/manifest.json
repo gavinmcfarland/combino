@@ -1,0 +1,10 @@
+{
+    "id": "com.q",
+    "name": "q",
+    "main": "src/main/main.js",
+    "ui": "src/ui/ui.js",
+    "editorType": ["figma", "figjam"],
+    "networkAccess": {
+        "allowedDomains": ["none"]
+    }
+}

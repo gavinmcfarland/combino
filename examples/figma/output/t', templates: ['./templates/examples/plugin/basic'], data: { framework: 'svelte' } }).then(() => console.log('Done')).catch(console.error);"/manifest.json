@@ -1,0 +1,10 @@
+{
+    "id": "com.t', templates: ['./templates/examples/plugin/basic'], data: { framework: 'svelte' } }).then(() => console.log('Done')).catch(console.error);"",
+    "name": "t', templates: ['./templates/examples/plugin/basic'], data: { framework: 'svelte' } }).then(() => console.log('Done')).catch(console.error);"",
+    "main": "src/main/main.js",
+    "ui": "src/ui/ui.js",
+    "editorType": ["figma", "figjam"],
+    "networkAccess": {
+        "allowedDomains": ["none"]
+    }
+}

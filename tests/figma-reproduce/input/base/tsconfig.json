@@ -1,4 +1,19 @@
 {
+    "compilerOptions": {
+        "target": "ESNext",
+        "useDefineForClassFields": true,
+        "module": "ESNext",
+        "allowJs": true,
+        "checkJs": true,
+        "isolatedModules": true,
+        "moduleDetection": "force",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "typeRoots": ["node_modules/@types"]
+    },
+    "files": [],
     "references": [
         {
             "$key": "./tsconfig.main.json",
@@ -19,20 +34,5 @@
             },
             "include": ["src/**/*.ts", "src/**/*.js"]
         }
-    ],
-    "compilerOptions": {
-        "target": "ESNext",
-        "useDefineForClassFields": true,
-        "module": "ESNext",
-        "allowJs": true,
-        "checkJs": true,
-        "isolatedModules": true,
-        "moduleDetection": "force",
-        "strict": true,
-        "esModuleInterop": true,
-        "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true,
-        "typeRoots": ["node_modules/@types"]
-    },
-    "files": []
+    ]
 }

@@ -15,8 +15,11 @@ const arrayMerge = (targetArray, sourceArray) => {
             const { $key, ...rest } = item;
             const keyValue = item.path;
             if (mergedMap.has(keyValue)) {
+                // Use deepmerge without recursive arrayMerge to avoid infinite recursion
                 const merged = deepmerge(mergedMap.get(keyValue), rest, {
-                    arrayMerge,
+                    arrayMerge: (target, source) => [
+                        ...new Set([...target, ...source]),
+                    ],
                 });
                 mergedMap.set(keyValue, merged);
             }
@@ -34,8 +37,11 @@ const arrayMerge = (targetArray, sourceArray) => {
             const keyValue = item[keyField];
             const { $key, ...rest } = item;
             if (mergedMap.has(keyValue)) {
+                // Use deepmerge without recursive arrayMerge to avoid infinite recursion
                 const merged = deepmerge(mergedMap.get(keyValue), rest, {
-                    arrayMerge,
+                    arrayMerge: (target, source) => [
+                        ...new Set([...target, ...source]),
+                    ],
                 });
                 mergedMap.set(keyValue, merged);
             }
@@ -49,8 +55,11 @@ const arrayMerge = (targetArray, sourceArray) => {
             if (keyField) {
                 const keyValue = item[keyField];
                 if (mergedMap.has(keyValue)) {
+                    // Use deepmerge without recursive arrayMerge to avoid infinite recursion
                     const merged = deepmerge(mergedMap.get(keyValue), item, {
-                        arrayMerge,
+                        arrayMerge: (target, source) => [
+                            ...new Set([...target, ...source]),
+                        ],
                     });
                     mergedMap.set(keyValue, merged);
                 }
@@ -94,21 +103,54 @@ const customMerge = (target, source) => {
     // For other types, use source value
     return source;
 };
-export async function mergeJson(targetPath, sourcePath, strategy) {
-    const targetContent = await fs.readFile(targetPath, "utf-8");
+export async function mergeJson(targetPath, sourcePath, strategy, baseTemplatePath) {
+    const targetContent = await fs
+        .readFile(targetPath, "utf-8")
+        .catch(() => "");
     const sourceContent = await fs.readFile(sourcePath, "utf-8");
     // Handle empty or blank files by treating them as empty objects
     const targetJson = targetContent.trim() ? JSON.parse(targetContent) : {};
     const sourceJson = sourceContent.trim() ? JSON.parse(sourceContent) : {};
+    // Get base template for property order if provided
+    let baseJson = {};
+    if (baseTemplatePath) {
+        try {
+            const baseContent = await fs.readFile(baseTemplatePath, "utf-8");
+            baseJson = baseContent.trim() ? JSON.parse(baseContent) : {};
+        }
+        catch (error) {
+            // If base template doesn't exist, fall back to target/source logic
+            baseJson = {};
+        }
+    }
     let merged;
     switch (strategy) {
         case "deep":
             merged = deepmerge(targetJson, sourceJson, {
                 arrayMerge,
             });
+            // Use base template for property order if available, otherwise fall back to target/source logic
+            if (Object.keys(baseJson).length > 0) {
+                merged = preservePropertyOrder(baseJson, merged);
+            }
+            else if (Object.keys(targetJson).length === 0) {
+                merged = preservePropertyOrder(sourceJson, merged);
+            }
+            else {
+                merged = preservePropertyOrder(targetJson, merged);
+            }
             break;
         case "shallow":
             merged = { ...targetJson, ...sourceJson };
+            if (Object.keys(baseJson).length > 0) {
+                merged = preservePropertyOrder(baseJson, merged);
+            }
+            else if (Object.keys(targetJson).length === 0) {
+                merged = preservePropertyOrder(sourceJson, merged);
+            }
+            else {
+                merged = preservePropertyOrder(targetJson, merged);
+            }
             break;
         case "replace":
             merged = sourceJson;
@@ -117,4 +159,21 @@ export async function mergeJson(targetPath, sourcePath, strategy) {
             throw new Error(`Unsupported merge strategy for JSON: ${strategy}`);
     }
     return JSON.stringify(merged, null, 2);
+}
+// Helper function to preserve property order from base template
+function preservePropertyOrder(baseTemplate, mergedObject) {
+    const result = {};
+    // First, add properties in the order they appear in the base template
+    for (const key of Object.keys(baseTemplate)) {
+        if (key in mergedObject) {
+            result[key] = mergedObject[key];
+        }
+    }
+    // Then, add any new properties from the merged object that weren't in the base template
+    for (const key of Object.keys(mergedObject)) {
+        if (!(key in baseTemplate)) {
+            result[key] = mergedObject[key];
+        }
+    }
+    return result;
 }

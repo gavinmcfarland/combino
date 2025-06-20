@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "jsxFactory": "",
     "target": "ESNext",
     "useDefineForClassFields": true,
     "module": "ESNext",
@@ -40,10 +41,8 @@
       },
       "include": [
         "src/**/*.ts",
-        "src/**/*.js",
-        "src/**/*.svelte"
-      ],
-      "extends": "@tsconfig/svelte/tsconfig.json"
+        "src/**/*.js"
+      ]
     }
   ]
 }
