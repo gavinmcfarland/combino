@@ -139,7 +139,7 @@ async function generateWebFramework() {
 	const namePrompt = new Input({
 		name: 'name',
 		message: `${type.charAt(0).toUpperCase() + type.slice(1)} name?`,
-		initial: `my-figma-${framework}-${type}`
+		initial: `${example}-${framework}-${type}`
 	});
 
 	const name = await namePrompt.run();

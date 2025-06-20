@@ -1,8 +1,8 @@
-# my-figma-svelte-plugin
+# basic-react-plugin
 
 ## Quickstart
 
-This plugin was created with [Plugma](https://github.com/gavinmcfarland/plugma) using the [Svelte](https://svelte.dev/) framework.
+This plugin was created with [Plugma](https://github.com/gavinmcfarland/plugma) using the [React](https://svelte.dev/) framework.
 
 ### Requirements
 
