@@ -153,11 +153,11 @@ export class Combino {
                 framework: "react", // Default value, can be overridden by data
                 ...this.data, // Include any existing data
             });
-            console.log("Processed .combino content:", processedContent);
-            console.log("Data used for EJS processing:", {
-                framework: "react",
-                ...this.data,
-            });
+            // console.log("Processed .combino content:", processedContent);
+            // console.log("Data used for EJS processing:", {
+            // 	framework: "react",
+            // 	...this.data,
+            // });
             const parsedConfig = ini.parse(processedContent);
             const config = {};
             // Extract ignore section - handle as a list of values
@@ -250,8 +250,8 @@ export class Combino {
     evaluateCondition(condition, data) {
         try {
             // Add logging to see what data we're working with
-            console.log("Evaluating condition:", condition);
-            console.log("With data:", JSON.stringify(data, null, 2));
+            // console.log("Evaluating condition:", condition);
+            // console.log("With data:", JSON.stringify(data, null, 2));
             // Remove the [ and ] from the condition
             const cleanCondition = condition.slice(1, -1);
             // Replace operators to be compatible with expr-eval
@@ -273,11 +273,11 @@ export class Combino {
                 return acc;
             }, {});
             // Log the scope being used for evaluation
-            console.log("Evaluation scope:", JSON.stringify(scope, null, 2));
+            // console.log("Evaluation scope:", JSON.stringify(scope, null, 2));
             // Parse and evaluate the expression
             const expr = parser.parse(parsedCondition);
             const result = expr.evaluate(scope);
-            console.log("Condition result:", result);
+            // console.log("Condition result:", result);
             return result;
         }
         catch (error) {
@@ -288,14 +288,17 @@ export class Combino {
     async getFilesInTemplate(templatePath, ignorePatterns, data) {
         try {
             // Log the data being used for file processing
-            console.log("Processing template with data:", JSON.stringify(data, null, 2));
+            // console.log(
+            // 	"Processing template with data:",
+            // 	JSON.stringify(data, null, 2)
+            // );
             const files = await glob("**/*", {
                 cwd: templatePath,
                 nodir: true,
                 ignore: ignorePatterns,
                 dot: true,
             });
-            console.log("Found files:", files);
+            // console.log("Found files:", files);
             const filteredFiles = files.filter((file) => {
                 // First check if the file should be ignored
                 if (ignorePatterns.some((pattern) => {
@@ -312,12 +315,15 @@ export class Combino {
                         const conditionMatch = part.match(/\[[^\]]+\]/);
                         if (conditionMatch) {
                             const condition = conditionMatch[0];
-                            console.log("Checking condition for file:", file);
-                            console.log("Condition:", condition);
+                            // console.log("Checking condition for file:", file);
+                            // console.log("Condition:", condition);
                             // If any condition in the path is false, exclude the file
                             const result = this.evaluateCondition(condition, data);
                             if (typeof result === "boolean" && !result) {
-                                console.log("File excluded due to condition:", file);
+                                // console.log(
+                                // 	"File excluded due to condition:",
+                                // 	file
+                                // );
                                 return false;
                             }
                         }
@@ -325,7 +331,7 @@ export class Combino {
                 }
                 return true;
             });
-            console.log("Filtered files:", filteredFiles);
+            // console.log("Filtered files:", filteredFiles);
             // Transform the file paths to handle conditional folders and file extensions
             const mappedFiles = filteredFiles.map((file) => {
                 const parts = file.split(path.sep);
@@ -357,7 +363,7 @@ export class Combino {
                     sourcePath: path.join(templatePath, file),
                     targetPath: path.join(...transformedParts),
                 };
-                console.log("Mapped file:", result);
+                // console.log("Mapped file:", result);
                 return result;
             });
             return mappedFiles;
@@ -518,42 +524,141 @@ export class Combino {
         // Robust recursive collection of all templates and their includes
         const allTemplates = [];
         const processedTemplates = new Set();
-        const collectTemplates = async (templatePath, targetDir) => {
+        const templateDependencies = new Map();
+        // First pass: collect all templates and their dependencies
+        const collectTemplateDependencies = async (templatePath, targetDir) => {
             const resolved = path.resolve(templatePath);
             if (processedTemplates.has(resolved)) {
                 return;
             }
             processedTemplates.add(resolved);
             const templateConfig = await this.readCombinoConfig(resolved);
-            // Recursively collect includes first (lowest priority)
+            const dependencies = new Set();
+            // Collect includes as dependencies
             if (templateConfig.include) {
+                console.log(`Template ${resolved} includes:`, templateConfig.include);
                 for (const { source, target } of templateConfig.include) {
                     const resolvedIncludePath = path.resolve(resolved, source);
                     if (await fileExists(resolvedIncludePath)) {
-                        await collectTemplates(resolvedIncludePath, target);
+                        dependencies.add(resolvedIncludePath);
+                        console.log(`  Adding dependency: ${resolvedIncludePath} -> ${resolved}`);
+                        // Recursively collect dependencies of included templates
+                        await collectTemplateDependencies(resolvedIncludePath, target);
                     }
                     else {
                         console.warn(`Warning: Included template not found: ${resolvedIncludePath}`);
                     }
                 }
             }
+            templateDependencies.set(resolved, dependencies);
+        };
+        // Start dependency collection from initial templates
+        for (const template of resolvedTemplates) {
+            await collectTemplateDependencies(template);
+        }
+        console.log("Dependency graph:");
+        for (const [template, deps] of templateDependencies.entries()) {
+            console.log(`  ${template} -> [${Array.from(deps).join(", ")}]`);
+        }
+        // Second pass: topological sort to determine processing order
+        const sortedTemplates = [];
+        const visited = new Set();
+        const visiting = new Set();
+        const topologicalSort = async (templatePath) => {
+            if (visiting.has(templatePath)) {
+                throw new Error(`Circular dependency detected: ${templatePath}`);
+            }
+            if (visited.has(templatePath)) {
+                return;
+            }
+            visiting.add(templatePath);
+            const dependencies = templateDependencies.get(templatePath) || new Set();
+            // Process dependencies first (includes should be processed before the template that includes them)
+            for (const dependency of dependencies) {
+                await topologicalSort(dependency);
+            }
+            visiting.delete(templatePath);
+            visited.add(templatePath);
             // Add template data and ignore patterns
+            const templateConfig = await this.readCombinoConfig(templatePath);
             if (templateConfig.data) {
                 Object.assign(allData, templateConfig.data);
             }
             if (templateConfig.ignore) {
                 templateConfig.ignore.forEach((pattern) => allIgnorePatterns.add(pattern));
             }
-            // Add this template after its includes (higher priority)
-            allTemplates.push({
-                path: resolved,
-                targetDir,
+            // Add this template to the sorted list
+            sortedTemplates.push({
+                path: templatePath,
+                targetDir: undefined, // We'll need to track targetDir separately
                 config: templateConfig,
             });
         };
-        // Start collection from initial templates
+        // Perform topological sort for all templates
+        for (const templatePath of templateDependencies.keys()) {
+            await topologicalSort(templatePath);
+        }
+        console.log("Topologically sorted templates:");
+        sortedTemplates.forEach((tpl, idx) => {
+            console.log(`  ${idx + 1}: ${tpl.path}`);
+        });
+        // Build targetDir map from initial templates
+        const targetDirMap = new Map();
+        const buildTargetDirMap = async (templatePath, targetDir) => {
+            const resolved = path.resolve(templatePath);
+            if (targetDir) {
+                targetDirMap.set(resolved, targetDir);
+            }
+            const templateConfig = await this.readCombinoConfig(resolved);
+            if (templateConfig.include) {
+                for (const { source, target } of templateConfig.include) {
+                    const resolvedIncludePath = path.resolve(resolved, source);
+                    if (await fileExists(resolvedIncludePath)) {
+                        await buildTargetDirMap(resolvedIncludePath, target);
+                    }
+                }
+            }
+        };
+        // Build targetDir map from initial templates
         for (const template of resolvedTemplates) {
-            await collectTemplates(template);
+            await buildTargetDirMap(template);
+        }
+        // After topological sort, reorder so initial templates are in the order given, but only after their dependencies
+        const initialTemplatesSet = new Set(resolvedTemplates.map((t) => path.resolve(t)));
+        const reorderedTemplates = [];
+        const alreadyAdded = new Set();
+        // Helper to add a template and its dependencies
+        const addWithDependencies = (templatePath) => {
+            const resolved = path.resolve(templatePath);
+            if (alreadyAdded.has(resolved))
+                return;
+            // Add dependencies first
+            const deps = templateDependencies.get(resolved) || new Set();
+            for (const dep of deps) {
+                addWithDependencies(dep);
+            }
+            // Then add the template itself
+            const tpl = sortedTemplates.find((t) => path.resolve(t.path) === resolved);
+            if (tpl) {
+                reorderedTemplates.push(tpl);
+                alreadyAdded.add(resolved);
+            }
+        };
+        // Add initial templates in the order given, with their dependencies
+        for (const template of resolvedTemplates) {
+            addWithDependencies(template);
+        }
+        // Add any remaining templates (e.g., includes not in initial list)
+        for (const tpl of sortedTemplates) {
+            addWithDependencies(tpl.path);
+        }
+        // Update allTemplates with the new order
+        allTemplates.length = 0;
+        for (const template of reorderedTemplates) {
+            allTemplates.push({
+                ...template,
+                targetDir: targetDirMap.get(path.resolve(template.path)),
+            });
         }
         console.log("Ordered list of templates to process:");
         allTemplates.forEach((tpl, idx) => {
@@ -570,6 +675,8 @@ export class Combino {
                 await fs.mkdir(path.dirname(fullTargetPath), {
                     recursive: true,
                 });
+                // Log the template and file being processed
+                console.log(`[PROCESSING] Template: ${template} -> File: ${finalTargetPath}`);
                 const sourceContent = await this.readFile(sourcePath);
                 const mergedConfig = {
                     ...templateConfig,

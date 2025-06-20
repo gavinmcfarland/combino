@@ -145,16 +145,20 @@ async function generateWebFramework() {
 	const name = await namePrompt.run();
 
 	// Prepare template paths based on user choices
-	const templates = [
-		path.join(__dirname, `templates/frameworks/${framework}`)
-	];
+	const templates = [];
+
+
+
+	// Add example template
+	templates.push(path.join(__dirname, `templates/examples/${type}/${example}`));
+
+	templates.push(path.join(__dirname, `templates/frameworks/${framework}`))
 
 	if (typescript) {
 		templates.push(path.join(__dirname, "templates/typescript"));
 	}
 
-	// Add example template
-	templates.push(path.join(__dirname, `templates/examples/${type}/${example}`));
+	console.log('templates', templates);
 
 	// Generate the project
 	await combino.combine({

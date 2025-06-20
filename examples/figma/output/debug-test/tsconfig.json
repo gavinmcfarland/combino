@@ -43,60 +43,6 @@
         "src/**/*.js",
         "src/**/*.svelte"
       ]
-    },
-    {
-      "path": "./tsconfig.main.json",
-      "compilerOptions": {
-        "composite": true,
-        "outDir": "dist/main",
-        "typeRoots": [
-          "node_modules/@figma",
-          "node_modules/@types"
-        ]
-      },
-      "include": [
-        "src/main/**/*.ts",
-        "src/main/**/*.js"
-      ]
-    },
-    {
-      "path": "./tsconfig.ui.json",
-      "compilerOptions": {
-        "composite": true,
-        "outDir": "dist/ui"
-      },
-      "include": [
-        "src/**/*.ts",
-        "src/**/*.js",
-        "src/**/*.svelte"
-      ]
-    },
-    {
-      "path": "./tsconfig.main.json",
-      "compilerOptions": {
-        "composite": true,
-        "outDir": "dist/main",
-        "typeRoots": [
-          "node_modules/@figma",
-          "node_modules/@types"
-        ]
-      },
-      "include": [
-        "src/main/**/*.ts",
-        "src/main/**/*.js"
-      ]
-    },
-    {
-      "path": "./tsconfig.ui.json",
-      "compilerOptions": {
-        "composite": true,
-        "outDir": "dist/ui"
-      },
-      "include": [
-        "src/**/*.ts",
-        "src/**/*.js",
-        "src/**/*.svelte"
-      ]
     }
   ]
 }
