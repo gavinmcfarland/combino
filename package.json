@@ -60,6 +60,8 @@
         "expr-eval": "^2.0.2",
         "glob": "^10.0.0",
         "gray-matter": "^4.0.3",
-        "ini": "^4.1.1"
+        "ini": "^4.1.1",
+        "prettier": "^3.5.3",
+        "prettier-plugin-svelte": "^3.4.0"
     }
 }

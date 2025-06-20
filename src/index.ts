@@ -1,4 +1,4 @@
-import { promises as fs } from "fs";
+import fs from "fs/promises";
 import path from "path";
 import { glob } from "glob";
 import matter from "gray-matter";
@@ -15,6 +15,8 @@ import { mergeMarkdown } from "./mergers/markdown.js";
 import { mergeText } from "./mergers/text.js";
 import * as ini from "ini";
 import { fileURLToPath } from "url";
+import prettier from "prettier";
+import prettierPluginSvelte from "prettier-plugin-svelte";
 
 interface CombinoConfig {
 	ignore?: string[];
@@ -97,6 +99,110 @@ function parseIncludeSection(
 		}
 	}
 	return include;
+}
+
+// Helper to format files with Prettier
+async function formatFileWithPrettier(
+	filePath: string,
+	content: string
+): Promise<string> {
+	try {
+		// Get file extension to determine parser
+		const ext = path.extname(filePath).toLowerCase();
+
+		// Define which file types to format
+		const formattableExtensions = [
+			".js",
+			".ts",
+			".jsx",
+			".tsx",
+			".json",
+			".md",
+			".css",
+			".scss",
+			".html",
+			".vue",
+			".svelte",
+		];
+
+		if (!formattableExtensions.includes(ext)) {
+			return content; // Return original content if not a formattable file type
+		}
+
+		// Determine parser based on file extension
+		let parser: string;
+		switch (ext) {
+			case ".js":
+			case ".jsx":
+				parser = "babel";
+				break;
+			case ".ts":
+			case ".tsx":
+				parser = "typescript";
+				break;
+			case ".json":
+				parser = "json";
+				break;
+			case ".md":
+				parser = "markdown";
+				break;
+			case ".css":
+			case ".scss":
+				parser = "css";
+				break;
+			case ".html":
+				parser = "html";
+				break;
+			case ".vue":
+				parser = "vue";
+				break;
+			case ".svelte":
+				parser = "svelte";
+				break;
+			default:
+				parser = "babel";
+		}
+
+		// Try to find a Prettier config file in the project
+		let prettierConfig: any = {
+			"useTabs": true,
+			"semi": false,
+			"singleQuote": true,
+			"printWidth": 120,
+			"braceStyle": "collapse,preserve-inline",
+			"overrides": [
+				{
+					"files": "*.md",
+					"options": {
+						"useTabs": false,
+						"tabWidth": 4
+					}
+				}
+			]
+		};
+		try {
+			const configPath = await prettier.resolveConfig(filePath);
+			if (configPath) {
+				prettierConfig = (await prettier.resolveConfig(filePath)) || {};
+			}
+		} catch (error) {
+			// If no config found, use default settings
+		}
+
+		// Format the content
+		return prettier.format(content, {
+			...prettierConfig,
+			parser,
+			plugins: [prettierPluginSvelte, ...(prettierConfig.plugins || [])],
+		});
+	} catch (error) {
+		// If formatting fails, return original content
+		console.warn(
+			`Warning: Failed to format ${filePath} with Prettier:`,
+			error
+		);
+		return content;
+	}
 }
 
 export class Combino {
@@ -928,7 +1034,11 @@ export class Combino {
 						fileData,
 						baseTemplatePath
 					);
-					await fs.writeFile(fullTargetPath, mergedContent);
+					const formattedContent = await formatFileWithPrettier(
+						fullTargetPath,
+						mergedContent
+					);
+					await fs.writeFile(fullTargetPath, formattedContent);
 				} catch (error) {
 					const fileData = {
 						...allData,
@@ -940,7 +1050,11 @@ export class Combino {
 						sourceContent.content,
 						fileData
 					);
-					await fs.writeFile(fullTargetPath, processedContent);
+					const formattedContent = await formatFileWithPrettier(
+						fullTargetPath,
+						processedContent
+					);
+					await fs.writeFile(fullTargetPath, formattedContent);
 				}
 			}
 		}

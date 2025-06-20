@@ -3,8 +3,8 @@
         {
             "$key": "path",
             "path": "./tsconfig.ui.json",
+            "include": ["src/**/*.svelte"],
             "extends": "@tsconfig/svelte/tsconfig.json",
-            "include": ["src/**/*.svelte"]
         }
     ]
 }

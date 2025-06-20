@@ -1,15 +1,10 @@
 {
-  "id": "com.my-figma-svelte-plugin",
-  "name": "my-figma-svelte-plugin",
-  "main": "src/main/main.ts",
-  "ui": "src/ui/ui.ts",
-  "editorType": [
-    "figma",
-    "figjam"
-  ],
-  "networkAccess": {
-    "allowedDomains": [
-      "none"
-    ]
-  }
+	"id": "com.my-figma-svelte-plugin",
+	"name": "my-figma-svelte-plugin",
+	"main": "src/main/main.ts",
+	"ui": "src/ui/ui.ts",
+	"editorType": ["figma", "figjam"],
+	"networkAccess": {
+		"allowedDomains": ["none"]
+	}
 }
