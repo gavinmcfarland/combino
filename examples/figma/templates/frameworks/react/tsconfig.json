@@ -1,5 +1,7 @@
 {
     "compilerOptions": {
-        "jsxFactory": ""
-    }
+        "jsxFactory": "",
+        "jsx": "react-jsx"
+    },
+    "include": ["src/**/*.tsx"]
 }
