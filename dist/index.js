@@ -381,7 +381,7 @@ export class Combino {
             return false;
         }
     }
-    async getFilesInTemplate(templatePath, ignorePatterns, data, templatesWithTargetDirs) {
+    async getFilesInTemplate(templatePath, ignorePatterns, data) {
         try {
             // Log the data being used for file processing
             // console.log(
@@ -462,10 +462,6 @@ export class Combino {
                 // console.log("Mapped file:", result);
                 return result;
             });
-            // Filter out files from templates that have target directories
-            if (templatesWithTargetDirs && templatesWithTargetDirs.has(path.resolve(templatePath))) {
-                return [];
-            }
             return mappedFiles;
         }
         catch (error) {
@@ -777,6 +773,8 @@ export class Combino {
         const templatesWithTargetDirs = new Set();
         // Map from template path to extra ignore patterns
         const templateExtraIgnores = new Map();
+        // Map from template path to included templates with targets
+        const includedWithTargets = new Map();
         for (const template of allTemplates) {
             if (template.targetDir) {
                 templatesWithTargetDirs.add(path.resolve(template.path));
@@ -791,8 +789,19 @@ export class Combino {
                         const sourceBasename = path.basename(resolvedSourcePath);
                         ignoreSet.add(sourceBasename);
                         templateExtraIgnores.set(path.resolve(template.path), ignoreSet);
+                        // Track which templates are included with targets
+                        const includedSet = includedWithTargets.get(path.resolve(template.path)) || new Set();
+                        includedSet.add(resolvedSourcePath);
+                        includedWithTargets.set(path.resolve(template.path), includedSet);
                     }
                 }
+            }
+        }
+        // Build a set of all templates that are included with targets
+        const allIncludedWithTargets = new Set();
+        for (const includedSet of includedWithTargets.values()) {
+            for (const includedPath of includedSet) {
+                allIncludedWithTargets.add(includedPath);
             }
         }
         // Now process/merge files in order
@@ -800,9 +809,18 @@ export class Combino {
             // Merge global ignore patterns with any extra for this template
             const extraIgnores = templateExtraIgnores.get(path.resolve(template)) || new Set();
             const ignorePatterns = Array.from(new Set([...allIgnorePatterns, ...extraIgnores]));
-            const files = await this.getFilesInTemplate(template, ignorePatterns, allData, undefined // no need to filter by templatesWithTargetDirs anymore
-            );
-            for (const { sourcePath, targetPath } of files) {
+            const files = await this.getFilesInTemplate(template, ignorePatterns, allData);
+            // Filter out files that are part of templates included with targets (only when copying to root)
+            const filteredFiles = targetDir ? files : files.filter(({ sourcePath }) => {
+                // Check if this file is part of a template that's included with a target
+                for (const includedPath of allIncludedWithTargets) {
+                    if (sourcePath.startsWith(includedPath)) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+            for (const { sourcePath, targetPath } of filteredFiles) {
                 const finalTargetPath = targetDir
                     ? path.join(targetDir, targetPath)
                     : targetPath;

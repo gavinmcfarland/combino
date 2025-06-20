@@ -969,6 +969,9 @@ export class Combino {
 		const templatesWithTargetDirs = new Set<string>();
 		// Map from template path to extra ignore patterns
 		const templateExtraIgnores = new Map<string, Set<string>>();
+		// Map from template path to included templates with targets
+		const includedWithTargets = new Map<string, Set<string>>();
+
 		for (const template of allTemplates) {
 			if (template.targetDir) {
 				templatesWithTargetDirs.add(path.resolve(template.path));
@@ -983,8 +986,21 @@ export class Combino {
 						const sourceBasename = path.basename(resolvedSourcePath);
 						ignoreSet.add(sourceBasename);
 						templateExtraIgnores.set(path.resolve(template.path), ignoreSet);
+
+						// Track which templates are included with targets
+						const includedSet = includedWithTargets.get(path.resolve(template.path)) || new Set();
+						includedSet.add(resolvedSourcePath);
+						includedWithTargets.set(path.resolve(template.path), includedSet);
 					}
 				}
+			}
+		}
+
+		// Build a set of all templates that are included with targets
+		const allIncludedWithTargets = new Set<string>();
+		for (const includedSet of includedWithTargets.values()) {
+			for (const includedPath of includedSet) {
+				allIncludedWithTargets.add(includedPath);
 			}
 		}
 
@@ -1003,7 +1019,18 @@ export class Combino {
 				allData
 			);
 
-			for (const { sourcePath, targetPath } of files) {
+			// Filter out files that are part of templates included with targets (only when copying to root)
+			const filteredFiles = targetDir ? files : files.filter(({ sourcePath }) => {
+				// Check if this file is part of a template that's included with a target
+				for (const includedPath of allIncludedWithTargets) {
+					if (sourcePath.startsWith(includedPath)) {
+						return false;
+					}
+				}
+				return true;
+			});
+
+			for (const { sourcePath, targetPath } of filteredFiles) {
 				const finalTargetPath = targetDir
 					? path.join(targetDir, targetPath)
 					: targetPath;
