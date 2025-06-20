@@ -3,5 +3,11 @@
         "jsxFactory": "",
         "jsx": "react-jsx"
     },
-    "include": ["src/**/*.tsx"]
+    "references": [
+        {
+            "$key": "path",
+            "path": "./tsconfig.ui.json",
+            "include": ["src/**/*.tsx"]
+        }
+    ]
 }

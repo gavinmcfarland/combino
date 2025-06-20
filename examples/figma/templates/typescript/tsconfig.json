@@ -1,0 +1,14 @@
+{
+    "references": [
+        {
+            "$key": "path",
+            "path": "./tsconfig.main.json",
+            "include": ["src/main/**/*.ts"]
+        },
+        {
+            "$key": "path",
+            "path": "./tsconfig.ui.json",
+            "include": ["src/ui/**/*.ts"]
+        }
+    ]
+}

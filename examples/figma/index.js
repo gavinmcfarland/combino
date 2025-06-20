@@ -13,6 +13,16 @@ function stripAnsi(str) {
 	return str.replace(/\x1B\[\d+m/g, '');
 }
 
+// Helper function to clear directory if it exists
+async function clearDirectory(dirPath) {
+	try {
+		await fs.rm(dirPath, { recursive: true, force: true });
+		console.log(chalk.yellow(`Cleared existing directory: ${dirPath}`));
+	} catch (error) {
+		// Directory doesn't exist, which is fine
+	}
+}
+
 async function getFrameworkChoices() {
 	const frameworksDir = path.join(__dirname, 'templates/frameworks');
 	const choices = [];
@@ -84,7 +94,6 @@ async function getExampleChoices(type) {
 async function generateWebFramework() {
 	const combino = new Combino();
 
-
 	// Framework selection
 	const frameworkChoices = await getFrameworkChoices();
 	const frameworkPrompt = new Select({
@@ -144,10 +153,12 @@ async function generateWebFramework() {
 
 	const name = await namePrompt.run();
 
+	// Clear the specific output directory if it exists
+	const outputDir = path.join(__dirname, `output/${name}`);
+	await clearDirectory(outputDir);
+
 	// Prepare template paths based on user choices
 	const templates = [];
-
-
 
 	// Add example template
 	templates.push(path.join(__dirname, `templates/examples/${type}/${example}`));
@@ -160,7 +171,7 @@ async function generateWebFramework() {
 
 	// Generate the project
 	await combino.combine({
-		outputDir: path.join(__dirname, `output/${name}`),
+		outputDir,
 		templates,
 		data: {
 			framework,
