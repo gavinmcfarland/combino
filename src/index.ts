@@ -449,8 +449,7 @@ export class Combino {
 	private async getFilesInTemplate(
 		templatePath: string,
 		ignorePatterns: string[],
-		data: Record<string, any>,
-		templatesWithTargetDirs?: Set<string>
+		data: Record<string, any>
 	): Promise<{ sourcePath: string; targetPath: string }[]> {
 		try {
 			// Log the data being used for file processing
@@ -551,11 +550,6 @@ export class Combino {
 				// console.log("Mapped file:", result);
 				return result;
 			});
-
-			// Filter out files from templates that have target directories
-			if (templatesWithTargetDirs && templatesWithTargetDirs.has(path.resolve(templatePath))) {
-				return [];
-			}
 
 			return mappedFiles;
 		} catch (error) {
@@ -1006,8 +1000,7 @@ export class Combino {
 			const files = await this.getFilesInTemplate(
 				template,
 				ignorePatterns,
-				allData,
-				undefined // no need to filter by templatesWithTargetDirs anymore
+				allData
 			);
 
 			for (const { sourcePath, targetPath } of files) {
