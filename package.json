@@ -19,8 +19,8 @@
     "scripts": {
         "build": "tsc",
         "build:watch": "tsc --watch",
-        "test": "vitest",
-        "test:run": "vitest run",
+        "test:watch": "vitest",
+        "test": "vitest run",
         "test:ui": "vitest --ui",
         "lint": "eslint src/**/*.ts",
         "start": "node dist/cli.js",
