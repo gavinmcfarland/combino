@@ -13,7 +13,7 @@ export interface MergeConfig {
 }
 
 export interface TemplateConfig {
-	ignore?: string[];
+	exclude?: string[];
 	data?: Record<string, any>;
 	merge?: Record<string, Record<string, any>>;
 	extend?: string[];

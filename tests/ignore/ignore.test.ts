@@ -6,10 +6,10 @@ import { Combino } from "../../src/index.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-describe("Ignore Test Suite", () => {
+describe("Exclude Test Suite", () => {
 	const testDir = __dirname;
 	const inputDirs = ["base", "typescript"].map((dir) =>
-		join(testDir, "input", dir)
+		join(testDir, "input", dir),
 	);
 	const outputDir = join(testDir, "output");
 	const expectedDir = join(testDir, "expected");
@@ -29,14 +29,14 @@ describe("Ignore Test Suite", () => {
 		});
 	});
 
-	describe("File ignoring", () => {
-		it("should ignore files specified in .combino", () => {
+	describe("File exclusion", () => {
+		it("should exclude files specified in .combino", () => {
 			// The package.json file should not be in the output because it's listed in .combino
 			const outputPath = join(outputDir, "package.json");
 			expect(() => readFileSync(outputPath, "utf-8")).toThrow();
 		});
 
-		it("should still process non-ignored files", () => {
+		it("should still process non-excluded files", () => {
 			const outputPath = join(outputDir, "README.md");
 			const expectedPath = join(expectedDir, "README.md");
 

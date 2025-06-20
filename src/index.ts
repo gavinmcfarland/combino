@@ -19,7 +19,7 @@ import prettier from "prettier";
 import prettierPluginSvelte from "prettier-plugin-svelte";
 
 interface CombinoConfig {
-	ignore?: string[];
+	exclude?: string[];
 	data?: Record<string, any>;
 	merge?: Record<string, Record<string, any>>;
 	include?: Array<{ source: string; target?: string }>;
@@ -299,9 +299,9 @@ export class Combino {
 
 			const config: CombinoConfig = {};
 
-			// Extract ignore section - handle as a list of values
-			if (parsedConfig.ignore) {
-				config.ignore = Object.keys(parsedConfig.ignore);
+			// Extract exclude section - handle as a list of values
+			if (parsedConfig.exclude) {
+				config.exclude = Object.keys(parsedConfig.exclude);
 			}
 
 			// Extract data section and structure it properly
@@ -861,8 +861,8 @@ export class Combino {
 			if (templateConfig.data) {
 				Object.assign(allData, templateConfig.data);
 			}
-			if (templateConfig.ignore) {
-				templateConfig.ignore.forEach((pattern) =>
+			if (templateConfig.exclude) {
+				templateConfig.exclude.forEach((pattern) =>
 					allIgnorePatterns.add(pattern)
 				);
 			}

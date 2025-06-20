@@ -256,9 +256,9 @@ export class Combino {
             // });
             const parsedConfig = ini.parse(processedContent);
             const config = {};
-            // Extract ignore section - handle as a list of values
-            if (parsedConfig.ignore) {
-                config.ignore = Object.keys(parsedConfig.ignore);
+            // Extract exclude section - handle as a list of values
+            if (parsedConfig.exclude) {
+                config.exclude = Object.keys(parsedConfig.exclude);
             }
             // Extract data section and structure it properly
             if (parsedConfig.data) {
@@ -685,8 +685,8 @@ export class Combino {
             if (templateConfig.data) {
                 Object.assign(allData, templateConfig.data);
             }
-            if (templateConfig.ignore) {
-                templateConfig.ignore.forEach((pattern) => allIgnorePatterns.add(pattern));
+            if (templateConfig.exclude) {
+                templateConfig.exclude.forEach((pattern) => allIgnorePatterns.add(pattern));
             }
             // Add this template to the sorted list
             sortedTemplates.push({

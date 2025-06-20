@@ -1,2 +1,2 @@
-[ignore]
+[exclude]
 package.json
