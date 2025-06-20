@@ -57,10 +57,10 @@ function parseMergeSections(configText) {
     }
     return merge;
 }
-// Helper to parse [extend] section from ini-like config text
-function parseExtendSection(configText) {
-    const extend = [];
-    const sectionRegex = /^\[extend\]$/gm;
+// Helper to parse [include] section from ini-like config text
+function parseIncludeSection(configText) {
+    const include = [];
+    const sectionRegex = /^\[include\]$/gm;
     let match;
     while ((match = sectionRegex.exec(configText))) {
         const start = match.index + match[0].length;
@@ -70,11 +70,19 @@ function parseExtendSection(configText) {
         })();
         const body = configText.slice(start, end).trim();
         const lines = body.split(/\r?\n/).filter(Boolean);
-        extend.push(...lines);
+        for (const line of lines) {
+            const [source, target] = line.split("=").map((s) => s.trim());
+            if (source) {
+                include.push({ source, target });
+            }
+        }
     }
-    return extend;
+    return include;
 }
 export class Combino {
+    constructor() {
+        this.data = {};
+    }
     async readFile(filePath) {
         const content = await fs.readFile(filePath, "utf-8");
         const { data, content: fileContent } = matter(content);
@@ -140,7 +148,17 @@ export class Combino {
         console.log("Reading config from:", configPath);
         try {
             const content = await fs.readFile(configPath, "utf-8");
-            const parsedConfig = ini.parse(content);
+            // Process the content with EJS first
+            const processedContent = await this.processTemplate(content, {
+                framework: "react", // Default value, can be overridden by data
+                ...this.data, // Include any existing data
+            });
+            console.log("Processed .combino content:", processedContent);
+            console.log("Data used for EJS processing:", {
+                framework: "react",
+                ...this.data,
+            });
+            const parsedConfig = ini.parse(processedContent);
             const config = {};
             // Extract ignore section - handle as a list of values
             if (parsedConfig.ignore) {
@@ -174,13 +192,14 @@ export class Combino {
                 });
             }
             // Manually parse [merge:...] sections
-            config.merge = parseMergeSections(content);
+            config.merge = parseMergeSections(processedContent);
             // Also support [merge] catch-all section from ini
             if (parsedConfig.merge && typeof parsedConfig.merge === "object") {
                 config.merge = { ...config.merge, "*": parsedConfig.merge };
             }
-            // Parse [extend] section
-            config.extend = parseExtendSection(content);
+            // Parse [include] section
+            config.include = parseIncludeSection(processedContent);
+            console.log("Parsed include config:", config.include);
             return config;
         }
         catch (error) {
@@ -466,38 +485,24 @@ export class Combino {
     }
     async combine(options) {
         const { outputDir, templates, data: externalData = {}, config, } = options;
-        // Get the directory of the calling script
+        this.data = { ...externalData };
         const callerDir = this.getCallerFileLocation();
-        // console.log("Caller directory:", callerDir);
-        // Resolve paths relative to the caller's directory
         const resolvedOutputDir = path.resolve(callerDir, outputDir);
         const resolvedTemplates = templates.map((template) => path.resolve(callerDir, template));
-        // Check if all template directories exist
         for (const template of resolvedTemplates) {
             if (!(await fileExists(template))) {
                 console.warn(`Warning: Template directory not found: ${template}`);
             }
         }
-        // console.log("Starting combine with options:", {
-        // 	outputDir: resolvedOutputDir,
-        // 	templates: resolvedTemplates,
-        // 	externalData,
-        // 	config,
-        // });
-        // Create target directory if it doesn't exist
         await fs.mkdir(resolvedOutputDir, { recursive: true });
-        // First, collect ignore patterns and data from all templates
         const allIgnorePatterns = new Set([
             "node_modules/**",
             ".combino",
         ]);
-        const allData = { ...externalData }; // Start with external data
-        const templateConfigs = []; // Store all template configs
-        // Load config if specified
+        const allData = { ...externalData };
         if (typeof config === "string" && (await fileExists(config))) {
             const configPath = path.resolve(callerDir, config);
             const loadedConfig = await this.readConfigFile(configPath);
-            // console.log("Loaded config from file:", loadedConfig);
             if (loadedConfig.data) {
                 Object.assign(allData, loadedConfig.data);
             }
@@ -506,74 +511,66 @@ export class Combino {
             }
         }
         else if (typeof config === "object" && config !== null) {
-            // Handle config object directly
             if (config.data) {
                 Object.assign(allData, config.data);
             }
         }
-        // Collect all template configs first
-        for (const template of resolvedTemplates) {
-            const config = await this.readCombinoConfig(template);
-            // console.log("Loaded template config for", template, ":", config);
-            templateConfigs.push(config);
-            if (config.ignore) {
-                config.ignore.forEach((pattern) => allIgnorePatterns.add(pattern));
+        // Robust recursive collection of all templates and their includes
+        const allTemplates = [];
+        const processedTemplates = new Set();
+        const collectTemplates = async (templatePath, targetDir) => {
+            const resolved = path.resolve(templatePath);
+            if (processedTemplates.has(resolved)) {
+                return;
             }
-            if (config.data) {
-                Object.assign(allData, config.data); // Merge config data, allowing external data to override
-            }
-            // Process extended templates
-            if (config.extend) {
-                for (const extendPath of config.extend) {
-                    const resolvedExtendPath = path.resolve(template, extendPath);
-                    if (await fileExists(resolvedExtendPath)) {
-                        const extendConfig = await this.readCombinoConfig(resolvedExtendPath);
-                        templateConfigs.push(extendConfig);
-                        if (extendConfig.ignore) {
-                            extendConfig.ignore.forEach((pattern) => allIgnorePatterns.add(pattern));
-                        }
-                        if (extendConfig.data) {
-                            Object.assign(allData, extendConfig.data);
-                        }
+            processedTemplates.add(resolved);
+            const templateConfig = await this.readCombinoConfig(resolved);
+            // Recursively collect includes first (lowest priority)
+            if (templateConfig.include) {
+                for (const { source, target } of templateConfig.include) {
+                    const resolvedIncludePath = path.resolve(resolved, source);
+                    if (await fileExists(resolvedIncludePath)) {
+                        await collectTemplates(resolvedIncludePath, target);
                     }
                     else {
-                        console.warn(`Warning: Extended template not found: ${resolvedExtendPath}`);
+                        console.warn(`Warning: Included template not found: ${resolvedIncludePath}`);
                     }
                 }
             }
+            // Add template data and ignore patterns
+            if (templateConfig.data) {
+                Object.assign(allData, templateConfig.data);
+            }
+            if (templateConfig.ignore) {
+                templateConfig.ignore.forEach((pattern) => allIgnorePatterns.add(pattern));
+            }
+            // Add this template after its includes (higher priority)
+            allTemplates.push({
+                path: resolved,
+                targetDir,
+                config: templateConfig,
+            });
+        };
+        // Start collection from initial templates
+        for (const template of resolvedTemplates) {
+            await collectTemplates(template);
         }
-        // First, copy all files from the first template
-        const firstTemplate = resolvedTemplates[0];
-        const firstTemplateFiles = await this.getFilesInTemplate(firstTemplate, Array.from(allIgnorePatterns), allData);
-        for (const { sourcePath, targetPath } of firstTemplateFiles) {
-            const fullTargetPath = path.join(resolvedOutputDir, targetPath);
-            await fs.mkdir(path.dirname(fullTargetPath), { recursive: true });
-            // Read and process the source file with EJS
-            const sourceContent = await this.readFile(sourcePath);
-            // Merge file's front matter data with template data
-            const fileData = {
-                ...allData,
-                ...(sourceContent.config?.data
-                    ? sourceContent.config.data
-                    : {}),
-            };
-            const processedContent = await this.processTemplate(sourceContent.content, fileData);
-            await fs.writeFile(fullTargetPath, processedContent);
-        }
-        // Then merge files from subsequent templates
-        for (let i = 1; i < resolvedTemplates.length; i++) {
-            const template = resolvedTemplates[i];
-            const templateConfig = templateConfigs[i];
+        console.log("Ordered list of templates to process:");
+        allTemplates.forEach((tpl, idx) => {
+            console.log(`${idx + 1}: ${tpl.path}${tpl.targetDir ? ` -> ${tpl.targetDir}` : ""}`);
+        });
+        // Now process/merge files in order
+        for (const { path: template, targetDir, config: templateConfig, } of allTemplates) {
             const files = await this.getFilesInTemplate(template, Array.from(allIgnorePatterns), allData);
             for (const { sourcePath, targetPath } of files) {
-                const fullTargetPath = path.join(resolvedOutputDir, targetPath);
-                // Create target directory if it doesn't exist
+                const finalTargetPath = targetDir
+                    ? path.join(targetDir, targetPath)
+                    : targetPath;
+                const fullTargetPath = path.join(resolvedOutputDir, finalTargetPath);
                 await fs.mkdir(path.dirname(fullTargetPath), {
                     recursive: true,
                 });
-                // Read source file
                 const sourceContent = await this.readFile(sourcePath);
-                // Merge template config with source file config
                 const mergedConfig = {
                     ...templateConfig,
                     merge: {
@@ -581,11 +578,9 @@ export class Combino {
                         ...sourceContent.config?.merge,
                     },
                 };
-                // Get merge strategy from template config
                 const strategy = this.getMergeStrategy(targetPath, mergedConfig);
                 try {
                     const targetContent = await this.readFile(fullTargetPath);
-                    // Merge file's front matter data with template data
                     const fileData = {
                         ...allData,
                         ...(sourceContent.config?.data
@@ -596,8 +591,6 @@ export class Combino {
                     await fs.writeFile(fullTargetPath, mergedContent);
                 }
                 catch (error) {
-                    // If target doesn't exist, just copy and process the source
-                    // Merge file's front matter data with template data
                     const fileData = {
                         ...allData,
                         ...(sourceContent.config?.data

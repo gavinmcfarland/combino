@@ -25,12 +25,13 @@
             "include": ["src/main/**/*.ts", "src/main/**/*.js"]
         },
         {
+            "extends": "@tsconfig/svelte/tsconfig.json",
             "path": "./tsconfig.ui.json",
             "compilerOptions": {
                 "composite": true,
                 "outDir": "dist/ui"
             },
-            "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte"]
+            "include": ["src/**/*.ts", "src/**/*.js"]
         }
     ]
 }

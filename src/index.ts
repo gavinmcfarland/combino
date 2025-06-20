@@ -183,6 +183,12 @@ export class Combino {
 				...this.data, // Include any existing data
 			});
 
+			console.log("Processed .combino content:", processedContent);
+			console.log("Data used for EJS processing:", {
+				framework: "react",
+				...this.data,
+			});
+
 			const parsedConfig = ini.parse(processedContent);
 
 			const config: CombinoConfig = {};
@@ -228,6 +234,8 @@ export class Combino {
 
 			// Parse [include] section
 			config.include = parseIncludeSection(processedContent);
+
+			console.log("Parsed include config:", config.include);
 
 			return config;
 		} catch (error) {
@@ -609,19 +617,13 @@ export class Combino {
 			config,
 		} = options;
 
-		// Set the data context for EJS processing
 		this.data = { ...externalData };
-
-		// Get the directory of the calling script
 		const callerDir = this.getCallerFileLocation();
-
-		// Resolve paths relative to the caller's directory
 		const resolvedOutputDir = path.resolve(callerDir, outputDir);
 		const resolvedTemplates = templates.map((template) =>
 			path.resolve(callerDir, template)
 		);
 
-		// Check if all template directories exist
 		for (const template of resolvedTemplates) {
 			if (!(await fileExists(template))) {
 				console.warn(
@@ -630,19 +632,14 @@ export class Combino {
 			}
 		}
 
-		// Create target directory if it doesn't exist
 		await fs.mkdir(resolvedOutputDir, { recursive: true });
 
-		// First, collect ignore patterns and data from all templates
 		const allIgnorePatterns = new Set<string>([
 			"node_modules/**",
 			".combino",
 		]);
-		const allData: Record<string, any> = { ...externalData }; // Start with external data
-		const templateConfigs: CombinoConfig[] = []; // Store all template configs
-		const allTemplates: Array<{ path: string; targetDir?: string }> = []; // Store all templates including included ones
+		const allData: Record<string, any> = { ...externalData };
 
-		// Load config if specified
 		if (typeof config === "string" && (await fileExists(config))) {
 			const configPath = path.resolve(callerDir, config);
 			const loadedConfig = await this.readConfigFile(configPath);
@@ -653,47 +650,37 @@ export class Combino {
 				options.config = loadedConfig.merge;
 			}
 		} else if (typeof config === "object" && config !== null) {
-			// Handle config object directly
 			if (config.data) {
 				Object.assign(allData, config.data);
 			}
 		}
 
-		// First pass: collect all template configs and included templates
-		for (const template of resolvedTemplates) {
-			const config = await this.readCombinoConfig(template);
-			templateConfigs.push(config);
-			if (config.ignore) {
-				config.ignore.forEach((pattern) =>
-					allIgnorePatterns.add(pattern)
-				);
-			}
-			if (config.data) {
-				Object.assign(allData, config.data);
-			}
+		// Robust recursive collection of all templates and their includes
+		const allTemplates: Array<{
+			path: string;
+			targetDir?: string;
+			config: CombinoConfig;
+		}> = [];
+		const processedTemplates = new Set<string>();
 
-			// Process included templates
-			if (config.include) {
-				for (const { source, target } of config.include) {
-					const resolvedIncludePath = path.resolve(template, source);
+		const collectTemplates = async (
+			templatePath: string,
+			targetDir?: string
+		) => {
+			const resolved = path.resolve(templatePath);
+			if (processedTemplates.has(resolved)) {
+				return;
+			}
+			processedTemplates.add(resolved);
+
+			const templateConfig = await this.readCombinoConfig(resolved);
+
+			// Recursively collect includes first (lowest priority)
+			if (templateConfig.include) {
+				for (const { source, target } of templateConfig.include) {
+					const resolvedIncludePath = path.resolve(resolved, source);
 					if (await fileExists(resolvedIncludePath)) {
-						const includeConfig = await this.readCombinoConfig(
-							resolvedIncludePath
-						);
-						templateConfigs.push(includeConfig);
-						if (includeConfig.ignore) {
-							includeConfig.ignore.forEach((pattern) =>
-								allIgnorePatterns.add(pattern)
-							);
-						}
-						if (includeConfig.data) {
-							Object.assign(allData, includeConfig.data);
-						}
-						// Add included template to the list with its target directory
-						allTemplates.push({
-							path: resolvedIncludePath,
-							targetDir: target,
-						});
+						await collectTemplates(resolvedIncludePath, target);
 					} else {
 						console.warn(
 							`Warning: Included template not found: ${resolvedIncludePath}`
@@ -701,17 +688,45 @@ export class Combino {
 					}
 				}
 			}
+
+			// Add template data and ignore patterns
+			if (templateConfig.data) {
+				Object.assign(allData, templateConfig.data);
+			}
+			if (templateConfig.ignore) {
+				templateConfig.ignore.forEach((pattern) =>
+					allIgnorePatterns.add(pattern)
+				);
+			}
+
+			// Add this template after its includes (higher priority)
+			allTemplates.push({
+				path: resolved,
+				targetDir,
+				config: templateConfig,
+			});
+		};
+
+		// Start collection from initial templates
+		for (const template of resolvedTemplates) {
+			await collectTemplates(template);
 		}
 
-		// Add main templates after included ones (so they override included templates)
-		allTemplates.push(
-			...resolvedTemplates.map((path) => ({ path, targetDir: undefined }))
-		);
+		console.log("Ordered list of templates to process:");
+		allTemplates.forEach((tpl, idx) => {
+			console.log(
+				`${idx + 1}: ${tpl.path}${
+					tpl.targetDir ? ` -> ${tpl.targetDir}` : ""
+				}`
+			);
+		});
 
-		// Process all templates in order
-		for (let i = 0; i < allTemplates.length; i++) {
-			const { path: template, targetDir } = allTemplates[i];
-			const templateConfig = templateConfigs[i];
+		// Now process/merge files in order
+		for (const {
+			path: template,
+			targetDir,
+			config: templateConfig,
+		} of allTemplates) {
 			const files = await this.getFilesInTemplate(
 				template,
 				Array.from(allIgnorePatterns),
@@ -719,7 +734,6 @@ export class Combino {
 			);
 
 			for (const { sourcePath, targetPath } of files) {
-				// If this template has a target directory, prepend it to the target path
 				const finalTargetPath = targetDir
 					? path.join(targetDir, targetPath)
 					: targetPath;
@@ -728,14 +742,11 @@ export class Combino {
 					finalTargetPath
 				);
 
-				// Create target directory if it doesn't exist
 				await fs.mkdir(path.dirname(fullTargetPath), {
 					recursive: true,
 				});
 
-				// Read source file
 				const sourceContent = await this.readFile(sourcePath);
-				// Merge template config with source file config
 				const mergedConfig = {
 					...templateConfig,
 					merge: {
@@ -744,7 +755,6 @@ export class Combino {
 					},
 				};
 
-				// Get merge strategy from template config
 				const strategy = this.getMergeStrategy(
 					targetPath,
 					mergedConfig
@@ -752,7 +762,6 @@ export class Combino {
 
 				try {
 					const targetContent = await this.readFile(fullTargetPath);
-					// Merge file's front matter data with template data
 					const fileData = {
 						...allData,
 						...(sourceContent.config?.data
@@ -767,8 +776,6 @@ export class Combino {
 					);
 					await fs.writeFile(fullTargetPath, mergedContent);
 				} catch (error) {
-					// If target doesn't exist, just copy and process the source
-					// Merge file's front matter data with template data
 					const fileData = {
 						...allData,
 						...(sourceContent.config?.data

@@ -1,5 +1,6 @@
 import { TemplateOptions } from "./types.js";
 export declare class Combino {
+    private data;
     private readFile;
     private readCombinoConfig;
     private readConfigFile;

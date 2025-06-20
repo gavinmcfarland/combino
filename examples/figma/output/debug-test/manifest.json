@@ -1,6 +1,6 @@
 {
-  "id": "com.my-figma-svelte-plugin",
-  "name": "my-figma-svelte-plugin",
+  "id": "com.debug-test",
+  "name": "debug-test",
   "main": "src/main/main.ts",
   "ui": "src/ui/ui.ts",
   "editorType": [

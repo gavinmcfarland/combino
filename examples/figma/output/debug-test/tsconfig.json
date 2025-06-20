@@ -1,7 +1,38 @@
 {
+  "compilerOptions": {
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "allowJs": true,
+    "checkJs": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "typeRoots": [
+      "node_modules/@types"
+    ]
+  },
+  "files": [],
   "references": [
     {
-      "extends": "@tsconfig/svelte/tsconfig.json",
+      "path": "./tsconfig.main.json",
+      "compilerOptions": {
+        "composite": true,
+        "outDir": "dist/main",
+        "typeRoots": [
+          "node_modules/@figma",
+          "node_modules/@types"
+        ]
+      },
+      "include": [
+        "src/main/**/*.ts",
+        "src/main/**/*.js"
+      ]
+    },
+    {
       "path": "./tsconfig.ui.json",
       "compilerOptions": {
         "composite": true,
@@ -14,7 +45,21 @@
       ]
     },
     {
-      "extends": "@tsconfig/svelte/tsconfig.json",
+      "path": "./tsconfig.main.json",
+      "compilerOptions": {
+        "composite": true,
+        "outDir": "dist/main",
+        "typeRoots": [
+          "node_modules/@figma",
+          "node_modules/@types"
+        ]
+      },
+      "include": [
+        "src/main/**/*.ts",
+        "src/main/**/*.js"
+      ]
+    },
+    {
       "path": "./tsconfig.ui.json",
       "compilerOptions": {
         "composite": true,
@@ -53,22 +98,5 @@
         "src/**/*.svelte"
       ]
     }
-  ],
-  "compilerOptions": {
-    "target": "ESNext",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "allowJs": true,
-    "checkJs": true,
-    "isolatedModules": true,
-    "moduleDetection": "force",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "typeRoots": [
-      "node_modules/@types"
-    ]
-  },
-  "files": []
+  ]
 }
