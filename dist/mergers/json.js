@@ -11,7 +11,16 @@ const arrayMerge = (targetArray, sourceArray) => {
     const allHavePath = allItems.every((item) => typeof item === "object" && item !== null && "path" in item);
     if (allHavePath) {
         const mergedMap = new Map();
-        for (const item of allItems) {
+        const targetKeys = new Set();
+        // First, add all target items to establish the base order
+        for (const item of targetArray) {
+            const { $key, ...rest } = item;
+            const keyValue = item.path;
+            mergedMap.set(keyValue, rest);
+            targetKeys.add(keyValue);
+        }
+        // Then merge with source items
+        for (const item of sourceArray) {
             const { $key, ...rest } = item;
             const keyValue = item.path;
             if (mergedMap.has(keyValue)) {
@@ -27,11 +36,60 @@ const arrayMerge = (targetArray, sourceArray) => {
                 mergedMap.set(keyValue, rest);
             }
         }
-        return Array.from(mergedMap.values());
+        // Return items in the order they appear in targetArray, then any new items
+        const result = [];
+        // First, add items in the order they appear in targetArray
+        for (const item of targetArray) {
+            const keyValue = item.path;
+            if (mergedMap.has(keyValue)) {
+                result.push({ path: keyValue, ...mergedMap.get(keyValue) });
+            }
+        }
+        // Then add any new items from sourceArray that weren't in targetArray
+        for (const item of sourceArray) {
+            const keyValue = item.path;
+            if (!targetKeys.has(keyValue)) {
+                result.push({ path: keyValue, ...mergedMap.get(keyValue) });
+            }
+        }
+        return result;
     }
     // Otherwise, use $key as a meta field to indicate the key field for that object
     const mergedMap = new Map();
-    for (const item of allItems) {
+    const targetKeys = new Set();
+    // First, add all target items to establish the base order
+    for (const item of targetArray) {
+        if (typeof item === "object" && item !== null && "$key" in item) {
+            const keyField = item.$key;
+            const keyValue = item[keyField];
+            const { $key, ...rest } = item;
+            mergedMap.set(keyValue, rest);
+            targetKeys.add(keyValue);
+        }
+        else if (typeof item === "object" && item !== null) {
+            // Try to use 'name' or 'id' as fallback
+            const keyField = "name" in item ? "name" : "id" in item ? "id" : undefined;
+            if (keyField) {
+                const keyValue = item[keyField];
+                mergedMap.set(keyValue, item);
+                targetKeys.add(keyValue);
+            }
+            else {
+                // No key, deduplicate by JSON string
+                const str = JSON.stringify(item);
+                mergedMap.set(str, item);
+                targetKeys.add(str);
+            }
+        }
+        else {
+            // Non-object, deduplicate by value
+            const str = JSON.stringify(item);
+            mergedMap.set(str, item);
+            targetKeys.add(str);
+        }
+    }
+    // Then merge with source items
+    for (const item of sourceArray) {
         if (typeof item === "object" && item !== null && "$key" in item) {
             const keyField = item.$key;
             const keyValue = item[keyField];
@@ -83,7 +141,73 @@ const arrayMerge = (targetArray, sourceArray) => {
             }
         }
     }
-    return Array.from(mergedMap.values());
+    // Return items in the order they appear in targetArray, then any new items
+    const result = [];
+    // First, add items in the order they appear in targetArray
+    for (const item of targetArray) {
+        let keyValue;
+        if (typeof item === "object" && item !== null && "$key" in item) {
+            const keyField = item.$key;
+            keyValue = item[keyField];
+        }
+        else if (typeof item === "object" && item !== null) {
+            const keyField = "name" in item ? "name" : "id" in item ? "id" : undefined;
+            if (keyField) {
+                keyValue = item[keyField];
+            }
+            else {
+                keyValue = JSON.stringify(item);
+            }
+        }
+        else {
+            keyValue = JSON.stringify(item);
+        }
+        if (mergedMap.has(keyValue)) {
+            if (typeof item === "object" && item !== null && "$key" in item) {
+                const keyField = item.$key;
+                result.push({
+                    [keyField]: keyValue,
+                    ...mergedMap.get(keyValue),
+                });
+            }
+            else {
+                result.push(mergedMap.get(keyValue));
+            }
+        }
+    }
+    // Then add any new items from sourceArray that weren't in targetArray
+    for (const item of sourceArray) {
+        let keyValue;
+        if (typeof item === "object" && item !== null && "$key" in item) {
+            const keyField = item.$key;
+            keyValue = item[keyField];
+        }
+        else if (typeof item === "object" && item !== null) {
+            const keyField = "name" in item ? "name" : "id" in item ? "id" : undefined;
+            if (keyField) {
+                keyValue = item[keyField];
+            }
+            else {
+                keyValue = JSON.stringify(item);
+            }
+        }
+        else {
+            keyValue = JSON.stringify(item);
+        }
+        if (!targetKeys.has(keyValue)) {
+            if (typeof item === "object" && item !== null && "$key" in item) {
+                const keyField = item.$key;
+                result.push({
+                    [keyField]: keyValue,
+                    ...mergedMap.get(keyValue),
+                });
+            }
+            else {
+                result.push(mergedMap.get(keyValue));
+            }
+        }
+    }
+    return result;
 };
 // Custom merge function that ensures our array merge is used consistently
 const customMerge = (target, source) => {
