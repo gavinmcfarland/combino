@@ -1,6 +1,6 @@
 {
     "name": "combino",
-    "version": "0.1.0-alpha.1",
+    "version": "0.1.0",
     "type": "module",
     "description": "A flexible scaffolding tool for intelligently merging template folders",
     "main": "./dist/index.js",

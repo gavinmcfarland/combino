@@ -74,7 +74,7 @@ This single command handles everything: testing, building, versioning, and publi
 
 ### Notes
 
-- The project is configured with `"access": "restricted"` in the changeset config, meaning it will publish as a scoped package if applicable
+- The project is configured with `"access": "public"` in the changeset config for the unscoped package
 - Changesets automatically generate changelog entries based on your descriptions
 - The `version` script updates package.json version numbers and creates git tags
 - The `release` script publishes to npm and pushes git tags
