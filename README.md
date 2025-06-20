@@ -13,7 +13,7 @@ Combino is a composable scaffolding engine that lets you build fully customised 
 
 ## Example
 
-In this example, we'll look at how we can combine multiple template folders to scaffold dynamic based on the framework.
+In this example, we'll look at how we can combine multiple template folders to scaffold a dynamic project based on a framework type.
 
 We start with out template folders and files:
 
