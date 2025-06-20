@@ -351,11 +351,11 @@ export class Combino {
 
 	private async readConfigFile(
 		configPath: string
-	): Promise<{ merge?: any; data?: Record<string, any> }> {
+	): Promise<CombinoConfig> {
 		try {
 			const content = await fs.readFile(configPath, "utf-8");
 			const parsedConfig = ini.parse(content);
-			const config: { merge?: any; data?: Record<string, any> } = {};
+			const config: CombinoConfig = {};
 
 			// Extract data section and structure it properly
 			if (parsedConfig.data) {
@@ -371,6 +371,9 @@ export class Combino {
 					current[keys[keys.length - 1]] = value;
 				});
 			}
+
+			// Parse include section
+			config.include = parseIncludeSection(content);
 
 			// Manually parse [merge:...] sections
 			config.merge = parseMergeSections(content);
@@ -747,17 +750,17 @@ export class Combino {
 			".combino",
 		]);
 		const allData: Record<string, any> = { ...externalData };
+		let globalConfig: CombinoConfig = {};
 
 		if (typeof config === "string" && (await fileExists(config))) {
 			const configPath = path.resolve(callerDir, config);
 			const loadedConfig = await this.readConfigFile(configPath);
+			globalConfig = loadedConfig;
 			if (loadedConfig.data) {
 				Object.assign(allData, loadedConfig.data);
 			}
-			if (loadedConfig.merge) {
-				options.config = loadedConfig.merge;
-			}
 		} else if (typeof config === "object" && config !== null) {
+			globalConfig = config;
 			if (config.data) {
 				Object.assign(allData, config.data);
 			}
@@ -1052,6 +1055,7 @@ export class Combino {
 				const mergedConfig = {
 					...templateConfig,
 					merge: {
+						...globalConfig.merge,
 						...templateConfig.merge,
 						...sourceContent.config?.merge,
 					},

@@ -16,7 +16,6 @@ program
     .action(async (templates, options) => {
     try {
         const combino = new Combino();
-        const config = {};
         let templateData = {};
         // Load config file if specified
         if (options.config) {
@@ -40,10 +39,6 @@ program
                     current[keys[keys.length - 1]] = value;
                 });
             }
-            // Extract merge config
-            if (parsedConfig.merge) {
-                config.merge = parsedConfig.merge;
-            }
         }
         // Merge command line data with config data
         if (options.data) {
@@ -60,7 +55,7 @@ program
         const templateOptions = {
             outputDir: options.output,
             templates: templates,
-            config: config.merge,
+            config: options.config || undefined,
             data: templateData,
         };
         await combino.combine(templateOptions);

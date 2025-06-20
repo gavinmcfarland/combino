@@ -213,11 +213,20 @@ Use EJS syntax `<%= %>` inside file contents.
 <%= plugin.description %>
 ```
 
-## Configuration
+## Config
+
+Combino supports a unified configuration structure that works for both `.combino` files and programmatic usage. The configuration includes:
+
+- `include`: Compose templates from other files and folders by specifying the path names to include.
+- `exclude`: Exclude certain files or folders from being composed from.
+- `data`: Pass custom data to template folders and files.
+- `merge`: Control how files are merged with per-pattern strategy configuration.
+
+### .combino File Format
 
 Use a `.combino` config file to customise how templates are combined.
 
-### [include]
+#### [include]
 
 Compose templates from other files and folders by specifying the path names to include.
 
@@ -227,11 +236,11 @@ Compose templates from other files and folders by specifying the path names to i
 ../<% framework %>/components = src/components
 ```
 
-### [merge]
+#### [merge]
 
 Control how files are merged with per-pattern strategy configuration.
 
-#### Merge Strategies
+##### Merge Strategies
 
 ```ini
 [merge]
@@ -244,20 +253,7 @@ strategy = deep
 strategy = replace
 ```
 
-#### Conflict Management
-
-```ini
-[merge:*.json]
-conflict = skip | error | rename
-```
-
-If using `conflict = rename`, Combino will auto-rename files to avoid overwriting:
-
-```bash
-logo.png → logo-1.png
-```
-
-### [data]
+#### [data]
 
 Pass custom data to template folders and files.
 
@@ -268,13 +264,36 @@ plugin.description = "Take figma plugins to the next level"
 plugin.version = 1.0.0
 ```
 
-## Combining Programmatically
+### Programmatic Configuration
+
+The same configuration structure can be used programmatically:
 
 ```js
-const combino = new Combino();
+const config = {
+  // Template composition - specify additional templates to include
+  include: [
+    { source: '../base' },
+    { source: '../react/components', target: 'src/components' }
+  ],
+  // Data to pass to templates for conditional logic and templating
+  data: {
+    project: {
+      name: "My Awesome Project",
+      description: "A sample project generated with Combino"
+    }
+  },
+  // Merge strategy configuration for different file patterns
+  merge: {
+    "*": { strategy: "deep" },
+    "*.json": { strategy: "deep" },
+    "*.md": { strategy: "replace" }
+  }
+};
+
 await combino.combine({
-    outputDir: "output",
-    templates: ["templates/base", "templates/typescript"],
+  templates: ["templates/base", "templates/typescript"],
+  outputDir: "output",
+  config
 });
 ```
 

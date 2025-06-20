@@ -12,6 +12,22 @@ export interface MergeConfig {
 	data?: Record<string, any>;
 }
 
+export interface IncludeConfig {
+	source: string;
+	target?: string;
+}
+
+export interface CombinoConfig {
+	/** Template composition - specify additional templates to include */
+	include?: IncludeConfig[];
+	/** Files or folders to exclude from processing */
+	exclude?: string[];
+	/** Data to pass to templates for conditional logic and templating */
+	data?: Record<string, any>;
+	/** Merge strategy configuration for different file patterns */
+	merge?: Record<string, Record<string, any>>;
+}
+
 export interface TemplateConfig {
 	exclude?: string[];
 	data?: Record<string, any>;
@@ -29,6 +45,7 @@ export type ConfigFile = string;
 export interface TemplateOptions {
 	outputDir: string;
 	templates: string[];
-	config?: MergeConfig | ConfigFile;
+	/** Unified configuration object or path to .combino file */
+	config?: CombinoConfig | ConfigFile;
 	data?: Record<string, any>;
 }

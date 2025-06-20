@@ -10,8 +10,14 @@ async function generateProjects() {
 	// Create a new Combino instance
 	const combino = new Combino();
 
-	// Configuration for both projects
+	// Unified configuration that matches .combino file structure
 	const config = {
+		// Template composition - specify additional templates to include
+		include: [
+			{ source: '../base' },
+			{ source: '../typescript/components', target: 'src/components' }
+		],
+		// Data to pass to templates for conditional logic and templating
 		data: {
 			project: {
 				name: "My Awesome Project",
@@ -21,8 +27,11 @@ async function generateProjects() {
 				license: "MIT"
 			}
 		},
+		// Merge strategy configuration for different file patterns
 		merge: {
-			strategy: "deep",
+			"*": {
+				strategy: "deep"
+			},
 			"*.json": {
 				strategy: "deep"
 			},

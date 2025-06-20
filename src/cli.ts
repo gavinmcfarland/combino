@@ -12,31 +12,30 @@ const program = new Command();
 program
 	.name("combino")
 	.description(
-		"Combine multiple template folders to generate custom file and folder structures"
+		"Combine multiple template folders to generate custom file and folder structures",
 	)
 	.version("0.1.0")
 	.argument(
 		"<templates...>",
-		"One or more template folders (first has lowest priority, last wins)"
+		"One or more template folders (first has lowest priority, last wins)",
 	)
 	.option(
 		"-o, --output <dir>",
 		"Output directory for the generated result",
-		"./output"
+		"./output",
 	)
 	.option(
 		"-c, --config <path>",
-		"Path to a .combino config file (INI or JSON)"
+		"Path to a .combino config file (INI or JSON)",
 	)
 	.option(
 		"--data <key=value>",
 		"Inline key-value data to use for templating, conditions, and naming",
-		collectData
+		collectData,
 	)
 	.action(async (templates: string[], options: any) => {
 		try {
 			const combino = new Combino();
-			const config: any = {};
 			let templateData: Record<string, any> = {};
 
 			// Load config file if specified
@@ -61,13 +60,8 @@ program
 								current = current[keys[i]];
 							}
 							current[keys[keys.length - 1]] = value;
-						}
+						},
 					);
-				}
-
-				// Extract merge config
-				if (parsedConfig.merge) {
-					config.merge = parsedConfig.merge;
 				}
 			}
 
@@ -87,7 +81,7 @@ program
 			const templateOptions: TemplateOptions = {
 				outputDir: options.output,
 				templates: templates,
-				config: config.merge,
+				config: options.config || undefined,
 				data: templateData,
 			};
 
@@ -106,7 +100,7 @@ program
 
 function collectData(
 	value: string,
-	previous: Record<string, any> = {}
+	previous: Record<string, any> = {},
 ): Record<string, any> {
 	// Try to parse as JSON first
 	try {
@@ -119,13 +113,13 @@ function collectData(
 		const [key, val] = value.split("=");
 		if (!key || !val) {
 			throw new Error(
-				`Invalid data format: ${value}. Expected key=value or valid JSON object`
+				`Invalid data format: ${value}. Expected key=value or valid JSON object`,
 			);
 		}
 		return { ...previous, [key]: val };
 	}
 	throw new Error(
-		`Invalid data format: ${value}. Expected key=value or valid JSON object`
+		`Invalid data format: ${value}. Expected key=value or valid JSON object`,
 	);
 }
 

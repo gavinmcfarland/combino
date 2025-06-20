@@ -321,6 +321,8 @@ export class Combino {
                     current[keys[keys.length - 1]] = value;
                 });
             }
+            // Parse include section
+            config.include = parseIncludeSection(content);
             // Manually parse [merge:...] sections
             config.merge = parseMergeSections(content);
             // Also support [merge] catch-all section from ini
@@ -602,17 +604,17 @@ export class Combino {
             ".combino",
         ]);
         const allData = { ...externalData };
+        let globalConfig = {};
         if (typeof config === "string" && (await fileExists(config))) {
             const configPath = path.resolve(callerDir, config);
             const loadedConfig = await this.readConfigFile(configPath);
+            globalConfig = loadedConfig;
             if (loadedConfig.data) {
                 Object.assign(allData, loadedConfig.data);
             }
-            if (loadedConfig.merge) {
-                options.config = loadedConfig.merge;
-            }
         }
         else if (typeof config === "object" && config !== null) {
+            globalConfig = config;
             if (config.data) {
                 Object.assign(allData, config.data);
             }
@@ -836,6 +838,7 @@ export class Combino {
                 const mergedConfig = {
                     ...templateConfig,
                     merge: {
+                        ...globalConfig.merge,
                         ...templateConfig.merge,
                         ...sourceContent.config?.merge,
                     },
