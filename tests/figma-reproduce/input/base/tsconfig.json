@@ -1,4 +1,25 @@
 {
+    "references": [
+        {
+            "$key": "./tsconfig.main.json",
+            "path": "./tsconfig.main.json",
+            "compilerOptions": {
+                "composite": true,
+                "outDir": "dist/main",
+                "typeRoots": ["node_modules/@figma", "node_modules/@types"]
+            },
+            "include": ["src/main/**/*.ts", "src/main/**/*.js"]
+        },
+        {
+            "$key": "./tsconfig.ui.json",
+            "path": "./tsconfig.ui.json",
+            "compilerOptions": {
+                "composite": true,
+                "outDir": "dist/ui"
+            },
+            "include": ["src/**/*.ts", "src/**/*.js"]
+        }
+    ],
     "compilerOptions": {
         "target": "ESNext",
         "useDefineForClassFields": true,
@@ -13,24 +34,5 @@
         "forceConsistentCasingInFileNames": true,
         "typeRoots": ["node_modules/@types"]
     },
-    "files": [],
-    "references": [
-        {
-            "path": "./tsconfig.main.json",
-            "compilerOptions": {
-                "composite": true,
-                "outDir": "dist/main",
-                "typeRoots": ["node_modules/@figma", "node_modules/@types"]
-            },
-            "include": ["src/main/**/*.ts", "src/main/**/*.js"]
-        },
-        {
-            "path": "./tsconfig.ui.json",
-            "compilerOptions": {
-                "composite": true,
-                "outDir": "dist/ui"
-            },
-            "include": ["src/**/*.ts", "src/**/*.js"]
-        }
-    ]
+    "files": []
 }

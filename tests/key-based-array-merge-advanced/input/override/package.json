@@ -1,0 +1,53 @@
+{
+    "dependencies": [
+        {
+            "$key": "name",
+            "name": "react",
+            "version": "^18.2.0",
+            "peer": true
+        },
+        {
+            "$key": "name",
+            "name": "react-dom",
+            "version": "^18.2.0"
+        }
+    ],
+    "devDependencies": [
+        {
+            "$key": "name",
+            "name": "vite",
+            "version": "^4.5.0",
+            "config": {
+                "port": 3000
+            }
+        },
+        {
+            "$key": "name",
+            "name": "@types/react",
+            "version": "^18.0.0"
+        }
+    ],
+    "configurations": [
+        {
+            "$key": "id",
+            "id": "development",
+            "features": [
+                "hot-reload",
+                "source-maps",
+                "eslint"
+            ],
+            "port": 3000
+        },
+        {
+            "$key": "id",
+            "id": "staging",
+            "env": "staging",
+            "debug": true,
+            "features": [
+                "hot-reload",
+                "source-maps",
+                "analytics"
+            ]
+        }
+    ]
+}
