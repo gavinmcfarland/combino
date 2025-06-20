@@ -22,7 +22,7 @@
                 "outDir": "dist/main",
                 "typeRoots": ["node_modules/@figma", "node_modules/@types"]
             },
-            "include": ["src/main/**/*.js"]
+            "include": ["src/main/**/*.js", "src/main/**/*.ts"]
         },
         {
             "path": "./tsconfig.ui.json",
@@ -30,7 +30,7 @@
                 "composite": true,
                 "outDir": "dist/ui"
             },
-            "include": ["src/ui/**/*.js"]
+            "include": ["src/ui/**/*.js", "src/ui/**/*.ts"]
         }
     ]
 }
