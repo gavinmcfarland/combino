@@ -8,6 +8,13 @@ import chalk from 'chalk';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Parse CLI arguments
+function parseArgs() {
+	const args = process.argv.slice(2);
+	const debug = args.includes('-d') || args.includes('--debug');
+	return { debug };
+}
+
 // Helper function to strip ANSI color codes
 function stripAnsi(str) {
 	return str.replace(/\x1B\[\d+m/g, '');
@@ -93,6 +100,7 @@ async function getExampleChoices(type) {
 
 async function generateWebFramework() {
 	const combino = new Combino();
+	const { debug } = parseArgs();
 
 	// Framework selection
 	const frameworkChoices = await getFrameworkChoices();
@@ -154,7 +162,14 @@ async function generateWebFramework() {
 	const name = await namePrompt.run();
 
 	// Clear the specific output directory if it exists
-	const outputDir = path.join(__dirname, `output/${name}`);
+	let outputDir = path.join(__dirname, `output/${name}`);
+
+	// Add debug suffix if debug flag is enabled
+	if (debug) {
+		const suffix = typescript ? '-ts' : '-js';
+		outputDir = path.join(__dirname, `output/${name}${suffix}`);
+	}
+
 	await clearDirectory(outputDir);
 
 	// Prepare template paths based on user choices
@@ -182,7 +197,7 @@ async function generateWebFramework() {
 		}
 	});
 
-	console.log(`Successfully generated ${framework} ${type} in output/${name}`);
+	console.log(`Successfully generated ${framework} ${type} in ${outputDir}`);
 }
 
 generateWebFramework().catch(console.error);
