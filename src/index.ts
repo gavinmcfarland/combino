@@ -173,7 +173,7 @@ export class Combino {
 		templatePath: string
 	): Promise<CombinoConfig> {
 		const configPath = path.join(templatePath, ".combino");
-		console.log("Reading config from:", configPath);
+		// console.log("Reading config from:", configPath);
 		try {
 			const content = await fs.readFile(configPath, "utf-8");
 
@@ -235,7 +235,7 @@ export class Combino {
 			// Parse [include] section
 			config.include = parseIncludeSection(processedContent);
 
-			console.log("Parsed include config:", config.include);
+			// console.log("Parsed include config:", config.include);
 
 			return config;
 		} catch (error) {
@@ -682,17 +682,17 @@ export class Combino {
 
 			// Collect includes as dependencies
 			if (templateConfig.include) {
-				console.log(
-					`Template ${resolved} includes:`,
-					templateConfig.include
-				);
+				// console.log(
+				// 	`Template ${resolved} includes:`,
+				// 	templateConfig.include
+				// );
 				for (const { source, target } of templateConfig.include) {
 					const resolvedIncludePath = path.resolve(resolved, source);
 					if (await fileExists(resolvedIncludePath)) {
 						dependencies.add(resolvedIncludePath);
-						console.log(
-							`  Adding dependency: ${resolvedIncludePath} -> ${resolved}`
-						);
+						// console.log(
+						// 	`  Adding dependency: ${resolvedIncludePath} -> ${resolved}`
+						// );
 						// Recursively collect dependencies of included templates
 						await collectTemplateDependencies(
 							resolvedIncludePath,
@@ -714,9 +714,9 @@ export class Combino {
 			await collectTemplateDependencies(template);
 		}
 
-		console.log("Dependency graph:");
+		// console.log("Dependency graph:");
 		for (const [template, deps] of templateDependencies.entries()) {
-			console.log(`  ${template} -> [${Array.from(deps).join(", ")}]`);
+			// console.log(`  ${template} -> [${Array.from(deps).join(", ")}]`);
 		}
 
 		// Second pass: topological sort to determine processing order
@@ -774,9 +774,9 @@ export class Combino {
 			await topologicalSort(templatePath);
 		}
 
-		console.log("Topologically sorted templates:");
+		// console.log("Topologically sorted templates:");
 		sortedTemplates.forEach((tpl, idx) => {
-			console.log(`  ${idx + 1}: ${tpl.path}`);
+			// console.log(`  ${idx + 1}: ${tpl.path}`);
 		});
 
 		// Build targetDir map from initial templates
@@ -850,13 +850,13 @@ export class Combino {
 			});
 		}
 
-		console.log("Ordered list of templates to process:");
+		// console.log("Ordered list of templates to process:");
 		allTemplates.forEach((tpl, idx) => {
-			console.log(
-				`${idx + 1}: ${tpl.path}${
-					tpl.targetDir ? ` -> ${tpl.targetDir}` : ""
-				}`
-			);
+			// console.log(
+			// 	`${idx + 1}: ${tpl.path}${
+			// 		tpl.targetDir ? ` -> ${tpl.targetDir}` : ""
+			// 	}`
+			// );
 		});
 
 		// Now process/merge files in order
@@ -885,9 +885,9 @@ export class Combino {
 				});
 
 				// Log the template and file being processed
-				console.log(
-					`[PROCESSING] Template: ${template} -> File: ${finalTargetPath}`
-				);
+				// console.log(
+				// 	`[PROCESSING] Template: ${template} -> File: ${finalTargetPath}`
+				// );
 
 				const sourceContent = await this.readFile(sourcePath);
 				const mergedConfig = {

@@ -158,8 +158,6 @@ async function generateWebFramework() {
 		templates.push(path.join(__dirname, "templates/typescript"));
 	}
 
-	console.log('templates', templates);
-
 	// Generate the project
 	await combino.combine({
 		outputDir: path.join(__dirname, `output/${name}`),
