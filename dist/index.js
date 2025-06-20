@@ -381,7 +381,7 @@ export class Combino {
             return false;
         }
     }
-    async getFilesInTemplate(templatePath, ignorePatterns, data) {
+    async getFilesInTemplate(templatePath, ignorePatterns, data, templatesWithTargetDirs) {
         try {
             // Log the data being used for file processing
             // console.log(
@@ -462,6 +462,10 @@ export class Combino {
                 // console.log("Mapped file:", result);
                 return result;
             });
+            // Filter out files from templates that have target directories
+            if (templatesWithTargetDirs && templatesWithTargetDirs.has(path.resolve(templatePath))) {
+                return [];
+            }
             return mappedFiles;
         }
         catch (error) {
@@ -769,9 +773,35 @@ export class Combino {
             // 	}`
             // );
         });
+        // Build a set of all templates that have target directories
+        const templatesWithTargetDirs = new Set();
+        // Map from template path to extra ignore patterns
+        const templateExtraIgnores = new Map();
+        for (const template of allTemplates) {
+            if (template.targetDir) {
+                templatesWithTargetDirs.add(path.resolve(template.path));
+            }
+            // If this template includes others with a target, add the source to ignore
+            if (template.config && template.config.include) {
+                for (const { source, target } of template.config.include) {
+                    if (target) {
+                        const ignoreSet = templateExtraIgnores.get(path.resolve(template.path)) || new Set();
+                        // Resolve the source path relative to the template and get the basename
+                        const resolvedSourcePath = path.resolve(template.path, source);
+                        const sourceBasename = path.basename(resolvedSourcePath);
+                        ignoreSet.add(sourceBasename);
+                        templateExtraIgnores.set(path.resolve(template.path), ignoreSet);
+                    }
+                }
+            }
+        }
         // Now process/merge files in order
         for (const { path: template, targetDir, config: templateConfig, } of allTemplates) {
-            const files = await this.getFilesInTemplate(template, Array.from(allIgnorePatterns), allData);
+            // Merge global ignore patterns with any extra for this template
+            const extraIgnores = templateExtraIgnores.get(path.resolve(template)) || new Set();
+            const ignorePatterns = Array.from(new Set([...allIgnorePatterns, ...extraIgnores]));
+            const files = await this.getFilesInTemplate(template, ignorePatterns, allData, undefined // no need to filter by templatesWithTargetDirs anymore
+            );
             for (const { sourcePath, targetPath } of files) {
                 const finalTargetPath = targetDir
                     ? path.join(targetDir, targetPath)

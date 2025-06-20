@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react'
 
 export const NestedComponent: React.FC = () => {
 	return (
@@ -6,5 +6,5 @@ export const NestedComponent: React.FC = () => {
 			<h2>Nested Component</h2>
 			<p>This is a nested component from the included template.</p>
 		</div>
-	);
-};
+	)
+}

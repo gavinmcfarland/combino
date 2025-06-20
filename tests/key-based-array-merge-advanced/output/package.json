@@ -1,73 +1,62 @@
 {
-  "name": "advanced-test",
-  "version": "1.0.0",
-  "scripts": {
-    "build": "tsc",
-    "test": "jest",
-    "dev": "vite"
-  },
-  "dependencies": [
-    {
-      "name": "react",
-      "version": "^18.2.0",
-      "peer": true
-    },
-    {
-      "name": "typescript",
-      "version": "^5.0.0"
-    },
-    {
-      "name": "react-dom",
-      "version": "^18.2.0"
-    }
-  ],
-  "devDependencies": [
-    {
-      "name": "vite",
-      "version": "^4.5.0",
-      "config": {
-        "port": 3000
-      }
-    },
-    {
-      "name": "jest",
-      "version": "^29.0.0"
-    },
-    {
-      "name": "@types/react",
-      "version": "^18.0.0"
-    }
-  ],
-  "configurations": [
-    {
-      "id": "development",
-      "env": "development",
-      "debug": true,
-      "features": [
-        "hot-reload",
-        "source-maps",
-        "eslint"
-      ],
-      "port": 3000
-    },
-    {
-      "id": "production",
-      "env": "production",
-      "debug": false,
-      "features": [
-        "minification",
-        "optimization"
-      ]
-    },
-    {
-      "id": "staging",
-      "env": "staging",
-      "debug": true,
-      "features": [
-        "hot-reload",
-        "source-maps",
-        "analytics"
-      ]
-    }
-  ]
+	"name": "advanced-test",
+	"version": "1.0.0",
+	"scripts": {
+		"build": "tsc",
+		"test": "jest",
+		"dev": "vite"
+	},
+	"dependencies": [
+		{
+			"name": "react",
+			"version": "^18.2.0",
+			"peer": true
+		},
+		{
+			"name": "typescript",
+			"version": "^5.0.0"
+		},
+		{
+			"name": "react-dom",
+			"version": "^18.2.0"
+		}
+	],
+	"devDependencies": [
+		{
+			"name": "vite",
+			"version": "^4.5.0",
+			"config": {
+				"port": 3000
+			}
+		},
+		{
+			"name": "jest",
+			"version": "^29.0.0"
+		},
+		{
+			"name": "@types/react",
+			"version": "^18.0.0"
+		}
+	],
+	"configurations": [
+		{
+			"id": "development",
+			"env": "development",
+			"debug": true,
+			"features": ["hot-reload", "source-maps", "eslint"],
+			"port": 3000
+		},
+		{
+			"id": "production",
+			"env": "production",
+			"debug": false,
+			"features": ["minification", "optimization"]
+		},
+		{
+			"id": "staging",
+			"env": "staging",
+			"debug": true,
+			"features": ["hot-reload", "source-maps", "analytics"]
+		}
+	]
 }
