@@ -7,6 +7,8 @@
 html {
 	background-color: var(--figma-color-bg);
 	color: var(--figma-color-text);
+	scrollbar-width: thin;
+	scrollbar-color: var(--figma-color-bg-tertiary) var(--figma-color-bg);
 }
 
 body {
