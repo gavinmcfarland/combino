@@ -2,45 +2,44 @@
 
 Combino is a composable scaffolding engine that lets you build fully customised project structures by combining modular template folders with smart deep merging, dynamic conditions, and reusable logic.
 
-> **Note:** This project is a work in progress. Features and documentation are still being developed.
+## Quick Start
+
+```bash
+# Install
+npm install -g combino
+
+# Basic usage
+combino ./templates/base ./templates/svelte --data framework=svelte
+
+# With config file
+combino ./templates/base ./templates/svelte -c config.combino
+```
 
 ## Example
 
-### Templates
-
-```bash
+**Templates:**
+```
 templates/
   base/
     package.json
     README.md
-
   svelte/
     package.json
     svelte.config.js
 ```
 
-```bash
-combino ./templates/base ./templates/svelte
+**Output:**
 ```
-
-### Output
-
-```bash
 output/
   package.json       # Deep merged from both templates
   README.md          # From base
   svelte.config.js   # From svelte
 ```
 
----
+## Features
 
-## Template Logic
-
-### Naming rules
-
-Use [key] placeholders in filenames or folder names to rename them dynamically.
-
-Example:
+### Dynamic Naming
+Use `[key]` placeholders in filenames to rename them dynamically:
 
 ```bash
 templates/
@@ -49,135 +48,27 @@ templates/
       index.[extension]
 ```
 
-With:
-
 ```bash
 combino base --data.name=my-plugin --data.extension=ts
-```
-
-The output is:
-
-```bash
-my-plugin/
-  index.ts
+# Output: my-plugin/index.ts
 ```
 
 ### Conditional Inclusion
-
-Files and folders can be conditionally included or excluded using JavaScript expressions. Conditions can use comparison operators (`==`, `!=`, `>`, `<`, `>=`, `<=`) and logical operators (`&&`, `||`).
-
-#### Conditional Folder
-
-Only include `tests/` if `--data.testing`:
+Files and folders can be conditionally included using JavaScript expressions:
 
 ```bash
 templates/
   base/
-    tests[testing]/
+    tests[testing]/           # Only if --data.testing
       example.test.ts
-```
-
-#### Conditional Files
-
-Include a file based on `framework` value:
-
-```bash
-templates/
-  base/
-    [framework=="svelte"]
+    [framework=="svelte"]     # Only if framework=svelte
       App.svelte
     [framework=="react"]
       App.tsx
 ```
 
-If `--data.framework=svelte`, the output includes:
-
-```bash
-App.svelte
-```
-
-If `--data.framework=react`, the output includes:
-
-```bash
-App.tsx
-```
-
-#### Complex Conditions
-
-You can use logical operators to create more complex conditions:
-
-```bash
-templates/
-  base/
-    # Include for React or Vue
-    react-or-vue[framework=="react"||framework=="vue"]/
-      App.tsx
-
-    # Include only for React with TypeScript
-    react-and-ts[framework=="react"&&language=="ts"]/
-      App.tsx
-
-    # Include for everything except Vue
-    not-vue[framework!="vue"]/
-      App.tsx
-```
-
-#### Conditional File Extensions
-
-You can also make file extensions conditional:
-
-```bash
-templates/
-  base/
-    src/
-      index.[language=="ts"?"tsx":"jsx"]
-```
-
-If `--data.language=ts`, the output will be `index.tsx`, otherwise `index.jsx`.
-
-### Key-Based Array Merging in JSON
-
-When merging JSON files, you can use the `$key` property to specify which field should be used as the unique identifier for merging objects in arrays. This is especially useful for `package.json` dependencies, TypeScript configuration references, and other structured data.
-
-#### Basic Usage
-
-```json
-{
-  "dependencies": [
-    {
-      "$key": "name",
-      "name": "react",
-      "version": "^18.2.0"
-    },
-    {
-      "$key": "name", 
-      "name": "typescript",
-      "version": "^5.0.0"
-    }
-  ]
-}
-```
-
-The `$key` property tells Combino to use the `name` field as the unique identifier. When merging with another template that has the same dependency, it will merge the properties instead of creating duplicates.
-
-#### TypeScript Configuration Example
-
-```json
-{
-  "references": [
-    {
-      "$key": "path",
-      "path": "./tsconfig.ui.json",
-      "include": ["src/**/*.svelte"],
-      "extends": "@tsconfig/svelte/tsconfig.json"
-    }
-  ]
-}
-```
-
-#### Complex Object Merging
-
-You can use different key fields for different arrays:
+### JSON Array Merging
+Use `$key` property to merge objects in arrays by unique identifier:
 
 ```json
 {
@@ -187,114 +78,81 @@ You can use different key fields for different arrays:
       "name": "react",
       "version": "^18.2.0"
     }
-  ],
-  "configurations": [
-    {
-      "$key": "id",
-      "id": "development",
-      "features": ["hot-reload", "source-maps"],
-      "port": 3000
-    }
   ]
 }
 ```
 
-When merging, objects with the same key value will have their properties merged, while new objects will be added to the array. The `$key` property itself is removed from the final output.
-
-### Templating File Contents
-
-Use EJS syntax `<%= %>` inside file contents.
+### File Content Templating
+Use EJS syntax `<%= %>` inside file contents:
 
 ```md
-# README.md
-
 # <%= plugin.name %>
-
 <%= plugin.description %>
 ```
 
-## Config
+## Configuration
 
-Combino supports a unified configuration structure that works for both `.combino` files and programmatic usage. The configuration includes:
+Combino supports a unified configuration structure:
 
-- `include`: Compose templates from other files and folders by specifying the path names to include.
-- `exclude`: Exclude certain files or folders from being composed from.
-- `data`: Pass custom data to template folders and files.
-- `merge`: Control how files are merged with per-pattern strategy configuration.
+- `include?: Array<{ source: string; target?: string }>` - Compose templates from other files and folders
+- `exclude?: string[]` - Exclude files/folders using glob patterns
+- `data?: Record<string, any>` - Pass custom data for templating and conditions
+- `merge?: Record<string, Record<string, any>>` - Control file merging with pattern-specific strategies
 
-### .combino File Format
+### Merge Strategies
+- `deep`: Deep merge objects and arrays (default for JSON)
+- `shallow`: Shallow merge objects (default for Markdown)
+- `append`: Append content to existing files
+- `prepend`: Prepend content to existing files
+- `replace`: Replace existing files completely (default)
 
-Use a `.combino` config file to customise how templates are combined.
-
-#### [include]
-
-Compose templates from other files and folders by specifying the path names to include.
-
-```ini
-[include]
-../base
-../<% framework %>/components = src/components
-```
-
-#### [merge]
-
-Control how files are merged with per-pattern strategy configuration.
-
-##### Merge Strategies
-
-```ini
-[merge]
-strategy = replace
-
-[merge:*.json]
-strategy = deep
-
-[merge:*.{md,json}]
-strategy = replace
-```
-
-#### [data]
-
-Pass custom data to template folders and files.
-
-```ini
-[data]
-plugin.name = "Plugma"
-plugin.description = "Take figma plugins to the next level"
-plugin.version = 1.0.0
-```
-
-### Programmatic Configuration
-
-The same configuration structure can be used programmatically:
+## Programmatic Usage
 
 ```js
+const combino = new Combino();
+
 const config = {
-  // Template composition - specify additional templates to include
   include: [
     { source: '../base' },
     { source: '../react/components', target: 'src/components' }
   ],
-  // Data to pass to templates for conditional logic and templating
+  exclude: ['node_modules/**', '*.log'],
   data: {
-    project: {
-      name: "My Awesome Project",
-      description: "A sample project generated with Combino"
-    }
+    project: { name: "My Project", version: "1.0.0" }
   },
-  // Merge strategy configuration for different file patterns
   merge: {
-    "*": { strategy: "deep" },
     "*.json": { strategy: "deep" },
     "*.md": { strategy: "replace" }
   }
 };
 
 await combino.combine({
-  templates: ["templates/base", "templates/typescript"],
+  templates: ["templates/base", "templates/react"],
   outputDir: "output",
   config
 });
+```
+
+## Using `.combino` files
+
+```ini
+[include]
+../base
+../<% framework %>/components = src/components
+
+[exclude]
+node_modules/**
+*.log
+
+[data]
+project.name = "My Project"
+project.version = "1.0.0"
+
+[merge:*.json]
+strategy = deep
+
+[merge:*.md]
+strategy = replace
 ```
 
 ## CLI Usage
@@ -303,20 +161,12 @@ await combino.combine({
 combino [templates...] [options]
 ```
 
-**Templates**
+**Options:**
+- `-o, --output <dir>` - Output directory (default: ./output)
+- `-c, --config <path>` - Path to .combino config file
+- `--data <key=value>` - Inline key-value data
 
--   `templates...` One or more template folders (first has lowest priority, last wins)
-
-**Options**
-
--   `-o, --output <dir>` Output directory for the generated result (Default: ./output)
--   `-c, --config <path>` Path to a .combino config file (INI or JSON)
--   `--data <key=value>` Inline key-value data to use for templating, conditions, and naming
-
-### Example
-
-Basic usage with multiple templates:
-
+**Example:**
 ```bash
 combino ./templates/base ./templates/svelte --data framework=svelte --data language=ts -o ./my-project
 ```
