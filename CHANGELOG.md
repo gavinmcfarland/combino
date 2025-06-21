@@ -1,5 +1,11 @@
 # combino
 
+## 0.1.1
+
+### Patch Changes
+
+- 69a72f7: "Refactored and updated features"
+
 ## 0.1.0
 
 ### Patch Changes
