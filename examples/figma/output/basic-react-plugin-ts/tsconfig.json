@@ -1,0 +1,38 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"useDefineForClassFields": true,
+		"module": "ESNext",
+		"allowJs": true,
+		"checkJs": true,
+		"isolatedModules": true,
+		"moduleDetection": "force",
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"typeRoots": ["node_modules/@types"],
+		"jsxFactory": "",
+		"jsx": "react-jsx"
+	},
+	"files": [],
+	"references": [
+		{
+			"path": "./tsconfig.main.json",
+			"compilerOptions": {
+				"composite": true,
+				"outDir": "dist/main",
+				"typeRoots": ["node_modules/@figma", "node_modules/@types"]
+			},
+			"include": ["src/main/**/*.js", "src/main/**/*.ts"]
+		},
+		{
+			"path": "./tsconfig.ui.json",
+			"compilerOptions": {
+				"composite": true,
+				"outDir": "dist/ui"
+			},
+			"include": ["src/ui/**/*.js", "src/ui/**/*.ts", "src/**/*.tsx"]
+		}
+	]
+}
