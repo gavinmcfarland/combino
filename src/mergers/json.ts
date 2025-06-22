@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import deepmerge from "deepmerge";
 import { MergeStrategy } from "../types.js";
+import ejs from "ejs";
 
 // Custom array merge function that handles key-based merging for objects
 const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
@@ -244,23 +245,41 @@ export async function mergeJson(
 	targetPath: string,
 	sourcePath: string,
 	strategy: MergeStrategy,
-	baseTemplatePath?: string
+	baseTemplatePath?: string,
+	data?: Record<string, any>
 ): Promise<string> {
 	const targetContent = await fs
 		.readFile(targetPath, "utf-8")
 		.catch(() => "");
 	const sourceContent = await fs.readFile(sourcePath, "utf-8");
 
+	// Process EJS templates before parsing JSON
+	const processTemplate = async (content: string, templateData?: Record<string, any>): Promise<string> => {
+		if (!templateData || !content.includes("<%")) {
+			return content;
+		}
+		try {
+			return await ejs.render(content, templateData, { async: true });
+		} catch (error) {
+			console.error("Error processing template:", error);
+			return content;
+		}
+	};
+
+	const processedTargetContent = await processTemplate(targetContent, data);
+	const processedSourceContent = await processTemplate(sourceContent, data);
+
 	// Handle empty or blank files by treating them as empty objects
-	const targetJson = targetContent.trim() ? JSON.parse(targetContent) : {};
-	const sourceJson = sourceContent.trim() ? JSON.parse(sourceContent) : {};
+	const targetJson = processedTargetContent.trim() ? JSON.parse(processedTargetContent) : {};
+	const sourceJson = processedSourceContent.trim() ? JSON.parse(processedSourceContent) : {};
 
 	// Get base template for property order if provided
 	let baseJson: any = {};
 	if (baseTemplatePath) {
 		try {
 			const baseContent = await fs.readFile(baseTemplatePath, "utf-8");
-			baseJson = baseContent.trim() ? JSON.parse(baseContent) : {};
+			const processedBaseContent = await processTemplate(baseContent, data);
+			baseJson = processedBaseContent.trim() ? JSON.parse(processedBaseContent) : {};
 		} catch (error) {
 			// If base template doesn't exist, fall back to target/source logic
 			baseJson = {};

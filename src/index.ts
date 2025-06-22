@@ -659,7 +659,8 @@ export class Combino {
 					targetPath,
 					sourcePath,
 					strategy,
-					baseTemplatePath
+					baseTemplatePath,
+					data
 				);
 				break;
 			case ".md":

@@ -1,4 +1,11 @@
 {
+	"plugma": {
+		"manifest": {
+			"name": "minimal",
+			"ui": "src/ui.ts",
+			"main": "src/main.ts"
+		}
+	},
 	"dependencies": {
 		"react": "^18.3.1",
 		"react-dom": "^18.3.1"

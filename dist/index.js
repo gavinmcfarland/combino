@@ -544,7 +544,7 @@ export class Combino {
         let mergedContent;
         switch (ext) {
             case ".json":
-                mergedContent = await mergeJson(targetPath, sourcePath, strategy, baseTemplatePath);
+                mergedContent = await mergeJson(targetPath, sourcePath, strategy, baseTemplatePath, data);
                 break;
             case ".md":
                 mergedContent = await mergeMarkdown(targetPath, sourcePath, strategy);
