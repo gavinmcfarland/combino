@@ -10,6 +10,7 @@
 		"vite": "^5.4.10",
 		"@figma/plugin-typings": "^1.100.2",
 		"plugma": "^2.0.0-40",
+		"globals": "^15.11.0",
 		"@vitejs/plugin-react": "^4.3.3"
 	},
 	"dependencies": {

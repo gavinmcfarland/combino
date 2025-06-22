@@ -11,6 +11,7 @@
 		"react-dom": "^18.3.1"
 	},
 	"devDependencies": {
+		"globals": "^15.11.0",
 		"@vitejs/plugin-react": "^4.3.3"
 	}
 }

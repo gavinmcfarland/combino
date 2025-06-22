@@ -9,6 +9,35 @@ const App = () => {
 	const [rectCount, setRectCount] = useState<number>(5)
 	const [nodeCount, setNodeCount] = useState<number>(0)
 
+	const styles = {
+		container: {
+			display: 'flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			height: '100%',
+			width: '100%',
+			flexDirection: 'column',
+		},
+		banner: {
+			display: 'flex',
+			alignItems: 'center',
+			gap: '18px',
+			marginBottom: '16px',
+		},
+		nodeCount: {
+			fontSize: '11px',
+		},
+		field: {
+			display: 'flex',
+			gap: 'var(--spacer-2)',
+			height: 'var(--spacer-5)',
+			alignItems: 'center',
+		},
+		createRectanglesInput: {
+			width: '40px',
+		},
+	}
+
 	const createRectangles = (count) => {
 		window.parent.postMessage(
 			{
@@ -36,18 +65,23 @@ const App = () => {
 	}, [])
 
 	return (
-		<div className="container">
-			<div className="banner">
+		<div style={styles.container}>
+			<div style={styles.banner}>
 				<Icon svg="plugma" size={38} />
 				<Icon svg="plus" size={24} />
 				<img src={reactLogo} width="44" height="44" alt="Svelte logo" />
 			</div>
 
-			<div className="field create-rectangles">
-				<Input type="number" value={rectCount} onChange={(e) => setRectCount(Number(e.target.value))} />
+			<div style={styles.field}>
+				<Input
+					type="number"
+					value={rectCount}
+					onChange={(e) => setRectCount(Number(e.target.value))}
+					style={styles.createRectanglesInput}
+				/>
 				<Button onClick={() => createRectangles(rectCount)}>Create Rectangles</Button>
 			</div>
-			<div className="field node-count">
+			<div style={styles.nodeCount}>
 				<span>{nodeCount} nodes selected</span>
 			</div>
 		</div>
