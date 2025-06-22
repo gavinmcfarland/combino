@@ -1,4 +1,3 @@
 [data]
 vite.plugins[] = {"name":"ui","import":"@figma/plugin-typings"}
-vite.plugins[] = {"name":"React","import":"react"}
-vite.plugins[] = {"name":"ReactDOM","import":"react-dom"}
+vite.plugins[] = {"name":"react","import":"@vitejs/plugin-react"}
