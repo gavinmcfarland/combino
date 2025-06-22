@@ -1,0 +1,13 @@
+{
+	"compilerOptions": {
+		"jsxFactory": "",
+		"jsx": "react-jsx"
+	},
+	"references": [
+		{
+			"$key": "path",
+			"path": "./tsconfig.ui.json",
+			"include": ["src/**/*.tsx"]
+		}
+	]
+}

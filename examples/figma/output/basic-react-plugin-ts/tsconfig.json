@@ -11,7 +11,9 @@
 		"esModuleInterop": true,
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
-		"typeRoots": ["node_modules/@types"]
+		"typeRoots": ["node_modules/@types"],
+		"jsxFactory": "",
+		"jsx": "react-jsx"
 	},
 	"files": [],
 	"references": [
@@ -30,7 +32,7 @@
 				"composite": true,
 				"outDir": "dist/ui"
 			},
-			"include": ["src/ui/**/*.js", "src/ui/**/*.ts"]
+			"include": ["src/ui/**/*.js", "src/ui/**/*.ts", "src/**/*.tsx"]
 		}
 	]
 }

@@ -5,5 +5,17 @@
 			"ui": "src/ui.ts",
 			"main": "src/main.ts"
 		}
+	},
+	"dependencies": {
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1"
+	},
+	"devDependencies": {
+		"globals": "^15.11.0",
+		"@vitejs/plugin-react": "^4.3.3",
+		"@types/react": "^18.3.12",
+		"@types/react-dom": "^18.3.1",
+		"tslib": "^2.8.0",
+		"typescript": "~5.6.2"
 	}
 }
