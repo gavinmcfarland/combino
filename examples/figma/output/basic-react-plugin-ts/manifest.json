@@ -1,7 +1,7 @@
 {
 	"id": "com.basic-react-plugin-ts",
 	"name": "basic-react-plugin-ts",
-	"main": "src/main/main.tsx",
+	"main": "src/main/main.ts",
 	"ui": "src/ui/ui.tsx",
 	"editorType": ["figma", "figjam"],
 	"networkAccess": {
