@@ -1,3 +1,5 @@
+<!-- Source: templates/examples/plugin/basic/README.md -->
+
 # basic-react-plugin-js
 
 ## Quickstart
