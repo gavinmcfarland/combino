@@ -1,3 +1,4 @@
+// Source: templates/frameworks/svelte/components/Input.svelte
 <script lang="ts">
 	let { value = $bindable(''), type = 'text', showIcon } = $props()
 </script>

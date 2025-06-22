@@ -1,3 +1,4 @@
+// Source: templates/frameworks/svelte/components/Icon.svelte
 <script lang="ts">
 	export let size = 16
 	export let svg

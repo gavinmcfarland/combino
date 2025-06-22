@@ -1,3 +1,4 @@
+// Source: templates/frameworks/svelte/components/Button.svelte
 <script lang="ts">
 	let { children, href, target, style, onclick } = $props()
 </script>

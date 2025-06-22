@@ -1,3 +1,4 @@
+// Source: templates/frameworks/svelte/svelte.config.ts
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
 
 export default {
