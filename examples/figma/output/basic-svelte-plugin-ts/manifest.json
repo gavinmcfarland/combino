@@ -1,6 +1,6 @@
 {
-	"id": "com.basic-svelte-plugin",
-	"name": "basic-svelte-plugin",
+	"id": "com.basic-svelte-plugin-ts",
+	"name": "basic-svelte-plugin-ts",
 	"main": "src/main/main.ts",
 	"ui": "src/ui/ui.ts",
 	"editorType": ["figma", "figjam"],

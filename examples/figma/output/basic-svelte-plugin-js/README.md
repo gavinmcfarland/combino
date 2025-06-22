@@ -1,4 +1,4 @@
-# basic-svelte-plugin
+# basic-svelte-plugin-js
 
 ## Quickstart
 

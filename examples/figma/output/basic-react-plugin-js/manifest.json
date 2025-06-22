@@ -1,6 +1,6 @@
 {
-	"id": "com.basic-react-plugin",
-	"name": "basic-react-plugin",
+	"id": "com.basic-react-plugin-js",
+	"name": "basic-react-plugin-js",
 	"main": "src/main/main.jsx",
 	"ui": "src/ui/ui.jsx",
 	"editorType": ["figma", "figjam"],

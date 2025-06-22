@@ -1,4 +1,4 @@
-# basic-react-plugin
+# basic-react-plugin-ts
 
 ## Quickstart
 
