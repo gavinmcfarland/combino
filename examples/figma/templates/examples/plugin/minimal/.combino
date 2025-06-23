@@ -1,5 +1,6 @@
 [include]
 ../../base
+../basic/src/ui/styles.css
 
 [data]
 description = "An example of a minimalistic plugin structure"
