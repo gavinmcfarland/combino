@@ -142,7 +142,6 @@ async function formatFileWithPrettier(filePath, content) {
             "semi": false,
             "singleQuote": true,
             "printWidth": 120,
-            "braceStyle": "collapse,preserve-inline",
             "overrides": [
                 {
                     "files": "*.md",
@@ -150,7 +149,7 @@ async function formatFileWithPrettier(filePath, content) {
                         "useTabs": false,
                         "tabWidth": 4
                     }
-                }
+                },
             ]
         };
         try {
@@ -163,11 +162,17 @@ async function formatFileWithPrettier(filePath, content) {
             // If no config found, use default settings
         }
         // Format the content
-        return prettier.format(content, {
+        const finalConfig = {
             ...prettierConfig,
             parser,
             plugins: [prettierPluginSvelte, ...(prettierConfig.plugins || [])],
-        });
+        };
+        // Debug logging for JSON files
+        // if (ext === '.json') {
+        // 	console.log('Formatting JSON file:', filePath);
+        // 	console.log('Final Prettier config:', JSON.stringify(finalConfig, null, 2));
+        // }
+        return prettier.format(content, finalConfig);
     }
     catch (error) {
         // If formatting fails, return original content
