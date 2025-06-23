@@ -2,6 +2,7 @@ import { promises as fs } from "fs";
 import deepmerge from "deepmerge";
 import { MergeStrategy } from "../types.js";
 import ejs from "ejs";
+import * as jsonc from "jsonc-parser";
 
 // Custom array merge function that handles key-based merging for objects
 const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
@@ -9,6 +10,17 @@ const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
 	if (!sourceArray.length) return targetArray;
 
 	const allItems = [...targetArray, ...sourceArray];
+
+	// Check if all items are primitives (strings, numbers, booleans)
+	const allPrimitives = allItems.every(
+		(item) => typeof item === "string" || typeof item === "number" || typeof item === "boolean"
+	);
+
+	if (allPrimitives) {
+		// For primitive arrays, concatenate and deduplicate
+		const uniqueItems = [...new Set([...targetArray, ...sourceArray])];
+		return uniqueItems;
+	}
 
 	// If all objects have 'path', use 'path' as the key
 	const allHavePath = allItems.every(
@@ -241,6 +253,26 @@ const customMerge = (target: any, source: any) => {
 	return source;
 };
 
+// Helper function to parse JSON with comments
+function parseJsonWithComments(content: string): any {
+	try {
+		// First try standard JSON.parse
+		return JSON.parse(content);
+	} catch (error) {
+		// If that fails, try parsing with comments
+		try {
+			const errors: jsonc.ParseError[] = [];
+			const result = jsonc.parse(content, errors);
+			if (errors.length > 0) {
+				throw new Error(`JSON parsing errors: ${errors.map(e => `Error at ${e.offset}: ${e.length} characters`).join(', ')}`);
+			}
+			return result;
+		} catch (jsoncError) {
+			throw new Error(`Failed to parse JSON with comments: ${jsoncError}`);
+		}
+	}
+}
+
 export async function mergeJson(
 	targetPath: string,
 	sourcePath: string,
@@ -270,8 +302,8 @@ export async function mergeJson(
 	const processedSourceContent = await processTemplate(sourceContent, data);
 
 	// Handle empty or blank files by treating them as empty objects
-	const targetJson = processedTargetContent.trim() ? JSON.parse(processedTargetContent) : {};
-	const sourceJson = processedSourceContent.trim() ? JSON.parse(processedSourceContent) : {};
+	const targetJson = processedTargetContent.trim() ? parseJsonWithComments(processedTargetContent) : {};
+	const sourceJson = processedSourceContent.trim() ? parseJsonWithComments(processedSourceContent) : {};
 
 	// Get base template for property order if provided
 	let baseJson: any = {};
@@ -279,7 +311,7 @@ export async function mergeJson(
 		try {
 			const baseContent = await fs.readFile(baseTemplatePath, "utf-8");
 			const processedBaseContent = await processTemplate(baseContent, data);
-			baseJson = processedBaseContent.trim() ? JSON.parse(processedBaseContent) : {};
+			baseJson = processedBaseContent.trim() ? parseJsonWithComments(processedBaseContent) : {};
 		} catch (error) {
 			// If base template doesn't exist, fall back to target/source logic
 			baseJson = {};
