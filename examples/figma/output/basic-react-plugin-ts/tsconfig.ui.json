@@ -1,5 +1,5 @@
 {
-	"include": ["src/**/*.js", "src/**/*.ts", "src"],
+	"include": ["src/**/*.js", "src/**/*.ts", "src/ui/**/*.ts", "src/ui/**/*.js", "src/ui/**/*.tsx"],
 	"compilerOptions": {
 		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
 		"target": "ES2022",

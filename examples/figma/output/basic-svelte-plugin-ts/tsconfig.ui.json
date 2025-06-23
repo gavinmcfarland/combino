@@ -1,5 +1,5 @@
 {
-	"include": ["src/**/*.js", "src/**/*.ts", "src/**/*.svelte"],
+	"include": ["src/**/*.js", "src/**/*.ts", "src/ui/**/*.ts", "src/ui/**/*.js", "src/ui/**/*.svelte"],
 	"extends": "@tsconfig/svelte/tsconfig.json",
 	"compilerOptions": {
 		"target": "ES2022",
