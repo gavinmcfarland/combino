@@ -1,8 +1,5 @@
 {
-	"path": "./tsconfig.main.json",
 	"compilerOptions": {
-		"composite": true,
-		"outDir": "dist/main",
 		"typeRoots": ["node_modules/@figma", "node_modules/@types"]
 	},
 	"include": ["src/main/**/*.js", "src/main/**/*.ts"]
