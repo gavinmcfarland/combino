@@ -1,0 +1,20 @@
+# Base Configuration
+
+APP_NAME=my-app
+PORT=3000
+NODE_ENV=development
+
+# Database settings
+DB_HOST=localhost
+DB_PORT=5432
+
+# TypeScript Configuration
+
+# TypeScript settings
+TYPESCRIPT_VERSION=4.5.0
+STRICT_MODE=true
+TARGET=ES2020
+
+# Build settings
+BUILD_DIR=dist
+SOURCE_DIR=src

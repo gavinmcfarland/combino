@@ -1,0 +1,9 @@
+# Base Configuration
+
+APP_NAME=my-app
+PORT=3000
+NODE_ENV=development
+
+# Database settings
+DB_HOST=localhost
+DB_PORT=5432

@@ -52,6 +52,10 @@ function mergeSections(targetSections, sourceSections, strategy) {
                     content: sourceSection.content,
                 };
             }
+            else {
+                // Add new sections from source
+                result.push({ ...sourceSection });
+            }
         }
         return result;
     }
@@ -121,6 +125,10 @@ strategy) {
                     ...result[targetIndex],
                     content: sourceSection.content,
                 };
+            }
+            else {
+                // Add new sections from source
+                result.push({ ...sourceSection });
             }
         }
         return sectionsToMarkdown(result);

@@ -8,7 +8,7 @@ import { assertDirectoriesEqual } from "../utils/directory-compare.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-describe("Comprehensive Merge Test Suite", () => {
+describe("Markdown Merge Test Suite", () => {
 	const testDir = __dirname;
 	const inputDirs = ["base", "typescript"].map((dir) =>
 		join(testDir, "input", dir),
@@ -34,28 +34,8 @@ describe("Comprehensive Merge Test Suite", () => {
 		});
 	});
 
-	describe("JSON file merging", () => {
-		it("should correctly merge JSON files (package.json)", () => {
-			// Compare the entire output directory with the expected directory
-			assertDirectoriesEqual(outputDir, expectedDir, {
-				ignoreWhitespace: true,
-				parseJson: true,
-			});
-		});
-	});
-
 	describe("Markdown file merging", () => {
-		it("should correctly merge Markdown files (README.md)", () => {
-			// Compare the entire output directory with the expected directory
-			assertDirectoriesEqual(outputDir, expectedDir, {
-				ignoreWhitespace: true,
-				parseJson: true,
-			});
-		});
-	});
-
-	describe("Mixed file type merging", () => {
-		it("should correctly merge both JSON and Markdown files together", () => {
+		it("should correctly merge Markdown files from multiple input folders", () => {
 			// Compare the entire output directory with the expected directory
 			assertDirectoriesEqual(outputDir, expectedDir, {
 				ignoreWhitespace: true,
