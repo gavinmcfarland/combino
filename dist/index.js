@@ -475,20 +475,51 @@ export class Combino {
             throw new Error(`Failed to get files in template: ${error}`);
         }
     }
-    getMergeStrategy(filePath, config) {
-        // console.log(
-        // 	"Getting merge strategy for",
-        // 	filePath,
-        // 	"with config:",
-        // 	config
-        // );
-        // Check for merge strategy in the config
-        if (config?.merge) {
-            // Check each pattern in the merge config
-            for (const [pattern, settings] of Object.entries(config.merge)) {
-                // Convert glob pattern to regex, handling brace expansion
+    getMergeStrategy(filePath, allTemplates, globalConfig) {
+        // Check templates in order (lowest priority first) to find merge strategy
+        // This implements inheritance - lower priority templates set the default strategy
+        // Higher priority templates can override it
+        for (const template of allTemplates) {
+            if (template.config?.merge) {
+                // Check each pattern in the merge config
+                for (const [pattern, settings] of Object.entries(template.config.merge)) {
+                    // Convert glob pattern to regex, handling brace expansion
+                    const expandedPattern = pattern.replace(/\{([^}]+)\}/g, (match, p1) => {
+                        // Split the options in the braces and escape them
+                        const options = p1
+                            .split(",")
+                            .map((opt) => opt
+                            .trim()
+                            .replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+                        return `(${options.join("|")})`;
+                    });
+                    // Convert * to .* and ensure the pattern matches the entire string
+                    const regex = new RegExp(`^${expandedPattern.replace(/\*/g, ".*")}$`);
+                    if (regex.test(filePath)) {
+                        // If settings has a strategy property, use it directly
+                        const typedSettings = settings;
+                        if (typedSettings.strategy) {
+                            return typedSettings.strategy;
+                        }
+                        // Handle nested structure for file extensions
+                        const ext = path
+                            .extname(filePath)
+                            .toLowerCase()
+                            .slice(1); // Remove the dot
+                        const nestedSettings = settings;
+                        if (nestedSettings[ext]?.strategy) {
+                            return nestedSettings[ext].strategy;
+                        }
+                        // If no extension-specific strategy, use the pattern's strategy
+                        return nestedSettings.strategy;
+                    }
+                }
+            }
+        }
+        // Check global config if no template-specific strategy found
+        if (globalConfig?.merge) {
+            for (const [pattern, settings] of Object.entries(globalConfig.merge)) {
                 const expandedPattern = pattern.replace(/\{([^}]+)\}/g, (match, p1) => {
-                    // Split the options in the braces and escape them
                     const options = p1
                         .split(",")
                         .map((opt) => opt
@@ -496,35 +527,17 @@ export class Combino {
                         .replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
                     return `(${options.join("|")})`;
                 });
-                // Convert * to .* and ensure the pattern matches the entire string
                 const regex = new RegExp(`^${expandedPattern.replace(/\*/g, ".*")}$`);
-                // console.log(
-                // 	"Checking pattern",
-                // 	pattern,
-                // 	"against",
-                // 	filePath,
-                // 	"result:",
-                // 	regex.test(filePath)
-                // );
                 if (regex.test(filePath)) {
-                    // console.log(
-                    // 	"Found matching pattern",
-                    // 	pattern,
-                    // 	"with settings:",
-                    // 	settings
-                    // );
-                    // If settings has a strategy property, use it directly
                     const typedSettings = settings;
                     if (typedSettings.strategy) {
                         return typedSettings.strategy;
                     }
-                    // Handle nested structure for file extensions
-                    const ext = path.extname(filePath).toLowerCase().slice(1); // Remove the dot
+                    const ext = path.extname(filePath).toLowerCase().slice(1);
                     const nestedSettings = settings;
                     if (nestedSettings[ext]?.strategy) {
                         return nestedSettings[ext].strategy;
                     }
-                    // If no extension-specific strategy, use the pattern's strategy
                     return nestedSettings.strategy;
                 }
             }
@@ -838,7 +851,7 @@ export class Combino {
                         ...sourceContent.config?.merge,
                     },
                 };
-                const strategy = this.getMergeStrategy(targetPath, mergedConfig);
+                const strategy = this.getMergeStrategy(targetPath, allTemplates, globalConfig);
                 // Find the first template that contains this file for property order preservation
                 let baseTemplatePath;
                 for (const tpl of allTemplates) {
