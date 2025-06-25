@@ -1,8 +1,0 @@
-{
-    "data": {
-        "framework": "react"
-    },
-    "skip": true,
-    "reason": "Complex include logic that needs specific setup",
-    "description": "Include test with complex include logic"
-}

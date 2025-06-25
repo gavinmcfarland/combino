@@ -1,0 +1,7 @@
+{
+    "data": {
+        "framework": "vue"
+    },
+    "inputDirs": ["input/included"],
+    "description": "Include test with Vue configuration"
+}

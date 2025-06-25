@@ -1,0 +1,7 @@
+{
+    "data": {
+        "framework": "react"
+    },
+    "inputDirs": ["input/included"],
+    "description": "Include test with base configuration"
+}

@@ -6,3 +6,7 @@ This is a base project template that can be extended.
 
 - React support
 - Modern UI components
+
+# Extended Project
+
+An extended project

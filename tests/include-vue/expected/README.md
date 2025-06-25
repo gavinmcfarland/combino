@@ -4,7 +4,8 @@ This is a base project template that can be extended.
 
 ## Features
 
-- More stuff
+- React support
+- Modern UI components
 
 # Extended Project
 
