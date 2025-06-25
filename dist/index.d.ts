@@ -1,6 +1,9 @@
 import { TemplateOptions } from "./types.js";
+import { TemplateEngine } from "./template-engines/index.js";
 export declare class Combino {
     private data;
+    private templateEngine;
+    constructor(templateEngine?: TemplateEngine);
     private readFile;
     private readCombinoConfig;
     private readConfigFile;

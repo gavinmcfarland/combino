@@ -33,6 +33,11 @@ program
 		"Inline key-value data to use for templating, conditions, and naming",
 		collectData,
 	)
+	.option(
+		"--template-engine <engine>",
+		"Template engine to use (ejs, handlebars, mustache)",
+		"ejs",
+	)
 	.action(async (templates: string[], options: any) => {
 		try {
 			const combino = new Combino();
@@ -83,6 +88,7 @@ program
 				templates: templates,
 				config: options.config || undefined,
 				data: templateData,
+				templateEngine: options.templateEngine,
 			};
 
 			await combino.combine(templateOptions);

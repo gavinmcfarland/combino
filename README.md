@@ -24,7 +24,7 @@ templates/
         README.md
         src/
             main/
-                main.[framework=="react"?"js":"jsx"]   
+                main.[framework=="react"?"js":"jsx"]
             ui/
                 [framework=="react"]App.jsx
                 [framework=="svelte"]App.svelte
@@ -44,7 +44,7 @@ This generates:
 ```bash
 output/
     package.json          # Deep merged with templated name, description, and scripts
-    README.md             # From base with templating    
+    README.md             # From base with templating
 src/
     main/
         main.js           # Conditional extension based on framework
@@ -65,7 +65,7 @@ npm install -g combino
 ## Features
 
 - ### Dynamic Naming
-    
+
     Use `[key]` placeholders in filenames to rename them dynamically.
 
     ```bash
@@ -96,6 +96,7 @@ npm install -g combino
         [framework=="react"]
           App.tsx
     ```
+
 ---
 
 - ### File Content Templating
@@ -104,7 +105,83 @@ npm install -g combino
 
     ```md
     # <%= plugin.name %>
+
     <%= plugin.description %>
+    ```
+
+---
+
+- ### Configurable Template Engines
+
+    Combino supports multiple template engines for file content processing. You can choose between EJS (default), Handlebars, or Mustache.
+
+    **EJS (Default)**
+
+    ```md
+    # <%= name %>
+
+    <% features.forEach(function(feature) { %>
+
+    - <%= feature %>
+      <% }); %>
+    ```
+
+    **Handlebars**
+
+    ```md
+    # {{name}}
+
+    {{#each features}}
+
+    - {{this}}
+      {{/each}}
+    ```
+
+    **Mustache**
+
+    ```md
+    # {{name}}
+
+    {{#features}}
+
+    - {{.}}
+      {{/features}}
+    ```
+
+    **CLI Usage**
+
+    ```bash
+    # Use EJS (default)
+    combino templates --data name=my-project
+
+    # Use Handlebars
+    combino templates --template-engine handlebars --data name=my-project
+
+    # Use Mustache
+    combino templates --template-engine mustache --data name=my-project
+    ```
+
+    **Programmatic Usage**
+
+    ```js
+    import { Combino } from "combino";
+    import {
+        EJSTemplateEngine,
+        HandlebarsTemplateEngine,
+    } from "combino/template-engines";
+
+    // Use EJS
+    const combino = new Combino(new EJSTemplateEngine());
+
+    // Use Handlebars
+    const combino = new Combino(new HandlebarsTemplateEngine());
+
+    // Or pass via options
+    await combino.combine({
+        outputDir: "./output",
+        templates: ["templates"],
+        templateEngine: "ejs", // or 'handlebars', 'mustache'
+    });
     ```
 
 ---
@@ -121,9 +198,9 @@ npm install -g combino
 
     ```js
     include: [
-      { source: '../base' },
-      { source: `../${framework}/components`, target: 'src/components' }
-    ]
+        { source: "../base" },
+        { source: `../${framework}/components`, target: "src/components" },
+    ];
     ```
 
 ---
@@ -141,7 +218,7 @@ npm install -g combino
     ```
 
     ```js
-    exclude: ['node_modules/**', '*.log', '.DS_Store', 'temp/']
+    exclude: ["node_modules/**", "*.log", ".DS_Store", "temp/"];
     ```
 
 ---
@@ -175,13 +252,13 @@ npm install -g combino
 
     ```json
     {
-      "dependencies": [
-        {
-          "$key": "name",
-          "name": "react",
-          "version": "^18.2.0"
-        }
-      ]
+        "dependencies": [
+            {
+                "$key": "name",
+                "name": "react",
+                "version": "^18.2.0"
+            }
+        ]
     }
     ```
 
@@ -200,24 +277,24 @@ Combino supports a unified configuration structure that works for both `.combino
 const combino = new Combino();
 
 const config = {
-  include: [
-    { source: '../base' },
-    { source: '../react/components', target: 'src/components' }
-  ],
-  exclude: ['node_modules/**', '*.log'],
-  data: {
-    project: { name: "My Project", version: "1.0.0" }
-  },
-  merge: {
-    "*.json": { strategy: "deep" },
-    "*.{md,yaml}": { strategy: "replace" }
-  }
+    include: [
+        { source: "../base" },
+        { source: "../react/components", target: "src/components" },
+    ],
+    exclude: ["node_modules/**", "*.log"],
+    data: {
+        project: { name: "My Project", version: "1.0.0" },
+    },
+    merge: {
+        "*.json": { strategy: "deep" },
+        "*.{md,yaml}": { strategy: "replace" },
+    },
 };
 
 await combino.combine({
-  templates: ["templates/base", "templates/react"],
-  outputDir: "output",
-  config
+    templates: ["templates/base", "templates/react"],
+    outputDir: "output",
+    config,
 });
 ```
 
@@ -249,18 +326,26 @@ strategy = replace
 
 ### Arguments
 
-- __`templates...`__ { String } One or more template folders (first has lowest priority, last wins)
+- **`templates...`** { String } One or more template folders (first has lowest priority, last wins)
 
 ### Options
 
-- __`-o, --output <dir>`__ { String } Output directory (default: ./output)
-- __`-c, --config <path>`__ { String } Path to .combino config file
-- __`--data <key=value>`__ { String } Inline key-value data
+- **`-o, --output <dir>`** { String } Output directory (default: ./output)
+- **`-c, --config <path>`** { String } Path to .combino config file
+- **`--data <key=value>`** { String } Inline key-value data
+- **`--template-engine <engine>`** { String } Template engine to use (ejs, handlebars, mustache) (default: ejs)
 
 ### Example
 
 ```bash
+# Using EJS (default)
 combino ./templates/base ./templates/svelte --data framework=svelte --data language=ts -o ./my-project
+
+# Using Handlebars
+combino ./templates/base ./templates/svelte --template-engine handlebars --data framework=svelte --data language=ts -o ./my-project
+
+# Using Mustache
+combino ./templates/base ./templates/svelte --template-engine mustache --data framework=svelte --data language=ts -o ./my-project
 ```
 
 ## Development

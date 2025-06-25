@@ -2,7 +2,6 @@ import fs from "fs/promises";
 import path from "path";
 import { glob } from "glob";
 import matter from "gray-matter";
-import ejs from "ejs";
 import { Parser } from "expr-eval";
 import { mergeJson } from "./mergers/json.js";
 import { mergeMarkdown } from "./mergers/markdown.js";
@@ -11,6 +10,7 @@ import * as ini from "ini";
 import { fileURLToPath } from "url";
 import prettier from "prettier";
 import prettierPluginSvelte from "prettier-plugin-svelte";
+import { EJSTemplateEngine, HandlebarsTemplateEngine, MustacheTemplateEngine, } from "./template-engines/index.js";
 // Helper to flatten merge config keys
 function flattenMergeConfig(mergeObj) {
     const flat = {};
@@ -181,8 +181,9 @@ async function formatFileWithPrettier(filePath, content) {
     }
 }
 export class Combino {
-    constructor() {
+    constructor(templateEngine) {
         this.data = {};
+        this.templateEngine = templateEngine || new EJSTemplateEngine();
     }
     async readFile(filePath) {
         const content = await fs.readFile(filePath, "utf-8");
@@ -343,7 +344,7 @@ export class Combino {
     }
     async processTemplate(content, data) {
         try {
-            return await ejs.render(content, data, { async: true });
+            return await this.templateEngine.render(content, data);
         }
         catch (error) {
             console.error("Error processing template:", error);
@@ -550,7 +551,7 @@ export class Combino {
         let mergedContent;
         switch (ext) {
             case ".json":
-                mergedContent = await mergeJson(targetPath, sourcePath, strategy, baseTemplatePath, data);
+                mergedContent = await mergeJson(targetPath, sourcePath, strategy, baseTemplatePath, data, this.templateEngine);
                 break;
             case ".md":
                 mergedContent = await mergeMarkdown(targetPath, sourcePath, strategy);
@@ -558,7 +559,7 @@ export class Combino {
             default:
                 mergedContent = await mergeText(targetPath, sourcePath, strategy);
         }
-        // Process the merged content with EJS
+        // Process the merged content with the template engine
         return this.processTemplate(mergedContent, data);
     }
     getCallerFileLocation() {
@@ -594,7 +595,29 @@ export class Combino {
         return process.cwd();
     }
     async combine(options) {
-        const { outputDir, templates, data: externalData = {}, config, } = options;
+        const { outputDir, templates, data: externalData = {}, config, templateEngine, } = options;
+        // Set template engine if provided
+        if (templateEngine) {
+            if (typeof templateEngine === "string") {
+                // Handle string-based template engine selection
+                switch (templateEngine.toLowerCase()) {
+                    case "ejs":
+                        this.templateEngine = new EJSTemplateEngine();
+                        break;
+                    case "handlebars":
+                        this.templateEngine = new HandlebarsTemplateEngine();
+                        break;
+                    case "mustache":
+                        this.templateEngine = new MustacheTemplateEngine();
+                        break;
+                    default:
+                        throw new Error(`Unknown template engine: ${templateEngine}`);
+                }
+            }
+            else {
+                this.templateEngine = templateEngine;
+            }
+        }
         this.data = { ...externalData };
         const callerDir = this.getCallerFileLocation();
         const resolvedOutputDir = path.resolve(callerDir, outputDir);

@@ -1,3 +1,4 @@
+import { TemplateEngine } from "./template-engines/index.js";
 export type MergeStrategy = "deep" | "shallow" | "append" | "prepend" | "replace";
 export interface MergeConfig {
     strategy?: MergeStrategy;
@@ -36,4 +37,6 @@ export interface TemplateOptions {
     /** Unified configuration object or path to .combino file */
     config?: CombinoConfig | ConfigFile;
     data?: Record<string, any>;
+    /** Template engine to use for processing templates */
+    templateEngine?: string | TemplateEngine;
 }

@@ -17,6 +17,12 @@ import * as ini from "ini";
 import { fileURLToPath } from "url";
 import prettier from "prettier";
 import prettierPluginSvelte from "prettier-plugin-svelte";
+import {
+	TemplateEngine,
+	EJSTemplateEngine,
+	HandlebarsTemplateEngine,
+	MustacheTemplateEngine,
+} from "./template-engines/index.js";
 
 interface CombinoConfig {
 	exclude?: string[];
@@ -214,6 +220,11 @@ async function formatFileWithPrettier(
 
 export class Combino {
 	private data: Record<string, any> = {};
+	private templateEngine: TemplateEngine;
+
+	constructor(templateEngine?: TemplateEngine) {
+		this.templateEngine = templateEngine || new EJSTemplateEngine();
+	}
 
 	private async readFile(filePath: string): Promise<FileContent> {
 		const content = await fs.readFile(filePath, "utf-8");
@@ -400,7 +411,7 @@ export class Combino {
 		data: Record<string, any>,
 	): Promise<string> {
 		try {
-			return await ejs.render(content, data, { async: true });
+			return await this.templateEngine.render(content, data);
 		} catch (error) {
 			console.error("Error processing template:", error);
 			return content;
@@ -691,6 +702,7 @@ export class Combino {
 					strategy,
 					baseTemplatePath,
 					data,
+					this.templateEngine,
 				);
 				break;
 			case ".md":
@@ -708,7 +720,7 @@ export class Combino {
 				);
 		}
 
-		// Process the merged content with EJS
+		// Process the merged content with the template engine
 		return this.processTemplate(mergedContent, data);
 	}
 
@@ -757,7 +769,32 @@ export class Combino {
 			templates,
 			data: externalData = {},
 			config,
+			templateEngine,
 		} = options;
+
+		// Set template engine if provided
+		if (templateEngine) {
+			if (typeof templateEngine === "string") {
+				// Handle string-based template engine selection
+				switch (templateEngine.toLowerCase()) {
+					case "ejs":
+						this.templateEngine = new EJSTemplateEngine();
+						break;
+					case "handlebars":
+						this.templateEngine = new HandlebarsTemplateEngine();
+						break;
+					case "mustache":
+						this.templateEngine = new MustacheTemplateEngine();
+						break;
+					default:
+						throw new Error(
+							`Unknown template engine: ${templateEngine}`,
+						);
+				}
+			} else {
+				this.templateEngine = templateEngine;
+			}
+		}
 
 		this.data = { ...externalData };
 		const callerDir = this.getCallerFileLocation();

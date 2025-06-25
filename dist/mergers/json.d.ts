@@ -1,2 +1,3 @@
 import { MergeStrategy } from "../types.js";
-export declare function mergeJson(targetPath: string, sourcePath: string, strategy: MergeStrategy, baseTemplatePath?: string, data?: Record<string, any>): Promise<string>;
+import { TemplateEngine } from "../template-engines/index.js";
+export declare function mergeJson(targetPath: string, sourcePath: string, strategy: MergeStrategy, baseTemplatePath?: string, data?: Record<string, any>, templateEngine?: TemplateEngine): Promise<string>;

@@ -3,6 +3,7 @@ import deepmerge from "deepmerge";
 import { MergeStrategy } from "../types.js";
 import ejs from "ejs";
 import * as jsonc from "jsonc-parser";
+import { TemplateEngine } from "../template-engines/index.js";
 
 // Custom array merge function that handles key-based merging for objects
 const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
@@ -13,7 +14,10 @@ const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
 
 	// Check if all items are primitives (strings, numbers, booleans)
 	const allPrimitives = allItems.every(
-		(item) => typeof item === "string" || typeof item === "number" || typeof item === "boolean"
+		(item) =>
+			typeof item === "string" ||
+			typeof item === "number" ||
+			typeof item === "boolean",
 	);
 
 	if (allPrimitives) {
@@ -24,7 +28,7 @@ const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
 
 	// If all objects have 'path', use 'path' as the key
 	const allHavePath = allItems.every(
-		(item) => typeof item === "object" && item !== null && "path" in item
+		(item) => typeof item === "object" && item !== null && "path" in item,
 	);
 
 	if (allHavePath) {
@@ -264,11 +268,15 @@ function parseJsonWithComments(content: string): any {
 			const errors: jsonc.ParseError[] = [];
 			const result = jsonc.parse(content, errors);
 			if (errors.length > 0) {
-				throw new Error(`JSON parsing errors: ${errors.map(e => `Error at ${e.offset}: ${e.length} characters`).join(', ')}`);
+				throw new Error(
+					`JSON parsing errors: ${errors.map((e) => `Error at ${e.offset}: ${e.length} characters`).join(", ")}`,
+				);
 			}
 			return result;
 		} catch (jsoncError) {
-			throw new Error(`Failed to parse JSON with comments: ${jsoncError}`);
+			throw new Error(
+				`Failed to parse JSON with comments: ${jsoncError}`,
+			);
 		}
 	}
 }
@@ -278,20 +286,24 @@ export async function mergeJson(
 	sourcePath: string,
 	strategy: MergeStrategy,
 	baseTemplatePath?: string,
-	data?: Record<string, any>
+	data?: Record<string, any>,
+	templateEngine?: TemplateEngine,
 ): Promise<string> {
 	const targetContent = await fs
 		.readFile(targetPath, "utf-8")
 		.catch(() => "");
 	const sourceContent = await fs.readFile(sourcePath, "utf-8");
 
-	// Process EJS templates before parsing JSON
-	const processTemplate = async (content: string, templateData?: Record<string, any>): Promise<string> => {
-		if (!templateData || !content.includes("<%")) {
+	// Process templates before parsing JSON
+	const processTemplate = async (
+		content: string,
+		templateData?: Record<string, any>,
+	): Promise<string> => {
+		if (!templateData || !templateEngine?.hasTemplateSyntax(content)) {
 			return content;
 		}
 		try {
-			return await ejs.render(content, templateData, { async: true });
+			return await templateEngine.render(content, templateData);
 		} catch (error) {
 			console.error("Error processing template:", error);
 			return content;
@@ -302,16 +314,25 @@ export async function mergeJson(
 	const processedSourceContent = await processTemplate(sourceContent, data);
 
 	// Handle empty or blank files by treating them as empty objects
-	const targetJson = processedTargetContent.trim() ? parseJsonWithComments(processedTargetContent) : {};
-	const sourceJson = processedSourceContent.trim() ? parseJsonWithComments(processedSourceContent) : {};
+	const targetJson = processedTargetContent.trim()
+		? parseJsonWithComments(processedTargetContent)
+		: {};
+	const sourceJson = processedSourceContent.trim()
+		? parseJsonWithComments(processedSourceContent)
+		: {};
 
 	// Get base template for property order if provided
 	let baseJson: any = {};
 	if (baseTemplatePath) {
 		try {
 			const baseContent = await fs.readFile(baseTemplatePath, "utf-8");
-			const processedBaseContent = await processTemplate(baseContent, data);
-			baseJson = processedBaseContent.trim() ? parseJsonWithComments(processedBaseContent) : {};
+			const processedBaseContent = await processTemplate(
+				baseContent,
+				data,
+			);
+			baseJson = processedBaseContent.trim()
+				? parseJsonWithComments(processedBaseContent)
+				: {};
 		} catch (error) {
 			// If base template doesn't exist, fall back to target/source logic
 			baseJson = {};

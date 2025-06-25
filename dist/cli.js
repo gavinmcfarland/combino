@@ -13,6 +13,7 @@ program
     .option("-o, --output <dir>", "Output directory for the generated result", "./output")
     .option("-c, --config <path>", "Path to a .combino config file (INI or JSON)")
     .option("--data <key=value>", "Inline key-value data to use for templating, conditions, and naming", collectData)
+    .option("--template-engine <engine>", "Template engine to use (ejs, handlebars, mustache)", "ejs")
     .action(async (templates, options) => {
     try {
         const combino = new Combino();
@@ -57,6 +58,7 @@ program
             templates: templates,
             config: options.config || undefined,
             data: templateData,
+            templateEngine: options.templateEngine,
         };
         await combino.combine(templateOptions);
         console.log(`Successfully generated output in ${options.output}`);

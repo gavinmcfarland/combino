@@ -1,6 +1,5 @@
 import { promises as fs } from "fs";
 import deepmerge from "deepmerge";
-import ejs from "ejs";
 import * as jsonc from "jsonc-parser";
 // Custom array merge function that handles key-based merging for objects
 const arrayMerge = (targetArray, sourceArray) => {
@@ -10,7 +9,9 @@ const arrayMerge = (targetArray, sourceArray) => {
         return targetArray;
     const allItems = [...targetArray, ...sourceArray];
     // Check if all items are primitives (strings, numbers, booleans)
-    const allPrimitives = allItems.every((item) => typeof item === "string" || typeof item === "number" || typeof item === "boolean");
+    const allPrimitives = allItems.every((item) => typeof item === "string" ||
+        typeof item === "number" ||
+        typeof item === "boolean");
     if (allPrimitives) {
         // For primitive arrays, concatenate and deduplicate
         const uniqueItems = [...new Set([...targetArray, ...sourceArray])];
@@ -248,7 +249,7 @@ function parseJsonWithComments(content) {
             const errors = [];
             const result = jsonc.parse(content, errors);
             if (errors.length > 0) {
-                throw new Error(`JSON parsing errors: ${errors.map(e => `Error at ${e.offset}: ${e.length} characters`).join(', ')}`);
+                throw new Error(`JSON parsing errors: ${errors.map((e) => `Error at ${e.offset}: ${e.length} characters`).join(", ")}`);
             }
             return result;
         }
@@ -257,18 +258,18 @@ function parseJsonWithComments(content) {
         }
     }
 }
-export async function mergeJson(targetPath, sourcePath, strategy, baseTemplatePath, data) {
+export async function mergeJson(targetPath, sourcePath, strategy, baseTemplatePath, data, templateEngine) {
     const targetContent = await fs
         .readFile(targetPath, "utf-8")
         .catch(() => "");
     const sourceContent = await fs.readFile(sourcePath, "utf-8");
-    // Process EJS templates before parsing JSON
+    // Process templates before parsing JSON
     const processTemplate = async (content, templateData) => {
-        if (!templateData || !content.includes("<%")) {
+        if (!templateData || !templateEngine?.hasTemplateSyntax(content)) {
             return content;
         }
         try {
-            return await ejs.render(content, templateData, { async: true });
+            return await templateEngine.render(content, templateData);
         }
         catch (error) {
             console.error("Error processing template:", error);
@@ -278,15 +279,21 @@ export async function mergeJson(targetPath, sourcePath, strategy, baseTemplatePa
     const processedTargetContent = await processTemplate(targetContent, data);
     const processedSourceContent = await processTemplate(sourceContent, data);
     // Handle empty or blank files by treating them as empty objects
-    const targetJson = processedTargetContent.trim() ? parseJsonWithComments(processedTargetContent) : {};
-    const sourceJson = processedSourceContent.trim() ? parseJsonWithComments(processedSourceContent) : {};
+    const targetJson = processedTargetContent.trim()
+        ? parseJsonWithComments(processedTargetContent)
+        : {};
+    const sourceJson = processedSourceContent.trim()
+        ? parseJsonWithComments(processedSourceContent)
+        : {};
     // Get base template for property order if provided
     let baseJson = {};
     if (baseTemplatePath) {
         try {
             const baseContent = await fs.readFile(baseTemplatePath, "utf-8");
             const processedBaseContent = await processTemplate(baseContent, data);
-            baseJson = processedBaseContent.trim() ? parseJsonWithComments(processedBaseContent) : {};
+            baseJson = processedBaseContent.trim()
+                ? parseJsonWithComments(processedBaseContent)
+                : {};
         }
         catch (error) {
             // If base template doesn't exist, fall back to target/source logic
