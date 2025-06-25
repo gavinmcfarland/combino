@@ -1,9 +1,3 @@
-[include]
-included
-
-[data]
-framework = "react"
-
 [merge:*.json]
 strategy = deep
 

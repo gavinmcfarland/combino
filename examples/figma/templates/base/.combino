@@ -1,2 +1,5 @@
+[merge:*.json]
+strategy = deep
+
 [data]
 versions.plugma = 2.0.0-40

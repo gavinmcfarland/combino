@@ -78,7 +78,7 @@ function parseMergeSections(configText: string): Record<string, any> {
 
 // Helper to parse [include] section from ini-like config text
 function parseIncludeSection(
-	configText: string
+	configText: string,
 ): Array<{ source: string; target?: string }> {
 	const include: Array<{ source: string; target?: string }> = [];
 	const sectionRegex = /^\[include\]$/gm;
@@ -104,7 +104,7 @@ function parseIncludeSection(
 // Helper to format files with Prettier
 async function formatFileWithPrettier(
 	filePath: string,
-	content: string
+	content: string,
 ): Promise<string> {
 	try {
 		// Get file extension to determine parser
@@ -165,19 +165,19 @@ async function formatFileWithPrettier(
 
 		// Try to find a Prettier config file in the project
 		let prettierConfig: any = {
-			"useTabs": true,
-			"semi": false,
-			"singleQuote": true,
-			"printWidth": 120,
-			"overrides": [
+			useTabs: true,
+			semi: false,
+			singleQuote: true,
+			printWidth: 120,
+			overrides: [
 				{
-					"files": "*.md",
-					"options": {
-						"useTabs": false,
-						"tabWidth": 4
-					}
+					files: "*.md",
+					options: {
+						useTabs: false,
+						tabWidth: 4,
+					},
 				},
-			]
+			],
 		};
 		try {
 			const configPath = await prettier.resolveConfig(filePath);
@@ -206,7 +206,7 @@ async function formatFileWithPrettier(
 		// If formatting fails, return original content
 		console.warn(
 			`Warning: Failed to format ${filePath} with Prettier:`,
-			error
+			error,
 		);
 		return content;
 	}
@@ -283,7 +283,7 @@ export class Combino {
 	}
 
 	private async readCombinoConfig(
-		templatePath: string
+		templatePath: string,
 	): Promise<CombinoConfig> {
 		const configPath = path.join(templatePath, ".combino");
 		// console.log("Reading config from:", configPath);
@@ -356,9 +356,7 @@ export class Combino {
 		}
 	}
 
-	private async readConfigFile(
-		configPath: string
-	): Promise<CombinoConfig> {
+	private async readConfigFile(configPath: string): Promise<CombinoConfig> {
 		try {
 			const content = await fs.readFile(configPath, "utf-8");
 			const parsedConfig = ini.parse(content);
@@ -399,7 +397,7 @@ export class Combino {
 
 	private async processTemplate(
 		content: string,
-		data: Record<string, any>
+		data: Record<string, any>,
 	): Promise<string> {
 		try {
 			return await ejs.render(content, data, { async: true });
@@ -411,7 +409,7 @@ export class Combino {
 
 	private evaluateCondition(
 		condition: string,
-		data: Record<string, any>
+		data: Record<string, any>,
 	): string | boolean {
 		try {
 			// Add logging to see what data we're working with
@@ -430,17 +428,20 @@ export class Combino {
 			const parser = new Parser();
 
 			// Create a scope with the data
-			const scope = Object.entries(data).reduce((acc, [key, value]) => {
-				// Handle nested properties
-				const keys = key.split(".");
-				let current = acc;
-				for (let i = 0; i < keys.length - 1; i++) {
-					current[keys[i]] = current[keys[i]] || {};
-					current = current[keys[i]];
-				}
-				current[keys[keys.length - 1]] = value;
-				return acc;
-			}, {} as Record<string, any>);
+			const scope = Object.entries(data).reduce(
+				(acc, [key, value]) => {
+					// Handle nested properties
+					const keys = key.split(".");
+					let current = acc;
+					for (let i = 0; i < keys.length - 1; i++) {
+						current[keys[i]] = current[keys[i]] || {};
+						current = current[keys[i]];
+					}
+					current[keys[keys.length - 1]] = value;
+					return acc;
+				},
+				{} as Record<string, any>,
+			);
 
 			// Log the scope being used for evaluation
 			// console.log("Evaluation scope:", JSON.stringify(scope, null, 2));
@@ -459,7 +460,7 @@ export class Combino {
 	private async getFilesInTemplate(
 		templatePath: string,
 		ignorePatterns: string[],
-		data: Record<string, any>
+		data: Record<string, any>,
 	): Promise<{ sourcePath: string; targetPath: string }[]> {
 		try {
 			// Log the data being used for file processing
@@ -501,7 +502,7 @@ export class Combino {
 							// If any condition in the path is false, exclude the file
 							const result = this.evaluateCondition(
 								condition,
-								data
+								data,
 							);
 							if (typeof result === "boolean" && !result) {
 								// console.log(
@@ -537,7 +538,7 @@ export class Combino {
 								// Evaluate the condition and get the result
 								const result = this.evaluateCondition(
 									condition,
-									data
+									data,
 								);
 
 								// If it's a boolean result, remove the condition
@@ -588,14 +589,14 @@ export class Combino {
 							.map((opt: string) =>
 								opt
 									.trim()
-									.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+									.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
 							);
 						return `(${options.join("|")})`;
-					}
+					},
 				);
 				// Convert * to .* and ensure the pattern matches the entire string
 				const regex = new RegExp(
-					`^${expandedPattern.replace(/\*/g, ".*")}$`
+					`^${expandedPattern.replace(/\*/g, ".*")}$`,
 				);
 				// console.log(
 				// 	"Checking pattern",
@@ -634,20 +635,8 @@ export class Combino {
 			}
 		}
 
-		// Fall back to default strategies
-		const ext = path.extname(filePath).toLowerCase();
-		// console.log(
-		// 	"No matching pattern found, using default strategy for extension",
-		// 	ext
-		// );
-		switch (ext) {
-			case ".json":
-				return "deep";
-			case ".md":
-				return "shallow";
-			default:
-				return "replace";
-		}
+		// Default strategy is now "replace" for all file types
+		return "replace";
 	}
 
 	private async mergeFiles(
@@ -655,7 +644,7 @@ export class Combino {
 		sourcePath: string,
 		strategy: MergeStrategy,
 		data: Record<string, any>,
-		baseTemplatePath?: string
+		baseTemplatePath?: string,
 	): Promise<string> {
 		const ext = path.extname(targetPath).toLowerCase();
 
@@ -667,21 +656,21 @@ export class Combino {
 					sourcePath,
 					strategy,
 					baseTemplatePath,
-					data
+					data,
 				);
 				break;
 			case ".md":
 				mergedContent = await mergeMarkdown(
 					targetPath,
 					sourcePath,
-					strategy
+					strategy,
 				);
 				break;
 			default:
 				mergedContent = await mergeText(
 					targetPath,
 					sourcePath,
-					strategy
+					strategy,
 				);
 		}
 
@@ -708,7 +697,7 @@ export class Combino {
 
 			// Try to extract the file path
 			const match = line.match(
-				/at\s+(?:\w+\s+\()?(?:(?:file|http|https):\/\/)?([^:]+)/
+				/at\s+(?:\w+\s+\()?(?:(?:file|http|https):\/\/)?([^:]+)/,
 			);
 			if (match) {
 				const filePath = match[1];
@@ -740,13 +729,13 @@ export class Combino {
 		const callerDir = this.getCallerFileLocation();
 		const resolvedOutputDir = path.resolve(callerDir, outputDir);
 		const resolvedTemplates = templates.map((template) =>
-			path.resolve(callerDir, template)
+			path.resolve(callerDir, template),
 		);
 
 		for (const template of resolvedTemplates) {
 			if (!(await fileExists(template))) {
 				console.warn(
-					`Warning: Template directory not found: ${template}`
+					`Warning: Template directory not found: ${template}`,
 				);
 			}
 		}
@@ -786,7 +775,7 @@ export class Combino {
 		// First pass: collect all templates and their dependencies
 		const collectTemplateDependencies = async (
 			templatePath: string,
-			targetDir?: string
+			targetDir?: string,
 		) => {
 			const resolved = path.resolve(templatePath);
 			if (processedTemplates.has(resolved)) {
@@ -813,11 +802,11 @@ export class Combino {
 						// Recursively collect dependencies of included templates
 						await collectTemplateDependencies(
 							resolvedIncludePath,
-							target
+							target,
 						);
 					} else {
 						console.warn(
-							`Warning: Included template not found: ${resolvedIncludePath}`
+							`Warning: Included template not found: ${resolvedIncludePath}`,
 						);
 					}
 				}
@@ -848,7 +837,7 @@ export class Combino {
 		const topologicalSort = async (templatePath: string) => {
 			if (visiting.has(templatePath)) {
 				throw new Error(
-					`Circular dependency detected: ${templatePath}`
+					`Circular dependency detected: ${templatePath}`,
 				);
 			}
 			if (visited.has(templatePath)) {
@@ -874,7 +863,7 @@ export class Combino {
 			}
 			if (templateConfig.exclude) {
 				templateConfig.exclude.forEach((pattern) =>
-					allIgnorePatterns.add(pattern)
+					allIgnorePatterns.add(pattern),
 				);
 			}
 
@@ -900,7 +889,7 @@ export class Combino {
 		const targetDirMap = new Map<string, string>();
 		const buildTargetDirMap = async (
 			templatePath: string,
-			targetDir?: string
+			targetDir?: string,
 		) => {
 			const resolved = path.resolve(templatePath);
 			if (targetDir) {
@@ -924,7 +913,7 @@ export class Combino {
 
 		// After topological sort, reorder so initial templates are in the order given, but only after their dependencies
 		const initialTemplatesSet = new Set(
-			resolvedTemplates.map((t) => path.resolve(t))
+			resolvedTemplates.map((t) => path.resolve(t)),
 		);
 		const reorderedTemplates: typeof sortedTemplates = [];
 		const alreadyAdded = new Set<string>();
@@ -940,7 +929,7 @@ export class Combino {
 			}
 			// Then add the template itself
 			const tpl = sortedTemplates.find(
-				(t) => path.resolve(t.path) === resolved
+				(t) => path.resolve(t.path) === resolved,
 			);
 			if (tpl) {
 				reorderedTemplates.push(tpl);
@@ -991,17 +980,33 @@ export class Combino {
 			if (template.config && template.config.include) {
 				for (const { source, target } of template.config.include) {
 					if (target) {
-						const ignoreSet = templateExtraIgnores.get(path.resolve(template.path)) || new Set();
+						const ignoreSet =
+							templateExtraIgnores.get(
+								path.resolve(template.path),
+							) || new Set();
 						// Resolve the source path relative to the template and get the basename
-						const resolvedSourcePath = path.resolve(template.path, source);
-						const sourceBasename = path.basename(resolvedSourcePath);
+						const resolvedSourcePath = path.resolve(
+							template.path,
+							source,
+						);
+						const sourceBasename =
+							path.basename(resolvedSourcePath);
 						ignoreSet.add(sourceBasename);
-						templateExtraIgnores.set(path.resolve(template.path), ignoreSet);
+						templateExtraIgnores.set(
+							path.resolve(template.path),
+							ignoreSet,
+						);
 
 						// Track which templates are included with targets
-						const includedSet = includedWithTargets.get(path.resolve(template.path)) || new Set();
+						const includedSet =
+							includedWithTargets.get(
+								path.resolve(template.path),
+							) || new Set();
 						includedSet.add(resolvedSourcePath);
-						includedWithTargets.set(path.resolve(template.path), includedSet);
+						includedWithTargets.set(
+							path.resolve(template.path),
+							includedSet,
+						);
 					}
 				}
 			}
@@ -1022,24 +1027,29 @@ export class Combino {
 			config: templateConfig,
 		} of allTemplates) {
 			// Merge global ignore patterns with any extra for this template
-			const extraIgnores = templateExtraIgnores.get(path.resolve(template)) || new Set();
-			const ignorePatterns = Array.from(new Set([...allIgnorePatterns, ...extraIgnores]));
+			const extraIgnores =
+				templateExtraIgnores.get(path.resolve(template)) || new Set();
+			const ignorePatterns = Array.from(
+				new Set([...allIgnorePatterns, ...extraIgnores]),
+			);
 			const files = await this.getFilesInTemplate(
 				template,
 				ignorePatterns,
-				allData
+				allData,
 			);
 
 			// Filter out files that are part of templates included with targets (only when copying to root)
-			const filteredFiles = targetDir ? files : files.filter(({ sourcePath }) => {
-				// Check if this file is part of a template that's included with a target
-				for (const includedPath of allIncludedWithTargets) {
-					if (sourcePath.startsWith(includedPath)) {
-						return false;
-					}
-				}
-				return true;
-			});
+			const filteredFiles = targetDir
+				? files
+				: files.filter(({ sourcePath }) => {
+						// Check if this file is part of a template that's included with a target
+						for (const includedPath of allIncludedWithTargets) {
+							if (sourcePath.startsWith(includedPath)) {
+								return false;
+							}
+						}
+						return true;
+					});
 
 			for (const { sourcePath, targetPath } of filteredFiles) {
 				const finalTargetPath = targetDir
@@ -1047,7 +1057,7 @@ export class Combino {
 					: targetPath;
 				const fullTargetPath = path.join(
 					resolvedOutputDir,
-					finalTargetPath
+					finalTargetPath,
 				);
 
 				await fs.mkdir(path.dirname(fullTargetPath), {
@@ -1071,7 +1081,7 @@ export class Combino {
 
 				const strategy = this.getMergeStrategy(
 					targetPath,
-					mergedConfig
+					mergedConfig,
 				);
 
 				// Find the first template that contains this file for property order preservation
@@ -1097,11 +1107,11 @@ export class Combino {
 						sourcePath,
 						strategy,
 						fileData,
-						baseTemplatePath
+						baseTemplatePath,
 					);
 					const formattedContent = await formatFileWithPrettier(
 						fullTargetPath,
-						mergedContent
+						mergedContent,
 					);
 					await fs.writeFile(fullTargetPath, formattedContent);
 				} catch (error) {
@@ -1113,11 +1123,11 @@ export class Combino {
 					};
 					const processedContent = await this.processTemplate(
 						sourceContent.content,
-						fileData
+						fileData,
 					);
 					const formattedContent = await formatFileWithPrettier(
 						fullTargetPath,
-						processedContent
+						processedContent,
 					);
 					await fs.writeFile(fullTargetPath, formattedContent);
 				}

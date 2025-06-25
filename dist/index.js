@@ -138,19 +138,19 @@ async function formatFileWithPrettier(filePath, content) {
         }
         // Try to find a Prettier config file in the project
         let prettierConfig = {
-            "useTabs": true,
-            "semi": false,
-            "singleQuote": true,
-            "printWidth": 120,
-            "overrides": [
+            useTabs: true,
+            semi: false,
+            singleQuote: true,
+            printWidth: 120,
+            overrides: [
                 {
-                    "files": "*.md",
-                    "options": {
-                        "useTabs": false,
-                        "tabWidth": 4
-                    }
+                    files: "*.md",
+                    options: {
+                        useTabs: false,
+                        tabWidth: 4,
+                    },
                 },
-            ]
+            ],
         };
         try {
             const configPath = await prettier.resolveConfig(filePath);
@@ -529,20 +529,8 @@ export class Combino {
                 }
             }
         }
-        // Fall back to default strategies
-        const ext = path.extname(filePath).toLowerCase();
-        // console.log(
-        // 	"No matching pattern found, using default strategy for extension",
-        // 	ext
-        // );
-        switch (ext) {
-            case ".json":
-                return "deep";
-            case ".md":
-                return "shallow";
-            default:
-                return "replace";
-        }
+        // Default strategy is now "replace" for all file types
+        return "replace";
     }
     async mergeFiles(targetPath, sourcePath, strategy, data, baseTemplatePath) {
         const ext = path.extname(targetPath).toLowerCase();
@@ -818,15 +806,17 @@ export class Combino {
             const ignorePatterns = Array.from(new Set([...allIgnorePatterns, ...extraIgnores]));
             const files = await this.getFilesInTemplate(template, ignorePatterns, allData);
             // Filter out files that are part of templates included with targets (only when copying to root)
-            const filteredFiles = targetDir ? files : files.filter(({ sourcePath }) => {
-                // Check if this file is part of a template that's included with a target
-                for (const includedPath of allIncludedWithTargets) {
-                    if (sourcePath.startsWith(includedPath)) {
-                        return false;
+            const filteredFiles = targetDir
+                ? files
+                : files.filter(({ sourcePath }) => {
+                    // Check if this file is part of a template that's included with a target
+                    for (const includedPath of allIncludedWithTargets) {
+                        if (sourcePath.startsWith(includedPath)) {
+                            return false;
+                        }
                     }
-                }
-                return true;
-            });
+                    return true;
+                });
             for (const { sourcePath, targetPath } of filteredFiles) {
                 const finalTargetPath = targetDir
                     ? path.join(targetDir, targetPath)

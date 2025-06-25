@@ -5,3 +5,9 @@
 [data]
 project.name = "extended-project"
 project.description = "An extended project"
+
+[merge:*.json]
+strategy = deep
+
+[merge:*.md]
+strategy = shallow
