@@ -100,34 +100,27 @@ describe("Combino Integration Test Suite", () => {
 
 		// Skip tests that don't have expected directories or are marked to skip
 		if (!existsSync(expectedDir) || testConfig.skip) {
-			describe(`${testName}`, () => {
-				it.skip(`skipped - ${!existsSync(expectedDir) ? "no expected directory" : testConfig.reason || "marked to skip"}`, () => {
-					// Test skipped
-				});
+			it.skip(`${testName} - skipped - ${!existsSync(expectedDir) ? "no expected directory" : testConfig.reason || "marked to skip"}`, () => {
+				// Test skipped
 			});
 			return;
 		}
 
-		describe(`${testName}`, () => {
-			let inputDirs: string[];
-			beforeAll(async () => {
-				try {
-					rmSync(outputDir, { recursive: true, force: true });
-				} catch {}
-				inputDirs = getInputDirsForTest(testConfig, testCaseDir);
-				const combino = new Combino();
-				await combino.combine({
-					outputDir,
-					templates: inputDirs,
-					data: testConfig.data || { framework: "react" },
-					...(configFile ? { config: configFile } : {}),
-				});
+		it(`${testName}: ${testConfig.description || "should match expected output"}`, async () => {
+			try {
+				rmSync(outputDir, { recursive: true, force: true });
+			} catch {}
+			const inputDirs = getInputDirsForTest(testConfig, testCaseDir);
+			const combino = new Combino();
+			await combino.combine({
+				outputDir,
+				templates: inputDirs,
+				data: testConfig.data || { framework: "react" },
+				...(configFile ? { config: configFile } : {}),
 			});
-			it("should match expected output", () => {
-				assertDirectoriesEqual(outputDir, expectedDir, {
-					ignoreWhitespace: true,
-					parseJson: true,
-				});
+			assertDirectoriesEqual(outputDir, expectedDir, {
+				ignoreWhitespace: true,
+				parseJson: true,
 			});
 		});
 	});
