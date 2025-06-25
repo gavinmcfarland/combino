@@ -1,0 +1,134 @@
+import { readdirSync, statSync, rmSync, existsSync, readFileSync } from "fs";
+import { join, dirname, resolve } from "path";
+import { fileURLToPath } from "url";
+import { describe, it, beforeAll } from "vitest";
+import { Combino } from "../src/index.js";
+import { assertDirectoriesEqual } from "./utils/directory-compare.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+interface TestConfig {
+	data?: Record<string, any>;
+	inputDirs?: string[];
+	skip?: boolean;
+	reason?: string;
+	description?: string;
+}
+
+// Helper to find all test case directories
+function getTestCaseDirs(testsRoot: string): string[] {
+	return readdirSync(testsRoot)
+		.filter((name) => {
+			const fullPath = join(testsRoot, name);
+			return (
+				statSync(fullPath).isDirectory() &&
+				!name.startsWith(".") &&
+				name !== "utils"
+			);
+		})
+		.map((name) => join(testsRoot, name));
+}
+
+// Helper to get input directories (input/* or inputs/*)
+function getInputDirs(testCaseDir: string): string[] {
+	const inputRoot = join(testCaseDir, "input");
+	const inputsRoot = join(testCaseDir, "inputs");
+	if (statSync(inputRoot, { throwIfNoEntry: false })?.isDirectory()) {
+		// If input/ contains subfolders, use them; else, use input/ itself
+		const subdirs = readdirSync(inputRoot)
+			.map((name) => join(inputRoot, name))
+			.filter((p) => statSync(p).isDirectory());
+		return subdirs.length > 0 ? subdirs : [inputRoot];
+	} else if (statSync(inputsRoot, { throwIfNoEntry: false })?.isDirectory()) {
+		return readdirSync(inputsRoot)
+			.map((name) => join(inputsRoot, name))
+			.filter((p) => statSync(p).isDirectory());
+	}
+	throw new Error(`No input/ or inputs/ directory found in ${testCaseDir}`);
+}
+
+// Helper to read test configuration
+function getTestConfig(testCaseDir: string): TestConfig {
+	const configPath = join(testCaseDir, "test-config.json");
+	if (existsSync(configPath)) {
+		try {
+			return JSON.parse(readFileSync(configPath, "utf-8"));
+		} catch (error) {
+			console.warn(
+				`Failed to parse test config for ${testCaseDir}:`,
+				error,
+			);
+		}
+	}
+
+	// Default configuration
+	return {
+		data: { framework: "react" },
+	};
+}
+
+// Helper to get input directories for specific tests
+function getInputDirsForTest(
+	testConfig: TestConfig,
+	testCaseDir: string,
+): string[] {
+	if (testConfig.inputDirs) {
+		// Use custom input directories from config
+		return testConfig.inputDirs.map((dir) => join(testCaseDir, dir));
+	}
+	return getInputDirs(testCaseDir);
+}
+
+// Main generic test runner
+describe("Combino Integration Test Suite", () => {
+	const testsRoot = join(__dirname);
+	const testCaseDirs = getTestCaseDirs(testsRoot);
+
+	testCaseDirs.forEach((testCaseDir) => {
+		const testName = testCaseDir.split("/").pop()!;
+		const outputDir = join(testCaseDir, "output");
+		const expectedDir = join(testCaseDir, "expected");
+		const configFile = [
+			".combino",
+			"config.combino",
+			join(testCaseDir, "input", ".combino"),
+			join(testCaseDir, "input", "config.combino"),
+		].find((f) => existsSync(f));
+
+		const testConfig = getTestConfig(testCaseDir);
+
+		// Skip tests that don't have expected directories or are marked to skip
+		if (!existsSync(expectedDir) || testConfig.skip) {
+			describe(`${testName}`, () => {
+				it.skip(`skipped - ${!existsSync(expectedDir) ? "no expected directory" : testConfig.reason || "marked to skip"}`, () => {
+					// Test skipped
+				});
+			});
+			return;
+		}
+
+		describe(`${testName}`, () => {
+			let inputDirs: string[];
+			beforeAll(async () => {
+				try {
+					rmSync(outputDir, { recursive: true, force: true });
+				} catch {}
+				inputDirs = getInputDirsForTest(testConfig, testCaseDir);
+				const combino = new Combino();
+				await combino.combine({
+					outputDir,
+					templates: inputDirs,
+					data: testConfig.data || { framework: "react" },
+					...(configFile ? { config: configFile } : {}),
+				});
+			});
+			it("should match expected output", () => {
+				assertDirectoriesEqual(outputDir, expectedDir, {
+					ignoreWhitespace: true,
+					parseJson: true,
+				});
+			});
+		});
+	});
+});

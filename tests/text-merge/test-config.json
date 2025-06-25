@@ -1,0 +1,6 @@
+{
+    "data": {
+        "framework": "react"
+    },
+    "description": "Text merge test with append strategy (configured via .combino file)"
+}

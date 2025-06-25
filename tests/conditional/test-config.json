@@ -1,0 +1,9 @@
+{
+    "data": {
+        "framework": "react",
+        "language": "ts",
+        "type": "web"
+    },
+    "inputDirs": ["input/base"],
+    "description": "Conditional test that only uses the base input directory"
+}
