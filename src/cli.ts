@@ -3,6 +3,10 @@
 import { Command } from "commander";
 import { Combino } from "./index.js";
 import { TemplateOptions } from "./types.js";
+import {
+	isTemplateEngineAvailable,
+	getTemplateEngineInstallInstructions,
+} from "./template-engines/index.js";
 import * as fs from "fs";
 import * as path from "path";
 import * as ini from "ini";
@@ -40,6 +44,26 @@ program
 	)
 	.action(async (templates: string[], options: any) => {
 		try {
+			// Check if the requested template engine is available
+			if (options.templateEngine && options.templateEngine !== "ejs") {
+				const isAvailable = await isTemplateEngineAvailable(
+					options.templateEngine,
+				);
+				if (!isAvailable) {
+					const installCmd = getTemplateEngineInstallInstructions(
+						options.templateEngine,
+					);
+					console.error(
+						`Error: Template engine '${options.templateEngine}' is not available.`,
+					);
+					console.error(
+						`To use this template engine, please install the required dependency:`,
+					);
+					console.error(`  ${installCmd}`);
+					process.exit(1);
+				}
+			}
+
 			const combino = new Combino();
 			let templateData: Record<string, any> = {};
 

@@ -13,6 +13,18 @@ export interface TemplateEngine {
      */
     hasTemplateSyntax(content: string): boolean;
 }
+/**
+ * Check if a template engine dependency is available
+ * @param engine The engine name to check
+ * @returns Promise<boolean> True if the engine is available
+ */
+export declare function isTemplateEngineAvailable(engine: string): Promise<boolean>;
+/**
+ * Get installation instructions for a template engine
+ * @param engine The engine name
+ * @returns string Installation instructions
+ */
+export declare function getTemplateEngineInstallInstructions(engine: string): string;
 export * from "./ejs.js";
 export * from "./handlebars.js";
 export * from "./mustache.js";

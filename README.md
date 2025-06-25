@@ -10,6 +10,7 @@ Combino is a composable scaffolding engine that lets you build fully customised 
 - [Configuration](#configuration)
 - [CLI Usage](#cli-usage)
 - [Development](#development)
+- [Template Engines](#template-engines)
 
 ## Example
 
@@ -126,7 +127,7 @@ npm install -g combino
       <% }); %>
     ```
 
-    **Handlebars**
+    **Handlebars** _(Optional dependency)_
 
     ```md
     # {{name}}
@@ -137,7 +138,7 @@ npm install -g combino
       {{/each}}
     ```
 
-    **Mustache**
+    **Mustache** _(Optional dependency)_
 
     ```md
     # {{name}}
@@ -148,16 +149,26 @@ npm install -g combino
       {{/features}}
     ```
 
+    **Installing Optional Dependencies**
+
+    ```bash
+    # For Handlebars support
+    npm install handlebars
+
+    # For Mustache support
+    npm install mustache
+    ```
+
     **CLI Usage**
 
     ```bash
     # Use EJS (default)
     combino templates --data name=my-project
 
-    # Use Handlebars
+    # Use Handlebars (requires: npm install handlebars)
     combino templates --template-engine handlebars --data name=my-project
 
-    # Use Mustache
+    # Use Mustache (requires: npm install mustache)
     combino templates --template-engine mustache --data name=my-project
     ```
 
@@ -168,14 +179,16 @@ npm install -g combino
     import {
         EJSTemplateEngine,
         HandlebarsTemplateEngine,
+        MustacheTemplateEngine,
     } from "combino/template-engines";
 
     // Use EJS
-    const combino = new Combino(new EJSTemplateEngine());
+    const combino = new Combino();
 
-    // Use Handlebars
-    const combino = new Combino(new HandlebarsTemplateEngine());
+    // Use Handlebars (requires: npm install handlebars)
+    const combinoHandlebars = new Combino(new HandlebarsTemplateEngine());
 
+    // Use Mustache (requires: npm install mustache)
     // Or pass via options
     await combino.combine({
         outputDir: "./output",
@@ -183,6 +196,8 @@ npm install -g combino
         templateEngine: "ejs", // or 'handlebars', 'mustache'
     });
     ```
+
+    **Note**: Handlebars and Mustache are optional dependencies. If you try to use them without installing the required packages, Combino will provide helpful error messages with installation instructions.
 
 ---
 

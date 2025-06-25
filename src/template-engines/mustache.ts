@@ -1,10 +1,30 @@
-import Mustache from "mustache";
 import { TemplateEngine } from "./index.js";
 
 export class MustacheTemplateEngine implements TemplateEngine {
+	private mustache: any = null;
+
+	constructor() {
+		// Initialize will be called lazily when first needed
+	}
+
+	private async initialize(): Promise<void> {
+		if (this.mustache === null) {
+			try {
+				const MustacheModule = await import("mustache");
+				this.mustache = MustacheModule.default;
+			} catch (error) {
+				throw new Error(
+					"Mustache template engine requires the 'mustache' package to be installed. " +
+						"Please run: npm install mustache",
+				);
+			}
+		}
+	}
+
 	async render(content: string, data: Record<string, any>): Promise<string> {
 		try {
-			return Mustache.render(content, data);
+			await this.initialize();
+			return this.mustache.render(content, data);
 		} catch (error) {
 			console.error("Error processing Mustache template:", error);
 			return content;
