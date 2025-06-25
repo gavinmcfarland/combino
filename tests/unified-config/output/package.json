@@ -1,5 +1,0 @@
-{
-	"name": "<%= project.name.toLowerCase().replace(/s+/g, '-') %>",
-	"version": "<%= project.version %>",
-	"description": "A test project"
-}

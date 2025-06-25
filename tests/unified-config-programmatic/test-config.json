@@ -1,0 +1,10 @@
+{
+    "data": {
+        "framework": "react",
+        "project": {
+            "name": "Config Project",
+            "version": "2.0.0"
+        }
+    },
+    "description": "Unified config test with programmatic configuration"
+}
