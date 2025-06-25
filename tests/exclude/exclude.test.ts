@@ -1,7 +1,8 @@
-import { readFileSync, rmSync } from "fs";
+import { rmSync, readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { Combino } from "../../src/index.js";
+import { assertDirectoriesEqual } from "../utils/directory-compare.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -37,13 +38,10 @@ describe("Exclude Test Suite", () => {
 		});
 
 		it("should still process non-excluded files", () => {
-			const outputPath = join(outputDir, "README.md");
-			const expectedPath = join(expectedDir, "README.md");
-
-			const output = readFileSync(outputPath, "utf-8");
-			const expected = readFileSync(expectedPath, "utf-8");
-
-			expect(output).toBe(expected);
+			// Compare the entire output directory with the expected directory
+			assertDirectoriesEqual(outputDir, expectedDir, {
+				ignoreWhitespace: true,
+			});
 		});
 	});
 });

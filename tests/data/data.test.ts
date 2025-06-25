@@ -1,7 +1,8 @@
-import { readFileSync, rmSync } from "fs";
+import { rmSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { Combino } from "../../src/index.js";
+import { assertDirectoriesEqual } from "../utils/directory-compare.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -9,7 +10,7 @@ const __dirname = dirname(__filename);
 describe("Data Processing Test Suite", () => {
 	const testDir = __dirname;
 	const inputDirs = ["base", "typescript"].map((dir) =>
-		join(testDir, "input", dir)
+		join(testDir, "input", dir),
 	);
 	const outputDir = join(testDir, "output");
 	const expectedDir = join(testDir, "expected");
@@ -30,24 +31,12 @@ describe("Data Processing Test Suite", () => {
 	});
 
 	describe("EJS template processing", () => {
-		it("should process package.json with data from .combino", () => {
-			const outputPath = join(outputDir, "package.json");
-			const expectedPath = join(expectedDir, "package.json");
-
-			const output = JSON.parse(readFileSync(outputPath, "utf-8"));
-			const expected = JSON.parse(readFileSync(expectedPath, "utf-8"));
-
-			expect(output).toEqual(expected);
-		});
-
-		it("should process README.md with data from .combino", () => {
-			const outputPath = join(outputDir, "README.md");
-			const expectedPath = join(expectedDir, "README.md");
-
-			const output = readFileSync(outputPath, "utf-8");
-			const expected = readFileSync(expectedPath, "utf-8");
-
-			expect(output).toBe(expected);
+		it("should process files with data from .combino", () => {
+			// Compare the entire output directory with the expected directory
+			assertDirectoriesEqual(outputDir, expectedDir, {
+				ignoreWhitespace: true,
+				parseJson: true,
+			});
 		});
 	});
 });

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Combino } from "../../src/index.js";
+import { assertDirectoriesEqual } from "../utils/directory-compare.js";
 import path from "path";
 import fs from "fs/promises";
 
@@ -7,6 +8,7 @@ describe("Unified Configuration", () => {
 	it("should work with programmatic config object", async () => {
 		const combino = new Combino();
 		const testDir = path.join(__dirname, "output");
+		const expectedDir = path.join(__dirname, "expected-programmatic");
 
 		// Clean up
 		try {
@@ -32,20 +34,17 @@ describe("Unified Configuration", () => {
 			config,
 		});
 
-		// Verify the output was generated
-		const packageJson = await fs.readFile(
-			path.join(testDir, "package.json"),
-			"utf-8",
-		);
-		const parsed = JSON.parse(packageJson);
-
-		expect(parsed.name).toBe("te-t project");
-		expect(parsed.version).toBe("1.0.0");
+		// Compare the entire output directory with the expected directory
+		assertDirectoriesEqual(testDir, expectedDir, {
+			ignoreWhitespace: true,
+			parseJson: true,
+		});
 	});
 
 	it("should work with .combino config file", async () => {
 		const combino = new Combino();
 		const testDir = path.join(__dirname, "output-file");
+		const expectedDir = path.join(__dirname, "expected-file");
 
 		// Clean up
 		try {
@@ -58,14 +57,10 @@ describe("Unified Configuration", () => {
 			config: path.join(__dirname, "input/config.combino"),
 		});
 
-		// Verify the output was generated
-		const packageJson = await fs.readFile(
-			path.join(testDir, "package.json"),
-			"utf-8",
-		);
-		const parsed = JSON.parse(packageJson);
-
-		expect(parsed.name).toBe("config project");
-		expect(parsed.version).toBe("2.0.0");
+		// Compare the entire output directory with the expected directory
+		assertDirectoriesEqual(testDir, expectedDir, {
+			ignoreWhitespace: true,
+			parseJson: true,
+		});
 	});
 });

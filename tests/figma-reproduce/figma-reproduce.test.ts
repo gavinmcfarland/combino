@@ -1,7 +1,8 @@
-import { readFileSync, rmSync } from "fs";
+import { rmSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { Combino } from "../../src/index.js";
+import { assertDirectoriesEqual } from "../utils/directory-compare.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -9,9 +10,10 @@ const __dirname = dirname(__filename);
 describe("Figma Reproduce Test Suite", () => {
 	const testDir = __dirname;
 	const inputDirs = ["base", "svelte"].map((dir) =>
-		join(testDir, "input", dir)
+		join(testDir, "input", dir),
 	);
 	const outputDir = join(testDir, "output");
+	const expectedDir = join(testDir, "expected");
 
 	beforeAll(async () => {
 		// Clean up output directory before running tests
@@ -29,41 +31,12 @@ describe("Figma Reproduce Test Suite", () => {
 	});
 
 	describe("Figma reproduce issue", () => {
-		it("should not have $key property in final output", () => {
-			const outputPath = join(outputDir, "tsconfig.json");
-			const output = JSON.parse(readFileSync(outputPath, "utf-8"));
-
-			// Check that no object has a $key property
-			const hasKeyProperty = output.references.some(
-				(ref: any) => "$key" in ref
-			);
-			expect(hasKeyProperty).toBe(false);
-		});
-
-		it("should merge the tsconfig.ui.json reference correctly", () => {
-			const outputPath = join(outputDir, "tsconfig.json");
-			const output = JSON.parse(readFileSync(outputPath, "utf-8"));
-
-			// Find the tsconfig.ui.json reference
-			const uiReference = output.references.find(
-				(ref: any) => ref.path === "./tsconfig.ui.json"
-			);
-
-			expect(uiReference).toBeDefined();
-			expect(uiReference.extends).toBe("@tsconfig/svelte/tsconfig.json");
-			expect(uiReference.include).toContain("src/**/*.svelte");
-			expect(uiReference.include).toContain("src/**/*.ts");
-			expect(uiReference.include).toContain("src/**/*.js");
-		});
-
-		it("should not have duplicate references", () => {
-			const outputPath = join(outputDir, "tsconfig.json");
-			const output = JSON.parse(readFileSync(outputPath, "utf-8"));
-
-			// Check that there's only one reference for each path
-			const paths = output.references.map((ref: any) => ref.path);
-			const uniquePaths = [...new Set(paths)];
-			expect(paths.length).toBe(uniquePaths.length);
+		it("should reproduce the expected output", () => {
+			// Compare the entire output directory with the expected directory
+			assertDirectoriesEqual(outputDir, expectedDir, {
+				ignoreWhitespace: true,
+				parseJson: true,
+			});
 		});
 	});
 });

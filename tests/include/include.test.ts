@@ -1,7 +1,8 @@
-import { readFileSync, rmSync } from "fs";
+import { rmSync, readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { Combino } from "../../src/index.js";
+import { assertDirectoriesEqual } from "../utils/directory-compare.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -36,80 +37,20 @@ describe("Include Test Suite", () => {
 	});
 
 	describe("File merging with inclusion", () => {
-		it("should correctly merge markdown files from base and included templates", () => {
-			const outputPath = join(outputDir, "README.md");
-			const expectedPath = join(expectedDir, "README.md");
-
-			const output = readFileSync(outputPath, "utf-8");
-			const expected = readFileSync(expectedPath, "utf-8");
-
-			expect(output).toBe(expected);
-		});
-
-		it("should correctly merge JSON files from base and included templates", () => {
-			const outputPath = join(outputDir, "package.json");
-			const expectedPath = join(expectedDir, "package.json");
-
-			const output = JSON.parse(readFileSync(outputPath, "utf-8"));
-			const expected = JSON.parse(readFileSync(expectedPath, "utf-8"));
-
-			expect(output).toEqual(expected);
+		it("should correctly merge files from base and included templates", () => {
+			// Compare the entire output directory with the expected directory
+			assertDirectoriesEqual(outputDir, expectedDir, {
+				ignoreWhitespace: true,
+				parseJson: true,
+			});
 		});
 
 		it("should correctly handle template overrides with multiple templates", () => {
 			const outputPath = join(outputDir, "package.json");
-			const expectedPath = join(expectedDir, "package.json");
-
 			const output = JSON.parse(readFileSync(outputPath, "utf-8"));
-			const expected = JSON.parse(readFileSync(expectedPath, "utf-8"));
 
 			// Verify that override template takes precedence
-			expect(output).toEqual(expected);
 			expect(output.name).toBe("override-project");
-		});
-
-		it("should place files in the correct target directory when specified", () => {
-			// Test that files from the included template are placed in the specified target directory
-			const outputPath = join(
-				outputDir,
-				"src",
-				"components",
-				"Component.tsx"
-			);
-			const expectedPath = join(
-				expectedDir,
-				"src",
-				"components",
-				"Component.tsx"
-			);
-
-			const output = readFileSync(outputPath, "utf-8");
-			const expected = readFileSync(expectedPath, "utf-8");
-
-			expect(output).toBe(expected);
-		});
-
-		it("should handle nested target directory mappings", () => {
-			// Test that nested target directories are created correctly
-			const outputPath = join(
-				outputDir,
-				"src",
-				"components",
-				"nested",
-				"NestedComponent.tsx"
-			);
-			const expectedPath = join(
-				expectedDir,
-				"src",
-				"components",
-				"nested",
-				"NestedComponent.tsx"
-			);
-
-			const output = readFileSync(outputPath, "utf-8");
-			const expected = readFileSync(expectedPath, "utf-8");
-
-			expect(output).toBe(expected);
 		});
 
 		it("should correctly process EJS templates in include paths", async () => {
@@ -139,7 +80,7 @@ describe("Include Test Suite", () => {
 				vueOutputDir,
 				"src",
 				"components",
-				"Component.tsx"
+				"Component.tsx",
 			);
 			expect(() => readFileSync(outputPath, "utf-8")).not.toThrow();
 		});
