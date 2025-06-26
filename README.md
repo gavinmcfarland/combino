@@ -196,7 +196,7 @@ project.version = "1.0.0"
 
 ### Arguments
 
-- **`include...`** { String } One or more paths to template folders to include (first has lowest priority, last wins)
+- **`include...`** One or more paths to template folders to include (first has lowest priority, last wins)
 
 ### Options
 
