@@ -142,7 +142,7 @@ await combino.combine({
 });
 ```
 
-## Usage
+## CLI
 
 `combino [templates...] [options]`
 
