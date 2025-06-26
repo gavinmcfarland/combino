@@ -1,5 +1,11 @@
 # combino
 
+## 0.1.2
+
+### Patch Changes
+
+- c898068: Refactored to use better names for options
+
 ## 0.1.1
 
 ### Patch Changes
