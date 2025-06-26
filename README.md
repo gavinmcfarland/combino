@@ -129,17 +129,25 @@ interface CombinoConfig {
     <%= plugin.description %>
     ```
 
-## Programmatic Usage
+## Configure
 
-```js
-import { Combino } from "combino";
+Combino will load `.combino` files that exist within each template.
 
-// Or pass via options
-await combino.combine({
-    outputDir: "./output",
-    templates: ["./templates/base", "./template/override"],
-    templateEngine: "ejs", // or 'handlebars', 'mustache'
-});
+```ini
+[include]
+../base
+../<% framework %>/components = src/components
+
+[exclude]
+node_modules/**
+*.log
+
+[merge:*.json]
+strategy = deep
+
+[data]
+project.name = "My Project"
+project.version = "1.0.0"
 ```
 
 ## CLI
