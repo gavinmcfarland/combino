@@ -2,7 +2,7 @@
 
 ![npm](https://img.shields.io/npm/v/combino)
 
-Combino is a composable scaffolding engine that lets you build fully customised project structures by combining modular template folders with smart deep merging, dynamic conditions, and reusable logic.
+Combino is a composable scaffolding engine that lets you build fully customised project structures by combining modular template folders with strategic merging, dynamic conditions, and reusable logic.
 
 ## Instal
 
