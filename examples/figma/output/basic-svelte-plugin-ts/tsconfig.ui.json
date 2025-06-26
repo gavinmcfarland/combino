@@ -1,7 +1,6 @@
 {
-	"include": ["src/**/*.js", "src/**/*.ts", "src/ui/**/*.ts", "src/ui/**/*.js", "src/ui/**/*.svelte"],
-	"extends": "@tsconfig/svelte/tsconfig.json",
 	"compilerOptions": {
+		"composite": true,
 		"target": "ES2022",
 		"useDefineForClassFields": true,
 		"module": "ESNext",
@@ -10,5 +9,7 @@
 		"checkJs": true,
 		"isolatedModules": true,
 		"moduleDetection": "force"
-	}
+	},
+	"extends": "@tsconfig/svelte/tsconfig.json",
+	"include": ["src/ui/**/*.ts", "src/ui/**/*.js", "src/ui/**/*.svelte"]
 }
