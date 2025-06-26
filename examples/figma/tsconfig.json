@@ -7,13 +7,12 @@
         "strict": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "outDir": "dist",
-        "rootDir": "src",
+        "outDir": "output",
         "declaration": true,
         "moduleDetection": "force",
         "isolatedModules": true,
         "verbatimModuleSyntax": true
     },
-    "include": ["src/**/*"],
-    "exclude": ["node_modules", "dist", "tests"]
+    "include": ["templates/**/*"],
+    "exclude": ["node_modules", "output"]
 }
