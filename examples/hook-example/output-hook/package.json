@@ -1,0 +1,19 @@
+{
+	"name": "<%= name %>",
+	"version": "<%= version %>",
+	"description": "<%= description %>",
+	"main": "index.js",
+	"scripts": {
+		"start": "node index.js",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"_metadata": {
+		"generatedAt": "2025-06-26T21:40:01.641Z",
+		"framework": "React",
+		"language": "TypeScript",
+		"generatedBy": "Combino"
+	}
+}

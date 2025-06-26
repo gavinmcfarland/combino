@@ -44,6 +44,21 @@ export interface FileContent {
 
 export type ConfigFile = string;
 
+export interface FileHookContext {
+	/** The source file path from the template */
+	sourcePath: string;
+	/** The target file path where the file will be written */
+	targetPath: string;
+	/** The file content after template processing but before formatting */
+	content: string;
+	/** The data used for template processing */
+	data: Record<string, any>;
+	/** The template engine instance (if any) */
+	templateEngine?: TemplateEngine;
+}
+
+export type FileHook = (context: FileHookContext) => Promise<string> | string;
+
 export interface TemplateOptions {
 	outputDir: string;
 	include: string[];
@@ -52,4 +67,6 @@ export interface TemplateOptions {
 	data?: Record<string, any>;
 	/** Template engine to use for processing templates */
 	templateEngine?: string | TemplateEngine;
+	/** Hook to run after template processing but before formatting */
+	onFileProcessed?: FileHook;
 }

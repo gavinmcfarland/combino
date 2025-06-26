@@ -3,7 +3,12 @@ import path from "path";
 import { glob } from "glob";
 import matter from "gray-matter";
 import { Parser } from "expr-eval";
-import { TemplateOptions, FileContent, MergeStrategy } from "./types.js";
+import {
+	TemplateOptions,
+	FileContent,
+	MergeStrategy,
+	FileHookContext,
+} from "./types.js";
 import { mergeJson } from "./mergers/json.js";
 import { mergeMarkdown } from "./mergers/markdown.js";
 import { mergeText } from "./mergers/text.js";
@@ -751,6 +756,7 @@ export class Combino {
 			data: externalData = {},
 			config,
 			templateEngine,
+			onFileProcessed,
 		} = options;
 
 		// Set template engine if provided
@@ -1162,9 +1168,25 @@ export class Combino {
 						fileData,
 						baseTemplatePath,
 					);
+
+					// Apply hook if provided (after template processing, before formatting)
+					let finalContent = mergedContent;
+					if (onFileProcessed) {
+						const hookContext = {
+							sourcePath,
+							targetPath: fullTargetPath,
+							content: mergedContent,
+							data: fileData,
+							templateEngine: this.templateEngine || undefined,
+						};
+						finalContent = await Promise.resolve(
+							onFileProcessed(hookContext),
+						);
+					}
+
 					const formattedContent = await formatFileWithPrettier(
 						fullTargetPath,
-						mergedContent,
+						finalContent,
 					);
 					await fs.writeFile(fullTargetPath, formattedContent);
 				} catch (error) {
@@ -1178,9 +1200,25 @@ export class Combino {
 						sourceContent.content,
 						fileData,
 					);
+
+					// Apply hook if provided (after template processing, before formatting)
+					let finalContent = processedContent;
+					if (onFileProcessed) {
+						const hookContext = {
+							sourcePath,
+							targetPath: fullTargetPath,
+							content: processedContent,
+							data: fileData,
+							templateEngine: this.templateEngine || undefined,
+						};
+						finalContent = await Promise.resolve(
+							onFileProcessed(hookContext),
+						);
+					}
+
 					const formattedContent = await formatFileWithPrettier(
 						fullTargetPath,
-						processedContent,
+						finalContent,
 					);
 					await fs.writeFile(fullTargetPath, formattedContent);
 				}
