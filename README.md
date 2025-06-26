@@ -4,7 +4,7 @@
 
 Combino is a composable scaffolding engine that lets you build fully customised project structures by combining modular template folders with smart deep merging, dynamic conditions, and reusable logic.
 
-## Installation
+## Instal
 
 Add the npm package to your project.
 
@@ -14,19 +14,38 @@ npm install combino
 
 ## Usage
 
-`combino [templates...] [options]`
+```js
+import { Combino } from "combino";
 
-### Arguments
+await combino.combine({
+    outputDir: "./output",
+    templates: ["./templates/base", "./template/override"],
+    templateEngine: "ejs",
+});
+```
 
-- **`templates...`** { String } One or more paths to template folders (first has lowest priority, last wins)
+<details>
 
-### Options
+<summary>Type Signature</summary>
 
-- **`-o, --output <dir>`**: Output directory (default: ./output)
-- **`-c, --config <path>`**: Path to .combino config file
-- **`--data <key=value>`** Inline key-value data
-- **`--template-engine <engine>`** Template engine to use (ejs, handlebars, mustache) - requires installing the corresponding dependency
-- **`--merge <pattern=strategy>`** Merge strategy for file patterns (e.g., _.json=deep, _.md=replace)
+```ts
+interface TemplateOptions {
+    outputDir: string;
+    templates: string[];
+    config?: CombinoConfig | string;
+    data?: Record<string, any>;
+    templateEngine?: string;
+}
+
+interface CombinoConfig {
+    include?: Array<{ source: string; target?: string }>;
+    exclude?: string[];
+    data?: Record<string, any>;
+    merge?: Record<string, Record<string, any>>;
+}
+```
+
+</details>
 
 ## Features
 
@@ -123,21 +142,18 @@ await combino.combine({
 });
 ```
 
-### Type Signature
+## Usage
 
-```ts
-interface TemplateOptions {
-    outputDir: string;
-    templates: string[];
-    config?: CombinoConfig | string;
-    data?: Record<string, any>;
-    templateEngine?: string;
-}
+`combino [templates...] [options]`
 
-interface CombinoConfig {
-    include?: Array<{ source: string; target?: string }>;
-    exclude?: string[];
-    data?: Record<string, any>;
-    merge?: Record<string, Record<string, any>>;
-}
-```
+### Arguments
+
+- **`templates...`** { String } One or more paths to template folders (first has lowest priority, last wins)
+
+### Options
+
+- **`-o, --output <dir>`**: Output directory (default: ./output)
+- **`-c, --config <path>`**: Path to .combino config file
+- **`--data <key=value>`** Inline key-value data
+- **`--template-engine <engine>`** Template engine to use (ejs, handlebars, mustache) - requires installing the corresponding dependency
+- **`--merge <pattern=strategy>`** Merge strategy for file patterns (e.g., _.json=deep, _.md=replace)
