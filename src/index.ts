@@ -2,14 +2,8 @@ import fs from "fs/promises";
 import path from "path";
 import { glob } from "glob";
 import matter from "gray-matter";
-import ejs from "ejs";
 import { Parser } from "expr-eval";
-import {
-	TemplateOptions,
-	FileContent,
-	MergeStrategy,
-	TemplateConfig,
-} from "./types.js";
+import { TemplateOptions, FileContent, MergeStrategy } from "./types.js";
 import { mergeJson } from "./mergers/json.js";
 import { mergeMarkdown } from "./mergers/markdown.js";
 import { mergeText } from "./mergers/text.js";
@@ -29,27 +23,6 @@ interface CombinoConfig {
 	data?: Record<string, any>;
 	merge?: Record<string, Record<string, any>>;
 	include?: Array<{ source: string; target?: string }>;
-}
-
-// Helper to flatten merge config keys
-function flattenMergeConfig(mergeObj: any): Record<string, any> {
-	const flat: Record<string, any> = {};
-	for (const [key, value] of Object.entries(mergeObj)) {
-		if (
-			typeof value === "object" &&
-			value !== null &&
-			!Array.isArray(value) &&
-			!("strategy" in value)
-		) {
-			// Flatten one level
-			for (const [subKey, subValue] of Object.entries(value)) {
-				flat[`${key}.${subKey}`] = subValue;
-			}
-		} else {
-			flat[key] = value;
-		}
-	}
-	return flat;
 }
 
 // Helper to manually parse [merge:...] sections from ini-like config text
