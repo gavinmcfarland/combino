@@ -1,15 +1,15 @@
 # Template Engines
 
-Combino now supports configurable template engines, allowing you to use different templating syntaxes based on your preferences or project requirements.
+Combino supports configurable template engines, allowing you to use different templating syntaxes based on your preferences or project requirements. **All template engines are optional dependencies** - you must install the ones you want to use.
 
 ## Available Template Engines
 
-### EJS (Default)
+### EJS (Optional)
 
 - **Syntax**: `<%= variable %>`, `<% code %>`
 - **Example**: `<%= name %>`
 - **CLI Option**: `--template-engine ejs`
-- **Dependency**: Included by default
+- **Installation**: `npm install ejs`
 
 ### Handlebars (Optional)
 
@@ -33,9 +33,12 @@ Combino now supports configurable template engines, allowing you to use differen
 npm install combino
 ```
 
-### Optional Dependencies
+### Template Engine Dependencies
 
 ```bash
+# For EJS support
+npm install ejs
+
 # For Handlebars support
 npm install handlebars
 
@@ -48,8 +51,8 @@ npm install mustache
 ### CLI Usage
 
 ```bash
-# Use EJS (default)
-combino templates --data name=my-project
+# Use EJS (requires: npm install ejs)
+combino templates --template-engine ejs --data name=my-project
 
 # Use Handlebars (requires: npm install handlebars)
 combino templates --template-engine handlebars --data name=my-project
@@ -65,13 +68,17 @@ import { Combino } from "combino";
 import {
     EJSTemplateEngine,
     HandlebarsTemplateEngine,
+    MustacheTemplateEngine,
 } from "combino/template-engines";
 
-// Use EJS
-const combino = new Combino(new EJSTemplateEngine());
+// Use EJS (requires: npm install ejs)
+const combinoEjs = new Combino(new EJSTemplateEngine());
 
 // Use Handlebars (requires: npm install handlebars)
-const combino = new Combino(new HandlebarsTemplateEngine());
+const combinoHandlebars = new Combino(new HandlebarsTemplateEngine());
+
+// Use Mustache (requires: npm install mustache)
+const combinoMustache = new Combino(new MustacheTemplateEngine());
 
 // Or pass via options
 await combino.combine({
@@ -83,13 +90,13 @@ await combino.combine({
 
 ## Error Handling
 
-If you try to use Handlebars or Mustache without installing the required dependencies, Combino will provide helpful error messages:
+If you try to use any template engine without installing the required dependencies, Combino will provide helpful error messages:
 
 ```bash
-$ combino templates --template-engine handlebars --data name=test
-Error: Template engine 'handlebars' is not available.
+$ combino templates --template-engine ejs --data name=test
+Error: Template engine 'ejs' is not available.
 To use this template engine, please install the required dependency:
-  npm install handlebars
+  npm install ejs
 ```
 
 ## Creating Custom Template Engines
@@ -119,4 +126,4 @@ Each template engine should implement the `hasTemplateSyntax` method to efficien
 
 ## Optional Dependencies
 
-Handlebars and Mustache are implemented as optional dependencies to keep the core package lightweight. The template engines use dynamic imports to load the dependencies only when needed, and provide clear error messages if the dependencies are not installed.
+All template engines are implemented as optional dependencies to keep the core package lightweight. The template engines use dynamic imports to load the dependencies only when needed, and provide clear error messages if the dependencies are not installed.

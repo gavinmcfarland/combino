@@ -39,13 +39,12 @@ program
 	)
 	.option(
 		"--template-engine <engine>",
-		"Template engine to use (ejs, handlebars, mustache)",
-		"ejs",
+		"Template engine to use (ejs, handlebars, mustache) - requires installing the corresponding dependency",
 	)
 	.action(async (templates: string[], options: any) => {
 		try {
 			// Check if the requested template engine is available
-			if (options.templateEngine && options.templateEngine !== "ejs") {
+			if (options.templateEngine) {
 				const isAvailable = await isTemplateEngineAvailable(
 					options.templateEngine,
 				);

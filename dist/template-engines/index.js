@@ -7,7 +7,8 @@ export async function isTemplateEngineAvailable(engine) {
     try {
         switch (engine.toLowerCase()) {
             case "ejs":
-                return true; // EJS is always available as it's a core dependency
+                await import("ejs");
+                return true;
             case "handlebars":
                 await import("handlebars");
                 return true;
@@ -29,6 +30,8 @@ export async function isTemplateEngineAvailable(engine) {
  */
 export function getTemplateEngineInstallInstructions(engine) {
     switch (engine.toLowerCase()) {
+        case "ejs":
+            return "npm install ejs";
         case "handlebars":
             return "npm install handlebars";
         case "mustache":

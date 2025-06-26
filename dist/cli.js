@@ -14,11 +14,11 @@ program
     .option("-o, --output <dir>", "Output directory for the generated result", "./output")
     .option("-c, --config <path>", "Path to a .combino config file (INI or JSON)")
     .option("--data <key=value>", "Inline key-value data to use for templating, conditions, and naming", collectData)
-    .option("--template-engine <engine>", "Template engine to use (ejs, handlebars, mustache)", "ejs")
+    .option("--template-engine <engine>", "Template engine to use (ejs, handlebars, mustache) - requires installing the corresponding dependency")
     .action(async (templates, options) => {
     try {
         // Check if the requested template engine is available
-        if (options.templateEngine && options.templateEngine !== "ejs") {
+        if (options.templateEngine) {
             const isAvailable = await isTemplateEngineAvailable(options.templateEngine);
             if (!isAvailable) {
                 const installCmd = getTemplateEngineInstallInstructions(options.templateEngine);

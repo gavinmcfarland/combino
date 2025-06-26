@@ -287,7 +287,7 @@ export async function mergeJson(
 	strategy: MergeStrategy,
 	baseTemplatePath?: string,
 	data?: Record<string, any>,
-	templateEngine?: TemplateEngine,
+	templateEngine?: TemplateEngine | null,
 ): Promise<string> {
 	const targetContent = await fs
 		.readFile(targetPath, "utf-8")

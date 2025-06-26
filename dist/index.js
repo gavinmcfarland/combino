@@ -183,7 +183,11 @@ async function formatFileWithPrettier(filePath, content) {
 export class Combino {
     constructor(templateEngine) {
         this.data = {};
-        this.templateEngine = templateEngine || new EJSTemplateEngine();
+        this.templateEngine = null;
+        // Don't set a default template engine - let it be set later when needed
+        if (templateEngine) {
+            this.templateEngine = templateEngine;
+        }
     }
     async readFile(filePath) {
         const content = await fs.readFile(filePath, "utf-8");
@@ -343,6 +347,10 @@ export class Combino {
         }
     }
     async processTemplate(content, data) {
+        if (!this.templateEngine) {
+            // If no template engine is set, return content as-is
+            return content;
+        }
         try {
             return await this.templateEngine.render(content, data);
         }

@@ -14,6 +14,7 @@ interface TestConfig {
 	skip?: boolean;
 	reason?: string;
 	description?: string;
+	templateEngine?: string;
 }
 
 // Helper to find all test case directories
@@ -65,6 +66,7 @@ function getTestConfig(testCaseDir: string): TestConfig {
 	// Default configuration
 	return {
 		data: { framework: "react" },
+		templateEngine: "ejs", // Default to EJS for tests
 	};
 }
 
@@ -116,6 +118,7 @@ describe("Combino Integration Test Suite", () => {
 				outputDir,
 				templates: inputDirs,
 				data: testConfig.data || { framework: "react" },
+				templateEngine: testConfig.templateEngine || "ejs",
 				...(configFile ? { config: configFile } : {}),
 			});
 			assertDirectoriesEqual(outputDir, expectedDir, {

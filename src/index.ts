@@ -220,10 +220,13 @@ async function formatFileWithPrettier(
 
 export class Combino {
 	private data: Record<string, any> = {};
-	private templateEngine: TemplateEngine;
+	private templateEngine: TemplateEngine | null = null;
 
 	constructor(templateEngine?: TemplateEngine) {
-		this.templateEngine = templateEngine || new EJSTemplateEngine();
+		// Don't set a default template engine - let it be set later when needed
+		if (templateEngine) {
+			this.templateEngine = templateEngine;
+		}
 	}
 
 	private async readFile(filePath: string): Promise<FileContent> {
@@ -410,6 +413,11 @@ export class Combino {
 		content: string,
 		data: Record<string, any>,
 	): Promise<string> {
+		if (!this.templateEngine) {
+			// If no template engine is set, return content as-is
+			return content;
+		}
+
 		try {
 			return await this.templateEngine.render(content, data);
 		} catch (error) {

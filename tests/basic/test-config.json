@@ -2,5 +2,6 @@
     "data": {
         "framework": "react"
     },
+    "templateEngine": "ejs",
     "description": "Basic merge test with default configuration"
 }

@@ -1,8 +1,24 @@
-import ejs from "ejs";
 export class EJSTemplateEngine {
+    constructor() {
+        this.ejs = null;
+        // Initialize will be called lazily when first needed
+    }
+    async initialize() {
+        if (this.ejs === null) {
+            try {
+                const EJSModule = await import("ejs");
+                this.ejs = EJSModule.default;
+            }
+            catch (error) {
+                throw new Error("EJS template engine requires the 'ejs' package to be installed. " +
+                    "Please run: npm install ejs");
+            }
+        }
+    }
     async render(content, data) {
         try {
-            return await ejs.render(content, data, { async: true });
+            await this.initialize();
+            return await this.ejs.render(content, data, { async: true });
         }
         catch (error) {
             console.error("Error processing EJS template:", error);
