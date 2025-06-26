@@ -603,7 +603,7 @@ export class Combino {
         return process.cwd();
     }
     async combine(options) {
-        const { outputDir, templates, data: externalData = {}, config, templateEngine, } = options;
+        const { outputDir, include, data: externalData = {}, config, templateEngine, } = options;
         // Set template engine if provided
         if (templateEngine) {
             if (typeof templateEngine === "string") {
@@ -629,7 +629,7 @@ export class Combino {
         this.data = { ...externalData };
         const callerDir = this.getCallerFileLocation();
         const resolvedOutputDir = path.resolve(callerDir, outputDir);
-        const resolvedTemplates = templates.map((template) => path.resolve(callerDir, template));
+        const resolvedTemplates = include.map((template) => path.resolve(callerDir, template));
         for (const template of resolvedTemplates) {
             if (!(await fileExists(template))) {
                 console.warn(`Warning: Template directory not found: ${template}`);

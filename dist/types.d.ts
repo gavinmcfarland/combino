@@ -33,7 +33,7 @@ export interface FileContent {
 export type ConfigFile = string;
 export interface TemplateOptions {
     outputDir: string;
-    templates: string[];
+    include: string[];
     /** Unified configuration object or path to .combino file */
     config?: CombinoConfig | ConfigFile;
     data?: Record<string, any>;

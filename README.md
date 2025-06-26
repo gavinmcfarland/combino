@@ -19,8 +19,11 @@ import { Combino } from "combino";
 
 await combino.combine({
     outputDir: "./output",
-    templates: ["./templates/base", "./template/override"],
     templateEngine: "ejs",
+    include: ["./templates/base", "./template/svelte"],
+    data: {
+        framework: "svelte",
+    },
 });
 ```
 
@@ -31,7 +34,7 @@ await combino.combine({
 ```ts
 interface TemplateOptions {
     outputDir: string;
-    templates: string[];
+    include: string[];
     config?: CombinoConfig | string;
     data?: Record<string, any>;
     templateEngine?: string;
@@ -46,6 +49,43 @@ interface CombinoConfig {
 ```
 
 </details>
+
+## Example
+
+At its core, Combino copies files from both template directories.
+
+For example, the following templates combined:
+
+```bash
+templates/
+    base/
+        package.json
+        README.md
+        src/
+            main/
+                main.[framework=="react"?"js":"jsx"]
+            ui/
+                [framework=="react"]App.jsx
+                [framework=="svelte"]App.svelte
+                styles.css
+    svelte/
+        svelte.config.js
+```
+
+This generates:
+
+```bash
+output/
+    package.json          # Copied from base
+    README.md             # Copied from base
+src/
+    main/
+        main.js           # Conditional extension based on framework
+    ui/
+        App.svelte        # Framework-specific file (only for svelte)
+        styles.css        # Copied from base
+svelte.config.js          # Unique file copied from svelte template
+```
 
 ## Features
 
@@ -152,11 +192,11 @@ project.version = "1.0.0"
 
 ## CLI
 
-`combino [templates...] [options]`
+`combino [include...] [options]`
 
 ### Arguments
 
-- **`templates...`** { String } One or more paths to template folders (first has lowest priority, last wins)
+- **`include...`** { String } One or more paths to template folders to include (first has lowest priority, last wins)
 
 ### Options
 

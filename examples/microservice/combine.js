@@ -10,7 +10,7 @@ async function generateMicroservice() {
 	// Example 1: REST API Service with Express
 	await combino.combine({
 		outputDir: path.join(__dirname, "output/rest-service"),
-		templates: [
+		include: [
 			path.join(__dirname, "templates/base"),
 			path.join(__dirname, "templates/express"),
 			path.join(__dirname, "templates/typescript")
@@ -29,7 +29,7 @@ async function generateMicroservice() {
 	// Example 2: GraphQL Service with Apollo
 	await combino.combine({
 		outputDir: path.join(__dirname, "output/graphql-service"),
-		templates: [
+		include: [
 			path.join(__dirname, "templates/base"),
 			path.join(__dirname, "templates/apollo"),
 			path.join(__dirname, "templates/typescript")
@@ -48,7 +48,7 @@ async function generateMicroservice() {
 	// Example 3: gRPC Service
 	await combino.combine({
 		outputDir: path.join(__dirname, "output/grpc-service"),
-		templates: [
+		include: [
 			path.join(__dirname, "templates/base"),
 			path.join(__dirname, "templates/grpc"),
 			path.join(__dirname, "templates/typescript")

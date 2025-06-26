@@ -13,7 +13,7 @@ async function testTemplateEngine() {
     try {
         await combino.combine({
             outputDir: './output-ejs',
-            templates: ['./templates/ejs-example'],
+            include: ['./templates/ejs-example'],
             data: {
                 name: 'My Awesome Project',
                 description: 'amazing',
@@ -35,7 +35,7 @@ async function testTemplateEngine() {
     try {
         await combinoExplicit.combine({
             outputDir: './output-ejs-explicit',
-            templates: ['./templates/ejs-example'],
+            include: ['./templates/ejs-example'],
             data: {
                 name: 'My Explicit Project',
                 description: 'explicitly configured',
@@ -57,7 +57,7 @@ async function testTemplateEngine() {
     try {
         await combinoString.combine({
             outputDir: './output-ejs-string',
-            templates: ['./templates/ejs-example'],
+            include: ['./templates/ejs-example'],
             templateEngine: 'ejs',
             data: {
                 name: 'My String Project',
@@ -80,7 +80,7 @@ async function testTemplateEngine() {
     try {
         await combinoHandlebars.combine({
             outputDir: './output-handlebars',
-            templates: ['./templates/handlebars-example'],
+            include: ['./templates/handlebars-example'],
             data: {
                 name: 'My Handlebars Project',
                 description: 'handlebars powered',
@@ -103,7 +103,7 @@ async function testTemplateEngine() {
     try {
         await combinoHandlebarsString.combine({
             outputDir: './output-handlebars-string',
-            templates: ['./templates/handlebars-example'],
+            include: ['./templates/handlebars-example'],
             templateEngine: 'handlebars',
             data: {
                 name: 'My String Handlebars Project',
@@ -127,7 +127,7 @@ async function testTemplateEngine() {
     try {
         await combinoMustache.combine({
             outputDir: './output-mustache',
-            templates: ['./templates/mustache-example'],
+            include: ['./templates/mustache-example'],
             data: {
                 name: 'My Mustache Project',
                 description: 'mustache powered',
@@ -150,7 +150,7 @@ async function testTemplateEngine() {
     try {
         await combinoMustacheString.combine({
             outputDir: './output-mustache-string',
-            templates: ['./templates/mustache-example'],
+            include: ['./templates/mustache-example'],
             templateEngine: 'mustache',
             data: {
                 name: 'My String Mustache Project',

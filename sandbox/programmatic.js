@@ -43,7 +43,7 @@ async function generateProjects() {
 
 	// Generate TypeScript project
 	await combino.combine({
-		templates: [
+		include: [
 			path.join(__dirname, 'templates/base'),
 			path.join(__dirname, 'templates/typescript')
 		],
@@ -54,7 +54,7 @@ async function generateProjects() {
 
 	// Generate JavaScript project
 	await combino.combine({
-		templates: [
+		include: [
 			path.join(__dirname, 'templates/base'),
 			path.join(__dirname, 'templates/typescript')
 		],

@@ -20,8 +20,8 @@ program
 	)
 	.version("0.1.0")
 	.argument(
-		"<templates...>",
-		"One or more template folders (first has lowest priority, last wins)",
+		"<include...>",
+		"One or more template folders to include (first has lowest priority, last wins)",
 	)
 	.option(
 		"-o, --output <dir>",
@@ -46,7 +46,7 @@ program
 		"Merge strategy for file patterns (e.g., '*.json=deep', '*.md=replace')",
 		collectMergeStrategies,
 	)
-	.action(async (templates: string[], options: any) => {
+	.action(async (include: string[], options: any) => {
 		try {
 			// Check if the requested template engine is available
 			if (options.templateEngine) {
@@ -151,7 +151,7 @@ program
 
 			const templateOptions: TemplateOptions = {
 				outputDir: options.output,
-				templates: templates,
+				include: include,
 				config:
 					options.config ||
 					(Object.keys(mergeConfig).length > 0

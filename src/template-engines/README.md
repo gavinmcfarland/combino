@@ -52,13 +52,13 @@ npm install mustache
 
 ```bash
 # Use EJS (requires: npm install ejs)
-combino templates --template-engine ejs --data name=my-project
+combino include --template-engine ejs --data name=my-project
 
 # Use Handlebars (requires: npm install handlebars)
-combino templates --template-engine handlebars --data name=my-project
+combino include --template-engine handlebars --data name=my-project
 
 # Use Mustache (requires: npm install mustache)
-combino templates --template-engine mustache --data name=my-project
+combino include --template-engine mustache --data name=my-project
 ```
 
 ### Programmatic Usage
@@ -83,7 +83,7 @@ const combinoMustache = new Combino(new MustacheTemplateEngine());
 // Or pass via options
 await combino.combine({
     outputDir: "./output",
-    templates: ["templates"],
+    include: ["templates"],
     templateEngine: "ejs", // or 'handlebars', 'mustache'
 });
 ```
@@ -93,7 +93,7 @@ await combino.combine({
 If you try to use any template engine without installing the required dependencies, Combino will provide helpful error messages:
 
 ```bash
-$ combino templates --template-engine ejs --data name=test
+$ combino include --template-engine ejs --data name=test
 Error: Template engine 'ejs' is not available.
 To use this template engine, please install the required dependency:
   npm install ejs

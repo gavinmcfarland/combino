@@ -204,7 +204,7 @@ async function generateAllCombinations() {
 						// Generate the project
 						await combino.combine({
 							outputDir,
-							templates,
+							include: templates,
 							templateEngine: 'ejs',
 							data: {
 								framework,

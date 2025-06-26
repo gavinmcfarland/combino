@@ -10,13 +10,13 @@ program
     .name("combino")
     .description("Combine multiple template folders to generate custom file and folder structures")
     .version("0.1.0")
-    .argument("<templates...>", "One or more template folders (first has lowest priority, last wins)")
+    .argument("<include...>", "One or more template folders to include (first has lowest priority, last wins)")
     .option("-o, --output <dir>", "Output directory for the generated result", "./output")
     .option("-c, --config <path>", "Path to a .combino config file (INI or JSON)")
     .option("--data <key=value>", "Inline key-value data to use for templating, conditions, and naming", collectData)
     .option("--template-engine <engine>", "Template engine to use (ejs, handlebars, mustache) - requires installing the corresponding dependency")
     .option("--merge <pattern=strategy>", "Merge strategy for file patterns (e.g., '*.json=deep', '*.md=replace')", collectMergeStrategies)
-    .action(async (templates, options) => {
+    .action(async (include, options) => {
     try {
         // Check if the requested template engine is available
         if (options.templateEngine) {
@@ -96,7 +96,7 @@ program
         }
         const templateOptions = {
             outputDir: options.output,
-            templates: templates,
+            include: include,
             config: options.config ||
                 (Object.keys(mergeConfig).length > 0
                     ? { merge: mergeConfig }

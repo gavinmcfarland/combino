@@ -141,13 +141,13 @@ npm install -g combino
 
     ```bash
     # Use EJS (requires: npm install ejs)
-    combino templates --template-engine ejs --data name=my-project
+    combino include --template-engine ejs --data name=my-project
 
     # Use Handlebars (requires: npm install handlebars)
-    combino templates --template-engine handlebars --data name=my-project
+    combino include --template-engine handlebars --data name=my-project
 
     # Use Mustache (requires: npm install mustache)
-    combino templates --template-engine mustache --data name=my-project
+    combino include --template-engine mustache --data name=my-project
     ```
 
     ### Programmatic Usage
@@ -171,9 +171,9 @@ npm install -g combino
 
     // Or pass via options
     await combino.combine({
-        outputDir: "./output",
-        templates: ["templates"],
-        templateEngine: "ejs", // or 'handlebars', 'mustache'
+        include: ["templates/base", "templates/react"],
+        outputDir: "output",
+        config,
     });
     ```
 
@@ -324,7 +324,7 @@ const config = {
 };
 
 await combino.combine({
-    templates: ["templates/base", "templates/react"],
+    include: ["templates/base", "templates/react"],
     outputDir: "output",
     config,
 });
@@ -354,11 +354,11 @@ strategy = replace
 
 ## CLI Usage
 
-`combino [templates...] [options]`
+`combino [include...] [options]`
 
 ### Arguments
 
-- **`templates...`** { String } One or more template folders (first has lowest priority, last wins)
+- **`include...`** { String } One or more template folders to include (first has lowest priority, last wins)
 
 ### Options
 

@@ -116,7 +116,7 @@ describe("Combino Integration Test Suite", () => {
 			const combino = new Combino();
 			await combino.combine({
 				outputDir,
-				templates: inputDirs,
+				include: inputDirs,
 				data: testConfig.data || { framework: "react" },
 				templateEngine: testConfig.templateEngine || "ejs",
 				...(configFile ? { config: configFile } : {}),

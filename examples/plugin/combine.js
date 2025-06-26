@@ -10,7 +10,7 @@ async function generatePlugin() {
 	// Example 1: Figma Plugin
 	await combino.combine({
 		outputDir: path.join(__dirname, "output/figma-plugin"),
-		templates: [
+		include: [
 			path.join(__dirname, "templates/base"),
 			path.join(__dirname, "templates/figma"),
 			path.join(__dirname, "templates/typescript")
@@ -29,7 +29,7 @@ async function generatePlugin() {
 	// Example 2: VS Code Extension
 	await combino.combine({
 		outputDir: path.join(__dirname, "output/vscode-extension"),
-		templates: [
+		include: [
 			path.join(__dirname, "templates/base"),
 			path.join(__dirname, "templates/vscode"),
 			path.join(__dirname, "templates/typescript")
@@ -48,7 +48,7 @@ async function generatePlugin() {
 	// Example 3: Chrome Extension
 	await combino.combine({
 		outputDir: path.join(__dirname, "output/chrome-extension"),
-		templates: [
+		include: [
 			path.join(__dirname, "templates/base"),
 			path.join(__dirname, "templates/chrome"),
 			path.join(__dirname, "templates/typescript")

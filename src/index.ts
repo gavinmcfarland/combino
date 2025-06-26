@@ -774,7 +774,7 @@ export class Combino {
 	async combine(options: TemplateOptions): Promise<void> {
 		const {
 			outputDir,
-			templates,
+			include,
 			data: externalData = {},
 			config,
 			templateEngine,
@@ -807,7 +807,7 @@ export class Combino {
 		this.data = { ...externalData };
 		const callerDir = this.getCallerFileLocation();
 		const resolvedOutputDir = path.resolve(callerDir, outputDir);
-		const resolvedTemplates = templates.map((template) =>
+		const resolvedTemplates = include.map((template) =>
 			path.resolve(callerDir, template),
 		);
 

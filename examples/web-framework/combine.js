@@ -10,7 +10,7 @@ async function generateWebFramework() {
 	// Example 1: React with TypeScript
 	await combino.combine({
 		outputDir: path.join(__dirname, "output/react-ts"),
-		templates: [
+		include: [
 			path.join(__dirname, "templates/base"),
 			path.join(__dirname, "templates/react"),
 			path.join(__dirname, "templates/typescript")
@@ -26,7 +26,7 @@ async function generateWebFramework() {
 	// Example 2: Vue with JavaScript
 	await combino.combine({
 		outputDir: path.join(__dirname, "output/vue-js"),
-		templates: [
+		include: [
 			path.join(__dirname, "templates/base"),
 			path.join(__dirname, "templates/vue")
 		],
@@ -41,7 +41,7 @@ async function generateWebFramework() {
 	// Example 3: Svelte with TypeScript
 	await combino.combine({
 		outputDir: path.join(__dirname, "output/svelte-ts"),
-		templates: [
+		include: [
 			path.join(__dirname, "templates/base"),
 			path.join(__dirname, "templates/svelte"),
 			path.join(__dirname, "templates/typescript")
