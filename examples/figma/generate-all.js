@@ -205,6 +205,7 @@ async function generateAllCombinations() {
 						await combino.combine({
 							outputDir,
 							templates,
+							templateEngine: 'ejs',
 							data: {
 								framework,
 								language: typescript ? 'ts' : 'js',

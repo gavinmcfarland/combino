@@ -2,7 +2,7 @@
 
 import { Command } from "commander";
 import { Combino } from "./index.js";
-import { TemplateOptions } from "./types.js";
+import { TemplateOptions, MergeStrategy } from "./types.js";
 import {
 	isTemplateEngineAvailable,
 	getTemplateEngineInstallInstructions,
@@ -41,6 +41,11 @@ program
 		"--template-engine <engine>",
 		"Template engine to use (ejs, handlebars, mustache) - requires installing the corresponding dependency",
 	)
+	.option(
+		"--merge <pattern=strategy>",
+		"Merge strategy for file patterns (e.g., '*.json=deep', '*.md=replace')",
+		collectMergeStrategies,
+	)
 	.action(async (templates: string[], options: any) => {
 		try {
 			// Check if the requested template engine is available
@@ -65,6 +70,7 @@ program
 
 			const combino = new Combino();
 			let templateData: Record<string, any> = {};
+			let mergeConfig: Record<string, Record<string, any>> = {};
 
 			// Load config file if specified
 			if (options.config) {
@@ -91,6 +97,34 @@ program
 						},
 					);
 				}
+
+				// Extract merge configuration from config file
+				if (parsedConfig.merge) {
+					Object.entries(parsedConfig.merge).forEach(
+						([key, value]) => {
+							if (key.startsWith("merge:")) {
+								// Handle [merge:pattern] sections
+								const pattern = key.substring(6); // Remove "merge:" prefix
+								mergeConfig[pattern] = {
+									strategy: value as string,
+								};
+							} else if (
+								key === "merge" &&
+								typeof value === "object"
+							) {
+								// Handle [merge] section with nested configuration
+								Object.entries(
+									value as Record<string, any>,
+								).forEach(([pattern, settings]) => {
+									mergeConfig[pattern] = settings as Record<
+										string,
+										any
+									>;
+								});
+							}
+						},
+					);
+				}
 			}
 
 			// Merge command line data with config data
@@ -106,10 +140,23 @@ program
 				});
 			}
 
+			// Merge command line merge strategies with config merge strategies
+			if (options.merge) {
+				Object.entries(options.merge).forEach(([pattern, strategy]) => {
+					mergeConfig[pattern] = {
+						strategy: strategy as MergeStrategy,
+					};
+				});
+			}
+
 			const templateOptions: TemplateOptions = {
 				outputDir: options.output,
 				templates: templates,
-				config: options.config || undefined,
+				config:
+					options.config ||
+					(Object.keys(mergeConfig).length > 0
+						? { merge: mergeConfig }
+						: undefined),
 				data: templateData,
 				templateEngine: options.templateEngine,
 			};
@@ -150,6 +197,36 @@ function collectData(
 	throw new Error(
 		`Invalid data format: ${value}. Expected key=value or valid JSON object`,
 	);
+}
+
+function collectMergeStrategies(
+	value: string,
+	previous: Record<string, MergeStrategy> = {},
+): Record<string, MergeStrategy> {
+	const validStrategies: MergeStrategy[] = [
+		"deep",
+		"shallow",
+		"append",
+		"prepend",
+		"replace",
+	];
+
+	// Parse pattern=strategy format
+	const [pattern, strategy] = value.split("=");
+	if (!pattern || !strategy) {
+		throw new Error(
+			`Invalid merge format: ${value}. Expected pattern=strategy (e.g., '*.json=deep')`,
+		);
+	}
+
+	// Validate strategy
+	if (!validStrategies.includes(strategy as MergeStrategy)) {
+		throw new Error(
+			`Invalid merge strategy: ${strategy}. Valid strategies are: ${validStrategies.join(", ")}`,
+		);
+	}
+
+	return { ...previous, [pattern]: strategy as MergeStrategy };
 }
 
 program.parse();
