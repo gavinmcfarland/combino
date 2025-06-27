@@ -8,6 +8,7 @@ import {
 	FileContent,
 	MergeStrategy,
 	FileHookContext,
+	FileHookResult,
 } from "./types.js";
 import { mergeJson } from "./mergers/json.js";
 import { mergeMarkdown } from "./mergers/markdown.js";
@@ -1171,6 +1172,7 @@ export class Combino {
 
 					// Apply hook if provided (after template processing, before formatting)
 					let finalContent = mergedContent;
+					let finalTargetPath = fullTargetPath;
 					if (onFileProcessed) {
 						const hookContext = {
 							sourcePath,
@@ -1179,16 +1181,24 @@ export class Combino {
 							data: fileData,
 							templateEngine: this.templateEngine || undefined,
 						};
-						finalContent = await Promise.resolve(
+						const hookResult = await Promise.resolve(
 							onFileProcessed(hookContext),
 						);
+						finalContent = hookResult.content;
+						if (hookResult.targetPath) {
+							finalTargetPath = hookResult.targetPath;
+							// Ensure the directory exists for the new path
+							await fs.mkdir(path.dirname(finalTargetPath), {
+								recursive: true,
+							});
+						}
 					}
 
 					const formattedContent = await formatFileWithPrettier(
-						fullTargetPath,
+						finalTargetPath,
 						finalContent,
 					);
-					await fs.writeFile(fullTargetPath, formattedContent);
+					await fs.writeFile(finalTargetPath, formattedContent);
 				} catch (error) {
 					const fileData = {
 						...allData,
@@ -1203,6 +1213,7 @@ export class Combino {
 
 					// Apply hook if provided (after template processing, before formatting)
 					let finalContent = processedContent;
+					let finalTargetPath = fullTargetPath;
 					if (onFileProcessed) {
 						const hookContext = {
 							sourcePath,
@@ -1211,16 +1222,24 @@ export class Combino {
 							data: fileData,
 							templateEngine: this.templateEngine || undefined,
 						};
-						finalContent = await Promise.resolve(
+						const hookResult = await Promise.resolve(
 							onFileProcessed(hookContext),
 						);
+						finalContent = hookResult.content;
+						if (hookResult.targetPath) {
+							finalTargetPath = hookResult.targetPath;
+							// Ensure the directory exists for the new path
+							await fs.mkdir(path.dirname(finalTargetPath), {
+								recursive: true,
+							});
+						}
 					}
 
 					const formattedContent = await formatFileWithPrettier(
-						fullTargetPath,
+						finalTargetPath,
 						finalContent,
 					);
-					await fs.writeFile(fullTargetPath, formattedContent);
+					await fs.writeFile(finalTargetPath, formattedContent);
 				}
 			}
 		}

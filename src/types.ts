@@ -57,7 +57,16 @@ export interface FileHookContext {
 	templateEngine?: TemplateEngine;
 }
 
-export type FileHook = (context: FileHookContext) => Promise<string> | string;
+export interface FileHookResult {
+	/** The transformed file content */
+	content: string;
+	/** The new target file path (optional - if not provided, original path is used) */
+	targetPath?: string;
+}
+
+export type FileHook = (
+	context: FileHookContext,
+) => Promise<FileHookResult> | FileHookResult;
 
 export interface TemplateOptions {
 	outputDir: string;
