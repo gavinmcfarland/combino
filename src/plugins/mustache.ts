@@ -1,4 +1,10 @@
-import { Plugin, PluginOptions, FileHook } from "./types.js";
+import {
+	Plugin,
+	PluginOptions,
+	FileHook,
+	FileHookContext,
+	FileHookResult,
+} from "./types.js";
 
 /**
  * Mustache Template Engine
@@ -45,6 +51,21 @@ class MustacheTemplateEngine {
 }
 
 /**
+ * Mustache Transform Hook
+ * This handles template rendering through the transform pipeline
+ */
+async function mustacheTransform(
+	context: FileHookContext,
+): Promise<FileHookResult> {
+	const engine = new MustacheTemplateEngine();
+	const renderedContent = await engine.render(context.content, context.data);
+	return {
+		content: renderedContent,
+		targetPath: context.targetPath,
+	};
+}
+
+/**
  * Mustache Plugin Factory Function
  * This is the main export for the standalone Mustache plugin
  */
@@ -52,13 +73,38 @@ export function mustache(
 	options: PluginOptions = {},
 	transform?: FileHook,
 ): Plugin {
+	// Create a combined transform function that handles both Mustache rendering and custom transforms
+	const combinedTransform = async (
+		context: FileHookContext,
+	): Promise<FileHookResult> => {
+		// First apply Mustache rendering
+		let result = await mustacheTransform(context);
+
+		// Then apply any custom transform if provided
+		if (transform) {
+			const customContext: FileHookContext = {
+				...context,
+				content: result.content,
+				targetPath: result.targetPath ?? context.targetPath,
+			};
+			const customResult = await Promise.resolve(
+				transform(customContext),
+			);
+			result = {
+				content: customResult.content,
+				targetPath: customResult.targetPath ?? result.targetPath,
+			};
+		}
+
+		return result;
+	};
+
 	return {
-		engine: new MustacheTemplateEngine(),
 		options: {
 			priority: 0,
 			...options,
 		},
-		transform,
+		transform: combinedTransform,
 	};
 }
 

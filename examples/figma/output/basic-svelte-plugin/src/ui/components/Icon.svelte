@@ -1,4 +1,4 @@
-<script lang="ts">
+<script>
 	export let size = 16
 	export let svg
 </script>

@@ -1,0 +1,11 @@
+{
+    "data": {
+        "name": "World",
+        "other": "Universe"
+    },
+    "plugins": ["ejs", "handlebars"],
+    "pluginConfigs": {
+        "ejs": { "patterns": ["*.txt"], "priority": 1 },
+        "handlebars": { "patterns": ["*.txt"], "priority": 2 }
+    }
+}

@@ -30,8 +30,6 @@ export type FileHook = (
 ) => Promise<FileHookResult> | FileHookResult;
 
 export interface Plugin {
-	/** The template engine instance */
-	engine: any;
 	/** Plugin configuration options */
 	options: PluginOptions;
 	/** Transform hook for file processing (similar to Vite's transform hook) */
@@ -83,15 +81,6 @@ export class PluginManager {
 			}
 		}
 
-		// Content detection
-		if (content) {
-			for (const plugin of this.plugins) {
-				if (plugin.engine.hasTemplateSyntax(content)) {
-					return plugin;
-				}
-			}
-		}
-
 		return this.defaultPlugin;
 	}
 
@@ -110,8 +99,6 @@ export class PluginManager {
 		data: Record<string, any>,
 		filePath?: string,
 	): Promise<string> {
-		let selectedPlugin: Plugin | null = null;
-		let highestPriority = -1;
 		let matchingPlugins: Plugin[] = [];
 
 		// First, collect all plugins that match by pattern
@@ -124,53 +111,48 @@ export class PluginManager {
 					for (const pattern of plugin.options.patterns) {
 						if (this.matchesPattern(filePath, pattern)) {
 							matchingPlugins.push(plugin);
-							const priority = plugin.options.priority || 0;
-							if (priority > highestPriority) {
-								highestPriority = priority;
-								selectedPlugin = plugin;
-							}
 						}
 					}
 				}
 			}
 		}
 
-		// If multiple plugins match by pattern, pick the first whose hasTemplateSyntax returns true
-		if (matchingPlugins.length > 1 && content) {
-			for (const plugin of matchingPlugins.sort(
-				(a, b) => (b.options.priority || 0) - (a.options.priority || 0),
-			)) {
-				if (plugin.engine.hasTemplateSyntax(content)) {
-					selectedPlugin = plugin;
-					break;
+		// If no plugins matched by pattern, use all available plugins as fallback
+		if (matchingPlugins.length === 0) {
+			matchingPlugins = [...this.plugins];
+		}
+
+		// Sort by priority (highest first)
+		matchingPlugins.sort(
+			(a, b) => (b.options.priority || 0) - (a.options.priority || 0),
+		);
+
+		// Process through all matching plugins in sequence
+		let processedContent = content;
+		for (const plugin of matchingPlugins) {
+			if (plugin.transform) {
+				try {
+					const context: FileHookContext = {
+						sourcePath: filePath || "",
+						targetPath: filePath || "",
+						content: processedContent,
+						data,
+					};
+					const result = await Promise.resolve(
+						plugin.transform(context),
+					);
+					processedContent = result.content;
+				} catch (error) {
+					console.error(
+						`Error rendering template with plugin:`,
+						error,
+					);
+					// Continue with the previous content on error
 				}
 			}
 		}
 
-		// If no plugin matched by pattern, use the first plugin whose hasTemplateSyntax returns true
-		if (!selectedPlugin && content) {
-			for (const plugin of this.plugins) {
-				if (plugin.engine.hasTemplateSyntax(content)) {
-					selectedPlugin = plugin;
-					break;
-				}
-			}
-		}
-
-		if (!selectedPlugin) {
-			selectedPlugin = this.defaultPlugin;
-		}
-
-		if (selectedPlugin) {
-			try {
-				return await selectedPlugin.engine.render(content, data);
-			} catch (error) {
-				console.error(`Error rendering template with plugin:`, error);
-				return content;
-			}
-		}
-
-		return content;
+		return processedContent;
 	}
 
 	async transform(context: FileHookContext): Promise<FileHookResult> {
@@ -225,11 +207,6 @@ export class PluginManager {
 		}
 
 		return result;
-	}
-
-	hasTemplateSyntax(content: string, filePath?: string): boolean {
-		const plugin = this.findPlugin(filePath, content);
-		return plugin ? plugin.engine.hasTemplateSyntax(content) : false;
 	}
 
 	getPlugins(): Plugin[] {

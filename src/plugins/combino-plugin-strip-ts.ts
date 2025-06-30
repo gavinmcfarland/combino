@@ -143,7 +143,6 @@ export function stripTS(options: PluginOptions = {}): Plugin {
 	};
 
 	return {
-		engine: new CombinoStripTSPlugin(),
 		options: {
 			priority: 0,
 			patterns: ["*"], // Process all files

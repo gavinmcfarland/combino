@@ -1,58 +1,66 @@
 import ejsEngine from "ejs";
-import { Plugin, PluginOptions, FileHook } from "./types.js";
-
-/**
- * EJS Template Engine
- */
-class EJSTemplateEngine {
-	private initialized = false;
-
-	async initialize(): Promise<void> {
-		if (this.initialized) return;
-		try {
-			await import("ejs");
-			this.initialized = true;
-		} catch (error) {
-			throw new Error(
-				"EJS template engine requires the 'ejs' package to be installed. Please run: npm install ejs",
-			);
-		}
-	}
-
-	async render(content: string, data: Record<string, any>): Promise<string> {
-		await this.initialize();
-		try {
-			return ejsEngine.render(content, data);
-		} catch (error) {
-			throw new Error(`Error processing EJS template: ${error}`);
-		}
-	}
-
-	hasTemplateSyntax(content: string): boolean {
-		// Check for EJS syntax patterns
-		const ejsPatterns = [
-			"<%=", // Output expression
-			"<%#", // Comment
-			"<%", // Code block
-			"%>", // End tag
-		];
-		return ejsPatterns.some((pattern) => content.includes(pattern));
-	}
-}
+import {
+	Plugin,
+	PluginOptions,
+	FileHook,
+	FileHookContext,
+	FileHookResult,
+} from "./types.js";
 
 /**
  * EJS Plugin Factory Function
- * This is the main export for the standalone EJS plugin
+ * Creates a plugin that processes EJS templates
  */
 export function ejs(options: PluginOptions = {}, transform?: FileHook): Plugin {
+	const ejsTransform: FileHook = async (context) => {
+		try {
+			const renderedContent = await ejsEngine.render(
+				context.content,
+				context.data,
+			);
+			return {
+				content: renderedContent,
+				targetPath: context.targetPath,
+			};
+		} catch (error) {
+			throw new Error(`Error processing EJS template: ${error}`);
+		}
+	};
+
+	// If no custom transform provided, use EJS transform directly
+	if (!transform) {
+		return {
+			options: {
+				priority: 0,
+				patterns: ["*"], // Process all files by default
+				...options,
+			},
+			transform: ejsTransform,
+		};
+	}
+
+	// If custom transform provided, chain them together
+	const combinedTransform: FileHook = async (context) => {
+		// First apply EJS rendering
+		const ejsResult = await ejsTransform(context);
+
+		// Then apply custom transform
+		const customContext: FileHookContext = {
+			...context,
+			content: ejsResult.content,
+			targetPath: ejsResult.targetPath ?? context.targetPath,
+		};
+
+		return transform(customContext);
+	};
+
 	return {
-		engine: new EJSTemplateEngine(),
 		options: {
 			priority: 0,
 			patterns: ["*"], // Process all files by default
 			...options,
 		},
-		transform,
+		transform: combinedTransform,
 	};
 }
 

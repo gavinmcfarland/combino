@@ -1,5 +1,6 @@
-<script lang="ts">
+<script>
 	let { children, href, target, style, onclick } = $props()
+	export {}
 </script>
 
 {#if href}

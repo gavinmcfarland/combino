@@ -1,8 +1,0 @@
-[data]
-name = World
-other = Universe
-
-[merge]
-*.ejs = { "strategy": "replace" }
-*.hbs = { "strategy": "replace" }
-*.mustache = { "strategy": "replace" }

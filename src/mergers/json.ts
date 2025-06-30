@@ -299,7 +299,7 @@ export async function mergeJson(
 		content: string,
 		templateData?: Record<string, any>,
 	): Promise<string> => {
-		if (!templateData || !pluginManager?.hasTemplateSyntax(content)) {
+		if (!templateData || !pluginManager) {
 			return content;
 		}
 		try {

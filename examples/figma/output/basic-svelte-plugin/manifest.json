@@ -1,8 +1,8 @@
 {
 	"id": "com.basic-svelte-plugin",
 	"name": "basic-svelte-plugin",
-	"main": "src/main/main.ts",
-	"ui": "src/ui/ui.ts",
+	"main": "src/main/main.js",
+	"ui": "src/ui/ui.js",
 	"editorType": ["figma", "figjam"],
 	"networkAccess": {
 		"allowedDomains": ["none"]

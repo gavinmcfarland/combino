@@ -118,17 +118,7 @@ async function formatFileWithPrettier(
 				break;
 			case ".ts":
 			case ".tsx":
-				// Check if content contains TypeScript syntax
-				const hasTypeScriptSyntax =
-					/import\s+type\s+|:\s*\w+\s*[=;]|interface\s+\w+|type\s+\w+\s*=|declare\s+module/.test(
-						content,
-					);
-				if (hasTypeScriptSyntax) {
-					parser = "typescript";
-				} else {
-					// If no TypeScript syntax, treat as JavaScript
-					parser = "babel";
-				}
+				parser = "typescript";
 				break;
 			case ".json":
 				parser = "json";
