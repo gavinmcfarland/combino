@@ -17,12 +17,7 @@ import * as ini from "ini";
 import { fileURLToPath } from "url";
 import prettier from "prettier";
 import prettierPluginSvelte from "prettier-plugin-svelte";
-import {
-	TemplateEngine,
-	EJSTemplateEngine,
-	HandlebarsTemplateEngine,
-	MustacheTemplateEngine,
-} from "./template-engines/index.js";
+import { PluginManager } from "./plugins/types.js";
 
 interface CombinoConfig {
 	exclude?: string[];
@@ -199,13 +194,15 @@ async function formatFileWithPrettier(
 
 export class Combino {
 	private data: Record<string, any> = {};
-	private templateEngine: TemplateEngine | null = null;
+	private pluginManager: PluginManager | null = null;
 
-	constructor(templateEngine?: TemplateEngine) {
+	constructor() {
 		// Don't set a default template engine - let it be set later when needed
-		if (templateEngine) {
-			this.templateEngine = templateEngine;
-		}
+	}
+
+	private setPlugins(plugins: any[]): void {
+		this.pluginManager = new PluginManager();
+		this.pluginManager.addPlugins(plugins);
 	}
 
 	private async readFile(filePath: string): Promise<FileContent> {
@@ -284,10 +281,14 @@ export class Combino {
 			const content = await fs.readFile(configPath, "utf-8");
 
 			// Process the content with EJS first
-			const processedContent = await this.processTemplate(content, {
-				framework: "react", // Default value, can be overridden by data
-				...this.data, // Include any existing data
-			});
+			const processedContent = await this.processTemplate(
+				content,
+				{
+					framework: "react", // Default value, can be overridden by data
+					...this.data, // Include any existing data
+				},
+				configPath,
+			);
 
 			// console.log("Processed .combino content:", processedContent);
 			// console.log("Data used for EJS processing:", {
@@ -391,18 +392,15 @@ export class Combino {
 	private async processTemplate(
 		content: string,
 		data: Record<string, any>,
+		filePath?: string,
 	): Promise<string> {
-		if (!this.templateEngine) {
-			// If no template engine is set, return content as-is
-			return content;
+		// Use plugin manager if available (new architecture)
+		if (this.pluginManager) {
+			return this.pluginManager.render(content, data, filePath);
 		}
 
-		try {
-			return await this.templateEngine.render(content, data);
-		} catch (error) {
-			console.error("Error processing template:", error);
-			return content;
-		}
+		// If no plugin manager is set, return content as-is
+		return content;
 	}
 
 	private evaluateCondition(
@@ -689,7 +687,7 @@ export class Combino {
 					strategy,
 					baseTemplatePath,
 					data,
-					this.templateEngine,
+					this.pluginManager,
 				);
 				break;
 			case ".md":
@@ -708,7 +706,7 @@ export class Combino {
 		}
 
 		// Process the merged content with the template engine
-		return this.processTemplate(mergedContent, data);
+		return this.processTemplate(mergedContent, data, targetPath);
 	}
 
 	private getCallerFileLocation(): string {
@@ -756,32 +754,13 @@ export class Combino {
 			include,
 			data: externalData = {},
 			config,
-			templateEngine,
+			plugins,
 			onFileProcessed,
 		} = options;
 
-		// Set template engine if provided
-		if (templateEngine) {
-			if (typeof templateEngine === "string") {
-				// Handle string-based template engine selection
-				switch (templateEngine.toLowerCase()) {
-					case "ejs":
-						this.templateEngine = new EJSTemplateEngine();
-						break;
-					case "handlebars":
-						this.templateEngine = new HandlebarsTemplateEngine();
-						break;
-					case "mustache":
-						this.templateEngine = new MustacheTemplateEngine();
-						break;
-					default:
-						throw new Error(
-							`Unknown template engine: ${templateEngine}`,
-						);
-				}
-			} else {
-				this.templateEngine = templateEngine;
-			}
+		// Set plugins if provided (new architecture)
+		if (plugins) {
+			this.setPlugins(plugins);
 		}
 
 		this.data = { ...externalData };
@@ -1179,7 +1158,6 @@ export class Combino {
 							targetPath: fullTargetPath,
 							content: mergedContent,
 							data: fileData,
-							templateEngine: this.templateEngine || undefined,
 						};
 						const hookResult = await Promise.resolve(
 							onFileProcessed(hookContext),
@@ -1209,6 +1187,7 @@ export class Combino {
 					const processedContent = await this.processTemplate(
 						sourceContent.content,
 						fileData,
+						sourcePath,
 					);
 
 					// Apply hook if provided (after template processing, before formatting)
@@ -1220,7 +1199,6 @@ export class Combino {
 							targetPath: fullTargetPath,
 							content: processedContent,
 							data: fileData,
-							templateEngine: this.templateEngine || undefined,
 						};
 						const hookResult = await Promise.resolve(
 							onFileProcessed(hookContext),

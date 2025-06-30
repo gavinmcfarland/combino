@@ -1,4 +1,4 @@
-import { TemplateEngine } from "./template-engines/index.js";
+import { Plugin } from "./plugins/types.js";
 
 export type MergeStrategy =
 	| "deep"
@@ -53,8 +53,6 @@ export interface FileHookContext {
 	content: string;
 	/** The data used for template processing */
 	data: Record<string, any>;
-	/** The template engine instance (if any) */
-	templateEngine?: TemplateEngine;
 }
 
 export interface FileHookResult {
@@ -74,8 +72,8 @@ export interface TemplateOptions {
 	/** Unified configuration object or path to .combino file */
 	config?: CombinoConfig | ConfigFile;
 	data?: Record<string, any>;
-	/** Template engine to use for processing templates */
-	templateEngine?: string | TemplateEngine;
+	/** Plugins to use for processing templates (new plugin architecture) */
+	plugins?: Plugin[];
 	/** Hook to run after template processing but before formatting */
 	onFileProcessed?: FileHook;
 }

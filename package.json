@@ -63,8 +63,10 @@
         "expr-eval": "^2.0.2",
         "glob": "^10.0.0",
         "gray-matter": "^4.0.3",
+        "handlebars": "^4.7.8",
         "ini": "^4.1.1",
         "jsonc-parser": "^3.3.1",
+        "mustache": "^4.2.0",
         "prettier": "^3.5.3",
         "prettier-plugin-svelte": "^3.4.0"
     }

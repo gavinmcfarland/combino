@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
 import { Combino } from '../../dist/index.js';
-import { EJSTemplateEngine, HandlebarsTemplateEngine, MustacheTemplateEngine } from '../../dist/template-engines/index.js';
+import { ejs } from '../../dist/plugins/ejs.js';
+import { handlebars } from '../../dist/plugins/handlebars.js';
+import { mustache } from '../../dist/plugins/mustache.js';
 
 async function testTemplateEngine() {
 	console.log('Testing Combino with configurable template engines...\n');
@@ -22,16 +24,16 @@ async function testTemplateEngine() {
 				language: 'TypeScript',
 				version: '1.0.0'
 			},
-			templateEngine: "ejs",
+			plugins: [ejs()],
 		});
 		console.log('✅ EJS test completed successfully');
 	} catch (error) {
 		console.error('❌ EJS test failed:', error.message);
 	}
 
-	// Test with explicit EJS engine
-	console.log('\n2. Testing with explicit EJS template engine:');
-	const combinoExplicit = new Combino(new EJSTemplateEngine());
+	// Test with explicit EJS plugin
+	console.log('\n2. Testing with explicit EJS plugin:');
+	const combinoExplicit = new Combino();
 
 	try {
 		await combinoExplicit.combine({
@@ -44,7 +46,8 @@ async function testTemplateEngine() {
 				framework: 'Vue',
 				language: 'JavaScript',
 				version: '2.0.0'
-			}
+			},
+			plugins: [ejs()],
 		});
 		console.log('✅ Explicit EJS test completed successfully');
 	} catch (error) {
@@ -59,7 +62,7 @@ async function testTemplateEngine() {
 		await combinoString.combine({
 			outputDir: './output-ejs-string',
 			include: ['./templates/ejs-example'],
-			templateEngine: 'ejs',
+			plugins: [ejs()],
 			data: {
 				name: 'My String Project',
 				description: 'string configured',
@@ -76,7 +79,7 @@ async function testTemplateEngine() {
 
 	// Test with Handlebars
 	console.log('\n4. Testing with Handlebars template engine:');
-	const combinoHandlebars = new Combino(new HandlebarsTemplateEngine());
+	const combinoHandlebars = new Combino();
 
 	try {
 		await combinoHandlebars.combine({
@@ -90,7 +93,8 @@ async function testTemplateEngine() {
 				language: 'JavaScript',
 				version: '4.0.0',
 				hasTests: true
-			}
+			},
+			plugins: [handlebars()],
 		});
 		console.log('✅ Handlebars test completed successfully');
 	} catch (error) {
@@ -105,7 +109,7 @@ async function testTemplateEngine() {
 		await combinoHandlebarsString.combine({
 			outputDir: './output-handlebars-string',
 			include: ['./templates/handlebars-example'],
-			templateEngine: 'handlebars',
+			plugins: [handlebars()],
 			data: {
 				name: 'My String Handlebars Project',
 				description: 'string configured handlebars',
@@ -123,7 +127,7 @@ async function testTemplateEngine() {
 
 	// Test with Mustache
 	console.log('\n6. Testing with Mustache template engine:');
-	const combinoMustache = new Combino(new MustacheTemplateEngine());
+	const combinoMustache = new Combino();
 
 	try {
 		await combinoMustache.combine({
@@ -137,7 +141,8 @@ async function testTemplateEngine() {
 				language: 'JavaScript',
 				version: '6.0.0',
 				hasTests: true
-			}
+			},
+			plugins: [mustache()],
 		});
 		console.log('✅ Mustache test completed successfully');
 	} catch (error) {
@@ -152,7 +157,7 @@ async function testTemplateEngine() {
 		await combinoMustacheString.combine({
 			outputDir: './output-mustache-string',
 			include: ['./templates/mustache-example'],
-			templateEngine: 'mustache',
+			plugins: [mustache()],
 			data: {
 				name: 'My String Mustache Project',
 				description: 'string configured mustache',

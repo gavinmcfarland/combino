@@ -3,10 +3,10 @@
 import { Command } from "commander";
 import { Combino } from "./index.js";
 import { TemplateOptions, MergeStrategy } from "./types.js";
-import {
-	isTemplateEngineAvailable,
-	getTemplateEngineInstallInstructions,
-} from "./template-engines/index.js";
+import { ejs } from "./plugins/ejs.js";
+import { handlebars } from "./plugins/handlebars.js";
+import { mustache } from "./plugins/mustache.js";
+import { Plugin } from "./plugins/types.js";
 import * as fs from "fs";
 import * as path from "path";
 import * as ini from "ini";
@@ -48,23 +48,24 @@ program
 	)
 	.action(async (include: string[], options: any) => {
 		try {
-			// Check if the requested template engine is available
+			// Create plugin based on template engine option
+			let plugins: Plugin[] = [];
 			if (options.templateEngine) {
-				const isAvailable = await isTemplateEngineAvailable(
-					options.templateEngine,
-				);
-				if (!isAvailable) {
-					const installCmd = getTemplateEngineInstallInstructions(
-						options.templateEngine,
-					);
-					console.error(
-						`Error: Template engine '${options.templateEngine}' is not available.`,
-					);
-					console.error(
-						`To use this template engine, please install the required dependency:`,
-					);
-					console.error(`  ${installCmd}`);
-					process.exit(1);
+				switch (options.templateEngine.toLowerCase()) {
+					case "ejs":
+						plugins = [ejs()];
+						break;
+					case "handlebars":
+						plugins = [handlebars()];
+						break;
+					case "mustache":
+						plugins = [mustache()];
+						break;
+					default:
+						console.error(
+							`Error: Unknown template engine '${options.templateEngine}'. Supported engines: ejs, handlebars, mustache`,
+						);
+						process.exit(1);
 				}
 			}
 
@@ -158,7 +159,7 @@ program
 						? { merge: mergeConfig }
 						: undefined),
 				data: templateData,
-				templateEngine: options.templateEngine,
+				plugins: plugins.length > 0 ? plugins : undefined,
 			};
 
 			await combino.combine(templateOptions);

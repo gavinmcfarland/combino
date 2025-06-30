@@ -3,7 +3,7 @@ import deepmerge from "deepmerge";
 import { MergeStrategy } from "../types.js";
 import ejs from "ejs";
 import * as jsonc from "jsonc-parser";
-import { TemplateEngine } from "../template-engines/index.js";
+import { PluginManager } from "../plugins/types.js";
 
 // Custom array merge function that handles key-based merging for objects
 const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
@@ -287,7 +287,7 @@ export async function mergeJson(
 	strategy: MergeStrategy,
 	baseTemplatePath?: string,
 	data?: Record<string, any>,
-	templateEngine?: TemplateEngine | null,
+	pluginManager?: PluginManager | null,
 ): Promise<string> {
 	const targetContent = await fs
 		.readFile(targetPath, "utf-8")
@@ -299,11 +299,11 @@ export async function mergeJson(
 		content: string,
 		templateData?: Record<string, any>,
 	): Promise<string> => {
-		if (!templateData || !templateEngine?.hasTemplateSyntax(content)) {
+		if (!templateData || !pluginManager?.hasTemplateSyntax(content)) {
 			return content;
 		}
 		try {
-			return await templateEngine.render(content, templateData);
+			return await pluginManager.render(content, templateData);
 		} catch (error) {
 			console.error("Error processing template:", error);
 			return content;

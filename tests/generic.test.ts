@@ -3,6 +3,7 @@ import { join, dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 import { describe, it, beforeAll } from "vitest";
 import { Combino } from "../src/index.js";
+import { ejs } from "../src/plugins/ejs.js";
 import { assertDirectoriesEqual } from "../utils/directory-compare.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -118,7 +119,7 @@ describe("Combino Integration Test Suite", () => {
 				outputDir,
 				include: inputDirs,
 				data: testConfig.data || { framework: "react" },
-				templateEngine: testConfig.templateEngine || "ejs",
+				plugins: [ejs()], // Use EJS plugin by default
 				...(configFile ? { config: configFile } : {}),
 			});
 			assertDirectoriesEqual(outputDir, expectedDir, {
