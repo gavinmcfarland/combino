@@ -403,7 +403,7 @@ export class Combino {
 		if (this.pluginManager) {
 			// If we have allTemplates, use transformWithTemplates to provide full context
 			if (allTemplates && filePath) {
-				// Build template information for layout detection
+				// Build template information for layout detection without processing through plugins
 				const templateInfos = await Promise.all(
 					allTemplates.map(async (template) => {
 						const files = await this.getFilesInTemplate(
@@ -412,7 +412,7 @@ export class Combino {
 							data,
 						);
 
-						// Read file contents for layout detection
+						// Read file contents for layout detection without processing through plugins
 						const filesWithContent = await Promise.all(
 							files.map(async (file) => {
 								try {
@@ -420,18 +420,11 @@ export class Combino {
 										file.sourcePath,
 									);
 
-									// Process the content with current data for layout detection
-									const processedContent =
-										await this.processTemplate(
-											fileContent.content,
-											data,
-											file.sourcePath,
-											// Don't pass allTemplates recursively to avoid infinite loops
-										);
-
+									// For layout detection, we only need the raw content
+									// Don't process through plugins to avoid circular processing
 									return {
 										...file,
-										content: processedContent,
+										content: fileContent.content,
 									};
 								} catch (error) {
 									// If file can't be read, skip content
