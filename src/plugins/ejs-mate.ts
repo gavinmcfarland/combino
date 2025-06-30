@@ -32,6 +32,14 @@ interface TemplateRegistry {
 	[path: string]: string;
 }
 
+// Common rendering context for EJS
+interface EjsRenderingContext {
+	block: (name: string, html?: string) => Block;
+	layout: (view: string) => void;
+	partial: (view: string) => string;
+	[key: string]: any;
+}
+
 /**
  * EJS-Mate Plugin Factory Function
  * Creates a plugin that processes templates with flexible layout support
@@ -116,6 +124,84 @@ export function ejsMate(filePattern?: string[]): Plugin {
 }
 
 /**
+ * Create common EJS rendering context with block helpers
+ */
+function createRenderingContext(
+	data: Record<string, any>,
+	blocks: Record<string, Block>,
+): EjsRenderingContext {
+	return {
+		...data,
+		block: (name: string, html?: string): Block => {
+			if (!blocks[name]) {
+				blocks[name] = new Block();
+			}
+			if (html) {
+				blocks[name].append(html);
+			}
+			return blocks[name];
+		},
+		layout: (view: string): void => {}, // no-op
+		partial: (view: string): string => {
+			console.warn(
+				`Partial '${view}' not found - partials not yet implemented`,
+			);
+			return "";
+		},
+	};
+}
+
+/**
+ * Create layout rendering context with collected blocks
+ */
+function createLayoutContext(
+	data: Record<string, any>,
+	body: string,
+	blocks: Record<string, Block>,
+): EjsRenderingContext {
+	return {
+		...data,
+		body,
+		block: (name: string): Block => blocks[name] || new Block(),
+		partial: (view: string): string => "",
+		layout: () => {},
+	};
+}
+
+/**
+ * Render content with blocks and return both body and collected blocks
+ */
+async function renderWithBlocks(
+	content: string,
+	data: Record<string, any>,
+): Promise<{ body: string; blocks: Record<string, Block> }> {
+	const blocks: Record<string, Block> = {};
+	const renderContext = createRenderingContext(data, blocks);
+
+	const body = await ejsEngine.render(content, renderContext, {
+		async: true,
+	});
+
+	return { body, blocks };
+}
+
+/**
+ * Render layout with body and blocks
+ */
+async function renderLayout(
+	layoutContent: string,
+	data: Record<string, any>,
+	body: string,
+	blocks: Record<string, Block>,
+): Promise<string> {
+	const layoutContext = createLayoutContext(data, body, blocks);
+
+	return await ejsEngine.render(layoutContent, layoutContext, {
+		async: true,
+	});
+}
+
+/**
  * Detect automatic layout based on template structure
  */
 function detectAutomaticLayout(context: FileHookContext): string | null {
@@ -181,48 +267,19 @@ async function processAutomaticLayout(
 		throw new Error(`Layout template not found: ${layoutPath}`);
 	}
 
-	// First pass: render the page template with block helpers to collect blocks
-	const blocks: Record<string, Block> = {};
+	// Render the page template with block helpers to collect blocks
+	const { body, blocks } = await renderWithBlocks(
+		context.content,
+		context.data,
+	);
 
-	const renderContext = {
-		...context.data,
-		block: (name: string, html?: string): Block => {
-			if (!blocks[name]) {
-				blocks[name] = new Block();
-			}
-			if (html) {
-				blocks[name].append(html);
-			}
-			return blocks[name];
-		},
-		layout: (view: string): void => {}, // no-op
-		partial: (view: string): string => {
-			console.warn(
-				`Partial '${view}' not found - partials not yet implemented`,
-			);
-			return "";
-		},
-	};
-
-	const body = await ejsEngine.render(context.content, renderContext, {
-		async: true,
-	});
-
-	// Second pass: render the layout with the collected blocks and body
+	// Render the layout with the collected blocks and body
 	const layoutContent = layoutTemplate.content || "";
-
-	const renderedContent = await ejsEngine.render(
+	const renderedContent = await renderLayout(
 		layoutContent,
-		{
-			...context.data,
-			body,
-			block: (name: string): Block => blocks[name] || new Block(),
-			partial: (view: string): string => "",
-			layout: () => {},
-		},
-		{
-			async: true,
-		},
+		context.data,
+		body,
+		blocks,
 	);
 
 	return {
@@ -238,112 +295,64 @@ async function processExplicitLayout(
 	context: FileHookContext,
 	layoutPath: string,
 ): Promise<{ content: string; targetPath: string }> {
-	// First pass: render the template with layout and block helpers
-	const blocks: Record<string, Block> = {};
-
-	// Create the rendering context with ejs-mate helpers
-	const renderContext = {
-		...context.data,
-		// Block helper
-		block: (name: string, html?: string): Block => {
-			if (!blocks[name]) {
-				blocks[name] = new Block();
-			}
-			if (html) {
-				blocks[name].append(html);
-			}
-			return blocks[name];
-		},
-		// Layout helper (no-op for now, we handle it separately)
-		layout: (view: string): void => {
-			// This will be called but we handle layout processing separately
-		},
-		// Partial helper (simplified - would need template registry)
-		partial: (view: string): string => {
-			// For now, return empty string
-			// In a full implementation, you'd look up the template
-			console.warn(
-				`Partial '${view}' not found - partials not yet implemented`,
-			);
-			return "";
-		},
-	};
-
 	// Remove the layout directive from the content before rendering
 	const contentWithoutLayout = context.content.replace(
 		/<% layout\(['"][^'"]+['"]\) %>/,
 		"",
 	);
 
-	// Render the template
-	const renderedContent = await ejsEngine.render(
+	// Render the template with block helpers to collect blocks
+	const { body, blocks } = await renderWithBlocks(
 		contentWithoutLayout,
-		renderContext,
-		{
-			async: true,
-		},
+		context.data,
 	);
 
-	// Second pass: find and render the layout template
-	// Resolve the layout path relative to the current file
-	const sourceDir = path.dirname(context.sourcePath);
-	const resolvedLayoutPath = path.resolve(sourceDir, layoutPath);
+	// Find and render the layout template
+	const layoutContent = await findLayoutFileContent(
+		context.sourcePath,
+		layoutPath,
+	);
+	const renderedContent = await renderLayout(
+		layoutContent,
+		context.data,
+		body,
+		blocks,
+	);
 
-	// Try to find the layout file
-	let layoutTemplate: string = "";
+	return {
+		content: renderedContent,
+		targetPath: context.targetPath,
+	};
+}
+
+/**
+ * Find layout file content from filesystem
+ */
+async function findLayoutFileContent(
+	sourcePath: string,
+	layoutPath: string,
+): Promise<string> {
+	// Resolve the layout path relative to the current file
+	const sourceDir = path.dirname(sourcePath);
+	const resolvedLayoutPath = path.resolve(sourceDir, layoutPath);
 
 	// First try the exact path
 	if (fs.existsSync(resolvedLayoutPath)) {
-		layoutTemplate = fs.readFileSync(resolvedLayoutPath, "utf8");
-	} else {
-		// Try with common extensions
-		const extensions = [".ejs", ".md", ".html", ".txt"];
-		let found = false;
+		return fs.readFileSync(resolvedLayoutPath, "utf8");
+	}
 
-		for (const ext of extensions) {
-			const pathWithExt = resolvedLayoutPath + ext;
-			if (fs.existsSync(pathWithExt)) {
-				layoutTemplate = fs.readFileSync(pathWithExt, "utf8");
-				found = true;
-				break;
-			}
-		}
-
-		if (!found) {
-			throw new Error(
-				`Layout file not found: ${layoutPath} (tried: ${resolvedLayoutPath} and with extensions: ${extensions.join(", ")})`,
-			);
-		}
-
-		// TypeScript doesn't know that layoutTemplate is assigned in the loop
-		// This is a fallback that should never be reached
-		if (!layoutTemplate) {
-			throw new Error(`Layout file not found: ${layoutPath}`);
+	// Try with common extensions
+	const extensions = [".ejs", ".md", ".html", ".txt"];
+	for (const ext of extensions) {
+		const pathWithExt = resolvedLayoutPath + ext;
+		if (fs.existsSync(pathWithExt)) {
+			return fs.readFileSync(pathWithExt, "utf8");
 		}
 	}
 
-	// Render the layout with the body and blocks
-	const layoutContext = {
-		...context.data,
-		body: renderedContent,
-		block: (name: string): Block => {
-			return blocks[name] || new Block();
-		},
-		partial: (view: string): string => {
-			// For now, return empty string or implement lookup if you want
-			return "";
-		},
-		layout: () => {}, // no-op in layout
-	};
-
-	const finalContent = await ejsEngine.render(layoutTemplate, layoutContext, {
-		async: true,
-	});
-
-	return {
-		content: finalContent,
-		targetPath: context.targetPath,
-	};
+	throw new Error(
+		`Layout file not found: ${layoutPath} (tried: ${resolvedLayoutPath} and with extensions: ${extensions.join(", ")})`,
+	);
 }
 
 // Helper function to find layout template in template information
@@ -367,56 +376,6 @@ function findLayoutTemplate(
 	}
 
 	return null;
-}
-
-// Helper function to extract blocks from content
-async function extractBlocks(content: string): Promise<Record<string, Block>> {
-	const blocks: Record<string, Block> = {};
-
-	// Create the rendering context with ejs-mate helpers
-	const renderContext = {
-		// Block helper
-		block: (name: string, html?: string): Block => {
-			if (!blocks[name]) {
-				blocks[name] = new Block();
-			}
-			if (html) {
-				blocks[name].append(html);
-			}
-			return blocks[name];
-		},
-		// Layout helper (no-op for block extraction)
-		layout: (view: string): void => {
-			// This will be called but we handle layout processing separately
-		},
-		// Partial helper (simplified)
-		partial: (view: string): string => {
-			return "";
-		},
-	};
-
-	// Render the content to extract blocks
-	await ejsEngine.render(content, renderContext, {
-		async: true,
-	});
-
-	return blocks;
-}
-
-// Helper function to create EJS helpers for blocks
-function createBlockHelpers(blocks: Record<string, Block>) {
-	return {
-		block: (name: string): Block => {
-			return blocks[name] || new Block();
-		},
-		partial: (view: string): string => {
-			// For now, return empty string
-			console.warn(
-				`Partial '${view}' not found - partials not yet implemented`,
-			);
-			return "";
-		},
-	};
 }
 
 // Default export for convenience
