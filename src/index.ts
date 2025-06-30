@@ -109,7 +109,7 @@ async function formatFileWithPrettier(
 			return content; // Return original content if not a formattable file type
 		}
 
-		// Determine parser based on file extension
+		// Determine parser based on file extension and content
 		let parser: string;
 		switch (ext) {
 			case ".js":
@@ -118,7 +118,17 @@ async function formatFileWithPrettier(
 				break;
 			case ".ts":
 			case ".tsx":
-				parser = "typescript";
+				// Check if content contains TypeScript syntax
+				const hasTypeScriptSyntax =
+					/import\s+type\s+|:\s*\w+\s*[=;]|interface\s+\w+|type\s+\w+\s*=|declare\s+module/.test(
+						content,
+					);
+				if (hasTypeScriptSyntax) {
+					parser = "typescript";
+				} else {
+					// If no TypeScript syntax, treat as JavaScript
+					parser = "babel";
+				}
 				break;
 			case ".json":
 				parser = "json";
@@ -755,7 +765,6 @@ export class Combino {
 			data: externalData = {},
 			config,
 			plugins,
-			onFileProcessed,
 		} = options;
 
 		// Set plugins if provided (new architecture)
@@ -1149,19 +1158,18 @@ export class Combino {
 						baseTemplatePath,
 					);
 
-					// Apply hook if provided (after template processing, before formatting)
+					// Apply plugin transform hook (after template processing, before formatting)
 					let finalContent = mergedContent;
 					let finalTargetPath = fullTargetPath;
-					if (onFileProcessed) {
+					if (this.pluginManager) {
 						const hookContext = {
 							sourcePath,
 							targetPath: fullTargetPath,
 							content: mergedContent,
 							data: fileData,
 						};
-						const hookResult = await Promise.resolve(
-							onFileProcessed(hookContext),
-						);
+						const hookResult =
+							await this.pluginManager.transform(hookContext);
 						finalContent = hookResult.content;
 						if (hookResult.targetPath) {
 							finalTargetPath = hookResult.targetPath;
@@ -1190,19 +1198,18 @@ export class Combino {
 						sourcePath,
 					);
 
-					// Apply hook if provided (after template processing, before formatting)
+					// Apply plugin transform hook (after template processing, before formatting)
 					let finalContent = processedContent;
 					let finalTargetPath = fullTargetPath;
-					if (onFileProcessed) {
+					if (this.pluginManager) {
 						const hookContext = {
 							sourcePath,
 							targetPath: fullTargetPath,
 							content: processedContent,
 							data: fileData,
 						};
-						const hookResult = await Promise.resolve(
-							onFileProcessed(hookContext),
-						);
+						const hookResult =
+							await this.pluginManager.transform(hookContext);
 						finalContent = hookResult.content;
 						if (hookResult.targetPath) {
 							finalTargetPath = hookResult.targetPath;

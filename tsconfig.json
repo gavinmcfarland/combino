@@ -13,6 +13,6 @@
         "moduleDetection": "force",
         "isolatedModules": true
     },
-    "include": ["src/**/*"],
+    "include": ["src/**/*", "examples/figma/combino-plugin-strip-ts.js"],
     "exclude": ["node_modules", "dist", "tests"]
 }

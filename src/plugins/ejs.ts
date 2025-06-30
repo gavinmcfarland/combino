@@ -1,5 +1,5 @@
 import ejsEngine from "ejs";
-import { Plugin, PluginOptions } from "./types.js";
+import { Plugin, PluginOptions, FileHook } from "./types.js";
 
 /**
  * EJS Template Engine
@@ -44,13 +44,15 @@ class EJSTemplateEngine {
  * EJS Plugin Factory Function
  * This is the main export for the standalone EJS plugin
  */
-export function ejs(options: PluginOptions = {}): Plugin {
+export function ejs(options: PluginOptions = {}, transform?: FileHook): Plugin {
 	return {
 		engine: new EJSTemplateEngine(),
 		options: {
 			priority: 0,
+			patterns: ["*"], // Process all files by default
 			...options,
 		},
+		transform,
 	};
 }
 

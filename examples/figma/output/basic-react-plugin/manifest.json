@@ -1,0 +1,10 @@
+{
+	"id": "com.basic-react-plugin",
+	"name": "basic-react-plugin",
+	"main": "src/main/main.js",
+	"ui": "src/ui/ui.jsx",
+	"editorType": ["figma", "figjam"],
+	"networkAccess": {
+		"allowedDomains": ["none"]
+	}
+}

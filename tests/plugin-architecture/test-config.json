@@ -1,0 +1,14 @@
+{
+    "data": {
+        "name": "World",
+        "other": "Universe",
+        "framework": "react"
+    },
+    "plugins": ["ejs", "handlebars", "mustache"],
+    "description": "Plugin Architecture test with multiple template engines",
+    "pluginConfigs": {
+        "ejs": { "patterns": ["*.ejs", "*.txt"] },
+        "handlebars": { "patterns": ["*.hbs", "*.txt"] },
+        "mustache": { "patterns": ["*.mustache", "*.txt"] }
+    }
+}

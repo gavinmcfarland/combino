@@ -19,13 +19,14 @@ interface TestConfig {
 	reason?: string;
 	description?: string;
 	plugins?: string[]; // Array of plugin names like ["ejs", "handlebars"]
+	pluginConfigs?: Record<string, any>;
 }
 
 // Plugin mapping
-const pluginMap: Record<string, () => Plugin> = {
-	ejs: () => ejs(),
-	handlebars: () => handlebars(),
-	mustache: () => mustache(),
+const pluginMap: Record<string, (options?: any) => Plugin> = {
+	ejs: (options) => ejs(options),
+	handlebars: (options) => handlebars(options),
+	mustache: (options) => mustache(options),
 };
 
 // Helper to find all test case directories
@@ -94,7 +95,8 @@ function getPluginsFromConfig(testConfig: TestConfig): Plugin[] {
 				`Unknown plugin: ${pluginName}. Available plugins: ${Object.keys(pluginMap).join(", ")}`,
 			);
 		}
-		return pluginFactory();
+		const pluginOptions = testConfig.pluginConfigs?.[pluginName] || {};
+		return pluginFactory(pluginOptions);
 	});
 }
 

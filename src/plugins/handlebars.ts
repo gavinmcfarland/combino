@@ -1,4 +1,4 @@
-import { Plugin, PluginOptions } from "./types.js";
+import { Plugin, PluginOptions, FileHook } from "./types.js";
 
 /**
  * Handlebars Template Engine
@@ -48,13 +48,17 @@ class HandlebarsTemplateEngine {
  * Handlebars Plugin Factory Function
  * This is the main export for the standalone Handlebars plugin
  */
-export function handlebars(options: PluginOptions = {}): Plugin {
+export function handlebars(
+	options: PluginOptions = {},
+	transform?: FileHook,
+): Plugin {
 	return {
 		engine: new HandlebarsTemplateEngine(),
 		options: {
 			priority: 0,
 			...options,
 		},
+		transform,
 	};
 }
 

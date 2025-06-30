@@ -74,6 +74,4 @@ export interface TemplateOptions {
 	data?: Record<string, any>;
 	/** Plugins to use for processing templates (new plugin architecture) */
 	plugins?: Plugin[];
-	/** Hook to run after template processing but before formatting */
-	onFileProcessed?: FileHook;
 }

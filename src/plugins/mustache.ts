@@ -1,4 +1,4 @@
-import { Plugin, PluginOptions } from "./types.js";
+import { Plugin, PluginOptions, FileHook } from "./types.js";
 
 /**
  * Mustache Template Engine
@@ -48,13 +48,17 @@ class MustacheTemplateEngine {
  * Mustache Plugin Factory Function
  * This is the main export for the standalone Mustache plugin
  */
-export function mustache(options: PluginOptions = {}): Plugin {
+export function mustache(
+	options: PluginOptions = {},
+	transform?: FileHook,
+): Plugin {
 	return {
 		engine: new MustacheTemplateEngine(),
 		options: {
 			priority: 0,
 			...options,
 		},
+		transform,
 	};
 }
 
