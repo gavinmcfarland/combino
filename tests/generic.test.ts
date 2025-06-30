@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import { describe, it, beforeAll } from "vitest";
 import { Combino } from "../src/index.js";
 import { ejs } from "../src/plugins/ejs.js";
+import { ejsMate } from "../src/plugins/ejs-mate.js";
 import { handlebars } from "../src/plugins/handlebars.js";
 import { mustache } from "../src/plugins/mustache.js";
 import { Plugin } from "../src/plugins/types.js";
@@ -25,6 +26,7 @@ interface TestConfig {
 // Plugin mapping
 const pluginMap: Record<string, (options?: any) => Plugin> = {
 	ejs: (options) => ejs(options),
+	"ejs-mate": (options) => ejsMate(options),
 	handlebars: (options) => handlebars(options),
 	mustache: (options) => mustache(options),
 };

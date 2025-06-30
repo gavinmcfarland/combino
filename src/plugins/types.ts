@@ -1,10 +1,19 @@
 export interface PluginOptions {
-	/** File patterns this plugin should handle (e.g., ["*.ejs", "*.hbs"]) */
-	patterns?: string[];
-	/** Priority - higher numbers take precedence */
-	priority?: number;
 	/** Additional options specific to the plugin */
 	[key: string]: any;
+}
+
+export interface TemplateInfo {
+	/** The template path */
+	path: string;
+	/** The target directory (if specified) */
+	targetDir?: string;
+	/** All files in this template */
+	files: Array<{
+		sourcePath: string;
+		targetPath: string;
+		content?: string;
+	}>;
 }
 
 export interface FileHookContext {
@@ -16,6 +25,8 @@ export interface FileHookContext {
 	content: string;
 	/** The data used for template processing */
 	data: Record<string, any>;
+	/** Information about all templates being processed (for layout detection) */
+	allTemplates?: TemplateInfo[];
 }
 
 export interface FileHookResult {
@@ -30,8 +41,8 @@ export type FileHook = (
 ) => Promise<FileHookResult> | FileHookResult;
 
 export interface Plugin {
-	/** Plugin configuration options */
-	options: PluginOptions;
+	/** File patterns this plugin should handle (e.g., ["*.ejs", "*.hbs"]) */
+	filePattern?: string[];
 	/** Transform hook for file processing (similar to Vite's transform hook) */
 	transform?: FileHook;
 }
@@ -58,9 +69,6 @@ export class PluginManager {
 
 	addPlugin(plugin: Plugin): void {
 		this.plugins.push(plugin);
-		this.plugins.sort(
-			(a, b) => (b.options.priority || 0) - (a.options.priority || 0),
-		);
 	}
 
 	setDefaultPlugin(plugin: Plugin): void {
@@ -71,8 +79,8 @@ export class PluginManager {
 		// Pattern matching
 		if (filePath) {
 			for (const plugin of this.plugins) {
-				if (plugin.options.patterns) {
-					for (const pattern of plugin.options.patterns) {
+				if (plugin.filePattern) {
+					for (const pattern of plugin.filePattern) {
 						if (this.matchesPattern(filePath, pattern)) {
 							return plugin;
 						}
@@ -101,33 +109,28 @@ export class PluginManager {
 	): Promise<string> {
 		let matchingPlugins: Plugin[] = [];
 
-		// First, collect all plugins that match by pattern
+		// If filePath is provided, check for plugins with specific patterns
 		if (filePath) {
 			for (const plugin of this.plugins) {
-				if (
-					plugin.options.patterns &&
-					plugin.options.patterns.length > 0
-				) {
-					for (const pattern of plugin.options.patterns) {
+				// If plugin has specific file patterns, only include if it matches
+				if (plugin.filePattern && plugin.filePattern.length > 0) {
+					for (const pattern of plugin.filePattern) {
 						if (this.matchesPattern(filePath, pattern)) {
 							matchingPlugins.push(plugin);
+							break; // Don't add the same plugin twice
 						}
 					}
+				} else {
+					// If plugin has no patterns (or empty array), include it for all files
+					matchingPlugins.push(plugin);
 				}
 			}
-		}
-
-		// If no plugins matched by pattern, use all available plugins as fallback
-		if (matchingPlugins.length === 0) {
+		} else {
+			// If no filePath provided, use all plugins
 			matchingPlugins = [...this.plugins];
 		}
 
-		// Sort by priority (highest first)
-		matchingPlugins.sort(
-			(a, b) => (b.options.priority || 0) - (a.options.priority || 0),
-		);
-
-		// Process through all matching plugins in sequence
+		// Process through all matching plugins in sequence (order preserved)
 		let processedContent = content;
 		for (const plugin of matchingPlugins) {
 			if (plugin.transform) {
@@ -156,23 +159,20 @@ export class PluginManager {
 	}
 
 	async transform(context: FileHookContext): Promise<FileHookResult> {
-		// Collect all plugins whose transform hook matches the file (by pattern or by default)
+		// Collect all plugins that should process this file
 		const matchingPlugins = this.plugins.filter((plugin) => {
 			if (!plugin.transform) return false;
-			if (
-				!plugin.options.patterns ||
-				plugin.options.patterns.length === 0
-			)
-				return true;
-			return plugin.options.patterns.some((pattern) =>
-				this.matchesPattern(context.targetPath, pattern),
-			);
-		});
 
-		// Sort by priority (already sorted in addPlugin, but just in case)
-		matchingPlugins.sort(
-			(a, b) => (b.options.priority || 0) - (a.options.priority || 0),
-		);
+			// If plugin has specific file patterns, only include if it matches
+			if (plugin.filePattern && plugin.filePattern.length > 0) {
+				return plugin.filePattern.some((pattern) =>
+					this.matchesPattern(context.targetPath, pattern),
+				);
+			}
+
+			// If plugin has no patterns, include it for all files
+			return true;
+		});
 
 		let result: FileHookResult = {
 			content: context.content,
@@ -201,12 +201,25 @@ export class PluginManager {
 					targetPath: result.targetPath ?? "",
 				};
 			} catch (error) {
-				console.error(`Error in plugin transform hook:`, error);
-				// On error, continue with the previous result
+				console.error(`Error transforming with plugin:`, error);
+				// Continue with the previous result on error
 			}
 		}
 
 		return result;
+	}
+
+	async transformWithTemplates(
+		context: FileHookContext,
+		allTemplates: TemplateInfo[],
+	): Promise<FileHookResult> {
+		// Add template information to the context
+		const contextWithTemplates: FileHookContext = {
+			...context,
+			allTemplates,
+		};
+
+		return this.transform(contextWithTemplates);
 	}
 
 	getPlugins(): Plugin[] {

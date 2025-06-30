@@ -100,10 +100,7 @@ export function mustache(
 	};
 
 	return {
-		options: {
-			priority: 0,
-			...options,
-		},
+		filePattern: ["*"],
 		transform: combinedTransform,
 	};
 }

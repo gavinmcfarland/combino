@@ -17,7 +17,7 @@ import * as ini from "ini";
 import { fileURLToPath } from "url";
 import prettier from "prettier";
 import prettierPluginSvelte from "prettier-plugin-svelte";
-import { PluginManager } from "./plugins/types.js";
+import { PluginManager, TemplateInfo } from "./plugins/types.js";
 
 interface CombinoConfig {
 	exclude?: string[];
@@ -393,10 +393,81 @@ export class Combino {
 		content: string,
 		data: Record<string, any>,
 		filePath?: string,
+		allTemplates?: Array<{
+			path: string;
+			config: CombinoConfig;
+			targetDir?: string;
+		}>,
 	): Promise<string> {
 		// Use plugin manager if available (new architecture)
 		if (this.pluginManager) {
-			return this.pluginManager.render(content, data, filePath);
+			// If we have allTemplates, use transformWithTemplates to provide full context
+			if (allTemplates && filePath) {
+				// Build template information for layout detection
+				const templateInfos = await Promise.all(
+					allTemplates.map(async (template) => {
+						const files = await this.getFilesInTemplate(
+							template.path,
+							[], // Use empty ignore patterns for this context
+							data,
+						);
+
+						// Read file contents for layout detection
+						const filesWithContent = await Promise.all(
+							files.map(async (file) => {
+								try {
+									const fileContent = await this.readFile(
+										file.sourcePath,
+									);
+
+									// Process the content with current data for layout detection
+									const processedContent =
+										await this.processTemplate(
+											fileContent.content,
+											data,
+											file.sourcePath,
+											// Don't pass allTemplates recursively to avoid infinite loops
+										);
+
+									return {
+										...file,
+										content: processedContent,
+									};
+								} catch (error) {
+									// If file can't be read, skip content
+									return {
+										...file,
+										content: undefined,
+									};
+								}
+							}),
+						);
+
+						return {
+							path: template.path,
+							targetDir: template.targetDir,
+							files: filesWithContent,
+						};
+					}),
+				);
+
+				const hookContext = {
+					sourcePath: filePath,
+					targetPath: filePath,
+					content,
+					data,
+				};
+
+				const hookResult =
+					await this.pluginManager.transformWithTemplates(
+						hookContext,
+						templateInfos,
+					);
+				return hookResult.content;
+			} else {
+				// Fallback to render for cases where allTemplates is not available
+				return this.pluginManager.render(content, data, filePath);
+			}
 		}
 
 		// If no plugin manager is set, return content as-is
@@ -746,6 +817,62 @@ export class Combino {
 		}
 
 		return process.cwd();
+	}
+
+	private async buildTemplateInfoForLayoutDetection(
+		allTemplates: Array<{
+			path: string;
+			config: CombinoConfig;
+			targetDir?: string;
+		}>,
+		allData: Record<string, any>,
+		allIgnorePatterns: Set<string>,
+		templateExtraIgnores: Map<string, Set<string>>,
+	): Promise<TemplateInfo[]> {
+		return Promise.all(
+			allTemplates.map(async (template) => {
+				const extraIgnores =
+					templateExtraIgnores.get(path.resolve(template.path)) ||
+					new Set();
+				const ignorePatterns = Array.from(
+					new Set([...allIgnorePatterns, ...extraIgnores]),
+				);
+				const files = await this.getFilesInTemplate(
+					template.path,
+					ignorePatterns,
+					allData,
+				);
+
+				// Read file contents for layout detection without processing through plugins
+				const filesWithContent = await Promise.all(
+					files.map(async (file) => {
+						try {
+							const fileContent = await this.readFile(
+								file.sourcePath,
+							);
+							// For layout detection, we only need the raw content
+							// Don't process through plugins to avoid circular processing
+							return {
+								...file,
+								content: fileContent.content,
+							};
+						} catch (error) {
+							// If file can't be read, skip content
+							return {
+								...file,
+								content: undefined,
+							};
+						}
+					}),
+				);
+
+				return {
+					path: template.path,
+					targetDir: template.targetDir,
+					files: filesWithContent,
+				};
+			}),
+		);
 	}
 
 	async combine(options: TemplateOptions): Promise<void> {
@@ -1158,8 +1285,21 @@ export class Combino {
 							content: mergedContent,
 							data: fileData,
 						};
+
+						// Build template information for layout detection
+						const templateInfos: TemplateInfo[] =
+							await this.buildTemplateInfoForLayoutDetection(
+								allTemplates,
+								fileData,
+								allIgnorePatterns,
+								templateExtraIgnores,
+							);
+
 						const hookResult =
-							await this.pluginManager.transform(hookContext);
+							await this.pluginManager.transformWithTemplates(
+								hookContext,
+								templateInfos,
+							);
 						finalContent = hookResult.content;
 						if (hookResult.targetPath) {
 							finalTargetPath = hookResult.targetPath;
@@ -1186,6 +1326,7 @@ export class Combino {
 						sourceContent.content,
 						fileData,
 						sourcePath,
+						allTemplates,
 					);
 
 					// Apply plugin transform hook (after template processing, before formatting)
@@ -1198,8 +1339,21 @@ export class Combino {
 							content: processedContent,
 							data: fileData,
 						};
+
+						// Build template information for layout detection
+						const templateInfos: TemplateInfo[] =
+							await this.buildTemplateInfoForLayoutDetection(
+								allTemplates,
+								fileData,
+								allIgnorePatterns,
+								templateExtraIgnores,
+							);
+
 						const hookResult =
-							await this.pluginManager.transform(hookContext);
+							await this.pluginManager.transformWithTemplates(
+								hookContext,
+								templateInfos,
+							);
 						finalContent = hookResult.content;
 						if (hookResult.targetPath) {
 							finalTargetPath = hookResult.targetPath;

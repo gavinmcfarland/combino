@@ -143,11 +143,7 @@ export function stripTS(options: PluginOptions = {}): Plugin {
 	};
 
 	return {
-		options: {
-			priority: 0,
-			patterns: ["*"], // Process all files
-			...options,
-		},
+		filePattern: ["*"],
 		transform,
 	};
 }

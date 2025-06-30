@@ -100,10 +100,7 @@ export function handlebars(
 	};
 
 	return {
-		options: {
-			priority: 0,
-			...options,
-		},
+		filePattern: ["*"],
 		transform: combinedTransform,
 	};
 }
