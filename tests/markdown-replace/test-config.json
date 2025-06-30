@@ -3,6 +3,6 @@
         "framework": "react",
         "project": "test-project"
     },
-    "templateEngine": "ejs",
+    "plugins": ["ejs"],
     "description": "Markdown replace test with project data"
 }

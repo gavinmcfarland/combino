@@ -5,6 +5,6 @@
         "type": "web"
     },
     "inputDirs": ["input/base"],
-    "templateEngine": "ejs",
+    "plugins": ["ejs"],
     "description": "Conditional test that only uses the base input directory"
 }

@@ -2,6 +2,6 @@
     "data": {
         "framework": "react"
     },
-    "templateEngine": "ejs",
+    "plugins": ["ejs"],
     "description": "Markdown merge test with default configuration"
 }

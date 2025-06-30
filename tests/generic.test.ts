@@ -4,6 +4,9 @@ import { fileURLToPath } from "url";
 import { describe, it, beforeAll } from "vitest";
 import { Combino } from "../src/index.js";
 import { ejs } from "../src/plugins/ejs.js";
+import { handlebars } from "../src/plugins/handlebars.js";
+import { mustache } from "../src/plugins/mustache.js";
+import { Plugin } from "../src/plugins/types.js";
 import { assertDirectoriesEqual } from "../utils/directory-compare.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -15,8 +18,15 @@ interface TestConfig {
 	skip?: boolean;
 	reason?: string;
 	description?: string;
-	templateEngine?: string;
+	plugins?: string[]; // Array of plugin names like ["ejs", "handlebars"]
 }
+
+// Plugin mapping
+const pluginMap: Record<string, () => Plugin> = {
+	ejs: () => ejs(),
+	handlebars: () => handlebars(),
+	mustache: () => mustache(),
+};
 
 // Helper to find all test case directories
 function getTestCaseDirs(testsRoot: string): string[] {
@@ -67,8 +77,25 @@ function getTestConfig(testCaseDir: string): TestConfig {
 	// Default configuration
 	return {
 		data: { framework: "react" },
-		templateEngine: "ejs", // Default to EJS for tests
+		plugins: ["ejs"], // Default to EJS for tests
 	};
+}
+
+// Helper to get plugins from config
+function getPluginsFromConfig(testConfig: TestConfig): Plugin[] {
+	if (!testConfig.plugins || testConfig.plugins.length === 0) {
+		return [ejs()]; // Default to EJS if no plugins specified
+	}
+
+	return testConfig.plugins.map((pluginName) => {
+		const pluginFactory = pluginMap[pluginName];
+		if (!pluginFactory) {
+			throw new Error(
+				`Unknown plugin: ${pluginName}. Available plugins: ${Object.keys(pluginMap).join(", ")}`,
+			);
+		}
+		return pluginFactory();
+	});
 }
 
 // Helper to get input directories for specific tests
@@ -114,12 +141,13 @@ describe("Combino Integration Test Suite", () => {
 				rmSync(outputDir, { recursive: true, force: true });
 			} catch {}
 			const inputDirs = getInputDirsForTest(testConfig, testCaseDir);
+			const plugins = getPluginsFromConfig(testConfig);
 			const combino = new Combino();
 			await combino.combine({
 				outputDir,
 				include: inputDirs,
 				data: testConfig.data || { framework: "react" },
-				plugins: [ejs()], // Use EJS plugin by default
+				plugins: plugins,
 				...(configFile ? { config: configFile } : {}),
 			});
 			assertDirectoriesEqual(outputDir, expectedDir, {

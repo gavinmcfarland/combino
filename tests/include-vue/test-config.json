@@ -3,6 +3,6 @@
         "framework": "vue"
     },
     "inputDirs": ["input/included"],
-    "templateEngine": "ejs",
+    "plugins": ["ejs"],
     "description": "Include test with Vue configuration"
 }
