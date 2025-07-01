@@ -1,6 +1,5 @@
-<script>
+<script lang="ts">
 	let { value = $bindable(''), type = 'text', showIcon } = $props()
-	export {}
 </script>
 
 <div class="Input" data-non-interactive="true">

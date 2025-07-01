@@ -12,12 +12,13 @@ export function ejs(filePattern?: string[]): Plugin {
 		// This processes the raw template content before any file operations
 		process: async (context) => {
 			try {
-				// console.log(
-				// 	"[EJS Plugin] Processing:",
-				// 	context.targetPath,
-				// 	"Content:",
-				// 	context.content.slice(0, 60),
-				// );
+				console.log(
+					`[EJS Plugin] PROCESS hook - ${context.targetPath}`,
+					"Available data keys:",
+					Object.keys(context.data).sort(),
+					"Full merged data:",
+					JSON.stringify(context.data, null, 2),
+				);
 				const renderedContent = await ejsEngine.render(
 					context.content,
 					context.data,
@@ -27,6 +28,14 @@ export function ejs(filePattern?: string[]): Plugin {
 					targetPath: context.targetPath,
 				};
 			} catch (error) {
+				console.error(
+					`[EJS Plugin] PROCESS hook error in ${context.targetPath}:`,
+					error,
+					"Available data:",
+					Object.keys(context.data).sort(),
+					"Full merged data:",
+					JSON.stringify(context.data, null, 2),
+				);
 				throw new Error(`Error processing EJS template: ${error}`);
 			}
 		},
@@ -34,12 +43,13 @@ export function ejs(filePattern?: string[]): Plugin {
 		// This processes the final output content before prettier formatting
 		transform: async (context) => {
 			try {
-				// console.log(
-				// 	"[EJS Plugin] Transform:",
-				// 	context.targetPath,
-				// 	"Content:",
-				// 	context.content.slice(0, 60),
-				// );
+				console.log(
+					`[EJS Plugin] TRANSFORM hook - ${context.targetPath}`,
+					"Available data keys:",
+					Object.keys(context.data).sort(),
+					"Full merged data:",
+					JSON.stringify(context.data, null, 2),
+				);
 				const renderedContent = await ejsEngine.render(
 					context.content,
 					context.data,
@@ -49,6 +59,14 @@ export function ejs(filePattern?: string[]): Plugin {
 					targetPath: context.targetPath,
 				};
 			} catch (error) {
+				console.error(
+					`[EJS Plugin] TRANSFORM hook error in ${context.targetPath}:`,
+					error,
+					"Available data:",
+					Object.keys(context.data).sort(),
+					"Full merged data:",
+					JSON.stringify(context.data, null, 2),
+				);
 				throw new Error(`Error processing EJS template: ${error}`);
 			}
 		},

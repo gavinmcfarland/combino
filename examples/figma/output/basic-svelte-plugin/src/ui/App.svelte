@@ -1,9 +1,10 @@
-<script>
+<script lang="ts">
 	import svelteLogo from './assets/svelte.svg'
 	import Icon from './components/Icon.svelte'
 	import Input from './components/Input.svelte'
 	import Button from './components/Button.svelte'
-	function createRectangles(count) {
+
+	function createRectangles(count: number) {
 		parent.postMessage(
 			{
 				pluginMessage: {
@@ -14,10 +15,13 @@
 			'*',
 		)
 	}
-	let rectCount = $state(5)
-	let nodeCount = $state(0)
+
+	let rectCount: number = $state(5)
+	let nodeCount: number = $state(0)
+
 	window.onmessage = (event) => {
 		let message = event.data.pluginMessage
+
 		if (message.type === 'POST_NODE_COUNT') {
 			nodeCount = message.count
 		}

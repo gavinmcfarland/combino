@@ -1,0 +1,3 @@
+[data]
+overrideVar = "override-template-value"
+projectName = "Override Project Name"
