@@ -205,9 +205,31 @@ export class Combino {
 		this.pluginManager.addPlugins(plugins);
 	}
 
-	private async readFile(filePath: string): Promise<FileContent> {
-		const content = await fs.readFile(filePath, "utf-8");
-		const { data, content: fileContent } = matter(content);
+	private async readFile(
+		filePath: string,
+		mergedData?: Record<string, any>,
+	): Promise<FileContent> {
+		let content = await fs.readFile(filePath, "utf-8");
+
+		const { data, content: initialFileContent } = matter(content);
+		let fileContent = initialFileContent;
+
+		// Process template files BEFORE merging/copying/output using the process hook
+		// Use merged data if available, otherwise fall back to combined data
+		if (this.pluginManager) {
+			const combinedData = mergedData || {
+				...this.data,
+				...(data || {}),
+			};
+			const context = {
+				sourcePath: filePath,
+				targetPath: filePath,
+				content: fileContent,
+				data: combinedData,
+			};
+			const result = await this.pluginManager.process(context);
+			fileContent = result.content;
+		}
 
 		const config: CombinoConfig = {};
 
@@ -418,6 +440,7 @@ export class Combino {
 								try {
 									const fileContent = await this.readFile(
 										file.sourcePath,
+										data,
 									);
 
 									// For layout detection, we only need the raw content
@@ -458,8 +481,17 @@ export class Combino {
 					);
 				return hookResult.content;
 			} else {
-				// Fallback to render for cases where allTemplates is not available
-				return this.pluginManager.render(content, data, filePath);
+				// Use process hook for cases where allTemplates is not available
+				const hookContext = {
+					sourcePath: filePath || "",
+					targetPath: filePath || "",
+					content,
+					data,
+				};
+
+				const hookResult =
+					await this.pluginManager.process(hookContext);
+				return hookResult.content;
 			}
 		}
 
@@ -842,6 +874,7 @@ export class Combino {
 						try {
 							const fileContent = await this.readFile(
 								file.sourcePath,
+								allData,
 							);
 							// For layout detection, we only need the raw content
 							// Don't process through plugins to avoid circular processing
@@ -1226,7 +1259,7 @@ export class Combino {
 				// 	`[PROCESSING] Template: ${template} -> File: ${finalTargetPath}`
 				// );
 
-				const sourceContent = await this.readFile(sourcePath);
+				const sourceContent = await this.readFile(sourcePath, allData);
 				const mergedConfig = {
 					...templateConfig,
 					merge: {
@@ -1309,27 +1342,22 @@ export class Combino {
 					);
 					await fs.writeFile(finalTargetPath, formattedContent);
 				} catch (error) {
+					// If target file doesn't exist, just copy the source file
 					const fileData = {
 						...allData,
 						...(sourceContent.config?.data
 							? sourceContent.config.data
 							: {}),
 					};
-					const processedContent = await this.processTemplate(
-						sourceContent.content,
-						fileData,
-						sourcePath,
-						allTemplates,
-					);
 
 					// Apply plugin transform hook (after template processing, before formatting)
-					let finalContent = processedContent;
+					let finalContent = sourceContent.content;
 					let finalTargetPath = fullTargetPath;
 					if (this.pluginManager) {
 						const hookContext = {
 							sourcePath,
 							targetPath: fullTargetPath,
-							content: processedContent,
+							content: sourceContent.content,
 							data: fileData,
 						};
 

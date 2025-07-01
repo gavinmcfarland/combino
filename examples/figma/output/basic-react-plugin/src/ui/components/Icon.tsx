@@ -1,6 +1,11 @@
 import React from 'react'
 
-const Icon = ({ size = 16, svg }) => {
+interface IconProps {
+	size?: number
+	svg: 'plugma' | 'plus'
+}
+
+const Icon: React.FC<IconProps> = ({ size = 16, svg }) => {
 	if (svg === 'plugma') {
 		return (
 			<svg width={`${size}px`} height={`${size}px`} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

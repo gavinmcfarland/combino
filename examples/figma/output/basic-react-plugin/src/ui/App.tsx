@@ -6,8 +6,8 @@ import Button from './components/Button'
 import './App.css' // Import CSS for styles
 
 const App = () => {
-	const [rectCount, setRectCount] = useState < number > 5
-	const [nodeCount, setNodeCount] = useState < number > 0
+	const [rectCount, setRectCount] = useState<number>(5)
+	const [nodeCount, setNodeCount] = useState<number>(0)
 
 	const styles = {
 		container: {

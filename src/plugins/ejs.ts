@@ -7,9 +7,39 @@ import { Plugin } from "./types.js";
  */
 export function ejs(filePattern?: string[]): Plugin {
 	return {
-		filePattern,
+		filePattern: filePattern || ["*"],
+		// Process hook: Operates on template files BEFORE merging/copying/output
+		// This processes the raw template content before any file operations
+		process: async (context) => {
+			try {
+				// console.log(
+				// 	"[EJS Plugin] Processing:",
+				// 	context.targetPath,
+				// 	"Content:",
+				// 	context.content.slice(0, 60),
+				// );
+				const renderedContent = await ejsEngine.render(
+					context.content,
+					context.data,
+				);
+				return {
+					content: renderedContent,
+					targetPath: context.targetPath,
+				};
+			} catch (error) {
+				throw new Error(`Error processing EJS template: ${error}`);
+			}
+		},
+		// Transform hook: Operates on output files AFTER merging/copying but BEFORE formatting
+		// This processes the final output content before prettier formatting
 		transform: async (context) => {
 			try {
+				// console.log(
+				// 	"[EJS Plugin] Transform:",
+				// 	context.targetPath,
+				// 	"Content:",
+				// 	context.content.slice(0, 60),
+				// );
 				const renderedContent = await ejsEngine.render(
 					context.content,
 					context.data,

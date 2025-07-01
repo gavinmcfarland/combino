@@ -43,8 +43,10 @@ export type FileHook = (
 export interface Plugin {
 	/** File patterns this plugin should handle (e.g., ["*.ejs", "*.hbs"]) */
 	filePattern?: string[];
-	/** Transform hook for file processing (similar to Vite's transform hook) */
+	/** Transform hook for file processing during template phase (with full template context) */
 	transform?: FileHook;
+	/** Process hook for file building phase (without template context, just file content) */
+	process?: FileHook;
 }
 
 /**
@@ -107,59 +109,19 @@ export class PluginManager {
 		data: Record<string, any>,
 		filePath?: string,
 	): Promise<string> {
-		let matchingPlugins: Plugin[] = [];
+		const context: FileHookContext = {
+			sourcePath: filePath || "",
+			targetPath: filePath || "",
+			content,
+			data,
+		};
 
-		// If filePath is provided, check for plugins with specific patterns
-		if (filePath) {
-			for (const plugin of this.plugins) {
-				// If plugin has specific file patterns, only include if it matches
-				if (plugin.filePattern && plugin.filePattern.length > 0) {
-					for (const pattern of plugin.filePattern) {
-						if (this.matchesPattern(filePath, pattern)) {
-							matchingPlugins.push(plugin);
-							break; // Don't add the same plugin twice
-						}
-					}
-				} else {
-					// If plugin has no patterns (or empty array), include it for all files
-					matchingPlugins.push(plugin);
-				}
-			}
-		} else {
-			// If no filePath provided, use all plugins
-			matchingPlugins = [...this.plugins];
-		}
-
-		// Process through all matching plugins in sequence (order preserved)
-		let processedContent = content;
-		for (const plugin of matchingPlugins) {
-			if (plugin.transform) {
-				try {
-					const context: FileHookContext = {
-						sourcePath: filePath || "",
-						targetPath: filePath || "",
-						content: processedContent,
-						data,
-					};
-					const result = await Promise.resolve(
-						plugin.transform(context),
-					);
-					processedContent = result.content;
-				} catch (error) {
-					console.error(
-						`Error rendering template with plugin:`,
-						error,
-					);
-					// Continue with the previous content on error
-				}
-			}
-		}
-
-		return processedContent;
+		const result = await this.process(context);
+		return result.content;
 	}
 
 	async transform(context: FileHookContext): Promise<FileHookResult> {
-		// Collect all plugins that should process this file
+		// Collect all plugins that should process this file during template phase
 		const matchingPlugins = this.plugins.filter((plugin) => {
 			if (!plugin.transform) return false;
 
@@ -202,6 +164,57 @@ export class PluginManager {
 				};
 			} catch (error) {
 				console.error(`Error transforming with plugin:`, error);
+				// Continue with the previous result on error
+			}
+		}
+
+		return result;
+	}
+
+	async process(context: FileHookContext): Promise<FileHookResult> {
+		// Collect all plugins that should process this file during file building phase
+		const matchingPlugins = this.plugins.filter((plugin) => {
+			if (!plugin.process) return false;
+
+			// If plugin has specific file patterns, only include if it matches
+			if (plugin.filePattern && plugin.filePattern.length > 0) {
+				return plugin.filePattern.some((pattern) =>
+					this.matchesPattern(context.targetPath, pattern),
+				);
+			}
+
+			// If plugin has no patterns, include it for all files
+			return true;
+		});
+
+		let result: FileHookResult = {
+			content: context.content,
+			targetPath: context.targetPath,
+		};
+		let currentContext = {
+			...context,
+			targetPath: context.targetPath ?? "",
+		};
+
+		for (const plugin of matchingPlugins) {
+			try {
+				const hookResult = await Promise.resolve(
+					plugin.process!(currentContext),
+				);
+				result = {
+					content: hookResult.content,
+					targetPath:
+						typeof hookResult.targetPath === "string"
+							? hookResult.targetPath
+							: (currentContext.targetPath ?? ""),
+				};
+				currentContext = {
+					...currentContext,
+					content: result.content,
+					targetPath: result.targetPath ?? "",
+				};
+			} catch (error) {
+				console.error(`Error processing with plugin:`, error);
 				// Continue with the previous result on error
 			}
 		}

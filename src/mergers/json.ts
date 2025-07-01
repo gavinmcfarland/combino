@@ -298,20 +298,36 @@ export async function mergeJson(
 	const processTemplate = async (
 		content: string,
 		templateData?: Record<string, any>,
+		filePath?: string,
 	): Promise<string> => {
 		if (!templateData || !pluginManager) {
 			return content;
 		}
 		try {
-			return await pluginManager.render(content, templateData);
+			const context = {
+				sourcePath: filePath || "",
+				targetPath: filePath || "",
+				content,
+				data: templateData,
+			};
+			const result = await pluginManager.process(context);
+			return result.content;
 		} catch (error) {
 			console.error("Error processing template:", error);
 			return content;
 		}
 	};
 
-	const processedTargetContent = await processTemplate(targetContent, data);
-	const processedSourceContent = await processTemplate(sourceContent, data);
+	const processedTargetContent = await processTemplate(
+		targetContent,
+		data,
+		targetPath,
+	);
+	const processedSourceContent = await processTemplate(
+		sourceContent,
+		data,
+		sourcePath,
+	);
 
 	// Handle empty or blank files by treating them as empty objects
 	const targetJson = processedTargetContent.trim()
@@ -329,6 +345,7 @@ export async function mergeJson(
 			const processedBaseContent = await processTemplate(
 				baseContent,
 				data,
+				baseTemplatePath,
 			);
 			baseJson = processedBaseContent.trim()
 				? parseJsonWithComments(processedBaseContent)

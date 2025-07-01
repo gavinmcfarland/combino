@@ -49,6 +49,8 @@ interface EjsRenderingContext {
 export function ejsMate(filePattern?: string[]): Plugin {
 	return {
 		filePattern,
+		// Transform hook: Used during template processing phase with full template context
+		// This is where layout detection and block processing happens
 		transform: async (context: FileHookContext) => {
 			try {
 				// Only process files that are in input directories, not output directories
