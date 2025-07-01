@@ -64,6 +64,31 @@ export function ejsMate(filePattern?: string[]): Plugin {
 		filePattern: filePattern,
 		// Transform hook: Used during template processing phase with full template context
 		// This is where layout detection and block processing happens
+		process: async (context) => {
+			try {
+				// In the process hook, data might not be fully available yet
+				// So we provide a safe default context that won't cause errors
+				const safeData = context.data || {};
+				const renderedContent = await ejsEngine.render(
+					context.content,
+					safeData,
+					{ async: true },
+				);
+				return {
+					content: renderedContent,
+					targetPath: context.targetPath,
+				};
+			} catch (error) {
+				// Don't throw errors in process hook - just return the original content
+				// console.warn(
+				// 	`EJS process hook warning, returning original content: ${error}`,
+				// );
+				return {
+					content: context.content,
+					targetPath: context.targetPath,
+				};
+			}
+		},
 		transform: async (context: FileHookContext) => {
 			try {
 				console.log("EJS-Mate processing file:", context.sourcePath);
