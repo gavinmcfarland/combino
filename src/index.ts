@@ -3,6 +3,7 @@ import path from "path";
 import { glob } from "glob";
 import matter from "gray-matter";
 import { Parser } from "expr-eval";
+import deepmerge from "deepmerge";
 import {
 	TemplateOptions,
 	FileContent,
@@ -1287,12 +1288,11 @@ export class Combino {
 
 				try {
 					const targetContent = await this.readFile(fullTargetPath);
-					const fileData = {
-						...allData,
-						...(sourceContent.config?.data
-							? sourceContent.config.data
-							: {}),
-					};
+					// Deep merge the data to ensure nested objects are properly merged
+					const fileData = deepmerge(
+						allData,
+						sourceContent.config?.data || {},
+					);
 					const mergedContent = await this.mergeFiles(
 						fullTargetPath,
 						sourcePath,
@@ -1343,12 +1343,11 @@ export class Combino {
 					await fs.writeFile(finalTargetPath, formattedContent);
 				} catch (error) {
 					// If target file doesn't exist, just copy the source file
-					const fileData = {
-						...allData,
-						...(sourceContent.config?.data
-							? sourceContent.config.data
-							: {}),
-					};
+					// Deep merge the data to ensure nested objects are properly merged
+					const fileData = deepmerge(
+						allData,
+						sourceContent.config?.data || {},
+					);
 
 					// Apply plugin transform hook (after template processing, before formatting)
 					let finalContent = sourceContent.content;
