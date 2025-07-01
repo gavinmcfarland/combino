@@ -1,6 +1,8 @@
 # <%= title %>
 
-<%- block('head').toString() %>
+<%- block('head') %>
+
+<%= block('description') || 'The default description' %>
 
 ## Content
 

@@ -1,0 +1,7 @@
+{
+	"name": "test-name",
+	"version": "1.0.0",
+	"dependencies": ["react", "react-dom"],
+	"overrideVar": "something else",
+	"projectName": "test-name"
+}

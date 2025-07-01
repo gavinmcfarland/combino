@@ -5,8 +5,6 @@
     "globalVar": "global-value",
     "templateVar": "base-template-value",
     "overrideVar": "override-template-value",
-    "dependencies": [
-        "react",
-        "react-dom"
-    ]
+    "dependencies": "[\"react\", \"react-dom\"]",
+    "projectName": "Override Project Name"
 }

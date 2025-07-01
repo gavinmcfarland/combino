@@ -4,6 +4,7 @@ import { Command } from "commander";
 import { Combino } from "./index.js";
 import { TemplateOptions, MergeStrategy } from "./types.js";
 import { ejs } from "./plugins/ejs.js";
+import { ejsMate } from "./plugins/ejs-mate.js";
 import { handlebars } from "./plugins/handlebars.js";
 import { mustache } from "./plugins/mustache.js";
 import { Plugin } from "./plugins/types.js";
@@ -55,6 +56,9 @@ program
 					case "ejs":
 						plugins = [ejs()];
 						break;
+					case "ejs-mate":
+						plugins = [ejsMate()];
+						break;
 					case "handlebars":
 						plugins = [handlebars()];
 						break;
@@ -63,7 +67,7 @@ program
 						break;
 					default:
 						console.error(
-							`Error: Unknown template engine '${options.templateEngine}'. Supported engines: ejs, handlebars, mustache`,
+							`Error: Unknown template engine '${options.templateEngine}'. Supported engines: ejs, ejs-mate, handlebars, mustache`,
 						);
 						process.exit(1);
 				}
