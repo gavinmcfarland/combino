@@ -1,15 +1,11 @@
 {
-	"name": "<%= name.toLowerCase() %>",
-	"version": "<%= version %>",
+	"name": "testproject",
+	"version": "1.0.0",
 	"description": "Test package for plugin architecture",
-	"author": "<%= author %>",
+	"author": "Test Author",
 	"scripts": {
 		"test": "echo \"Test script\""
 	},
-	"keywords": [
-		"test",
-		"plugin",
-		"architecture"
-	],
+	"keywords": ["test", "plugin", "architecture"],
 	"pluginProcessed": true
 }

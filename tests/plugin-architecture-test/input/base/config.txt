@@ -1,8 +1,0 @@
-# Configuration File
-name=<%= name %>
-version=<%= version %>
-author=<%= author %>
-
-# This file tests text processing
-# Process hook should add a comment
-# Transform hook should modify content

@@ -1,7 +1,7 @@
-# <%= name %>
+# TestProject
 
-Version: <%= version %>
-Author: <%= author %>
+Version: 1.0.0
+Author: Test Author
 
 This is a test file for plugin architecture.
 

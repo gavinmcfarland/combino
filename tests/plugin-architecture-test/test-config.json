@@ -4,7 +4,7 @@
 		"version": "1.0.0",
 		"author": "Test Author"
 	},
-	"plugins": ["custom"],
+	"plugins": ["ejs", "custom"],
 	"description": "Test plugin architecture with process and transform hooks",
 	"skip": false
 }

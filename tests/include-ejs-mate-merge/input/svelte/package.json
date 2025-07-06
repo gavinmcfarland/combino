@@ -1,0 +1,6 @@
+{
+	"name": "svelte-project",
+	"dependencies": {
+		"svelte": "^5.0.0"
+	}
+}

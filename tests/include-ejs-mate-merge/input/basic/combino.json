@@ -1,0 +1,14 @@
+{
+	"include": [
+		{
+			"source": "../base"
+		},
+		{
+			"source": "../<%= framework %>/assets",
+			"target": "src/ui/assets"
+		}
+	],
+	"data": {
+		"title": "merge ejs mate"
+	}
+}

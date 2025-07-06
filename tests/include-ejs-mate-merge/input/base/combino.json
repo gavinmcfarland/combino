@@ -1,0 +1,10 @@
+{
+	"merge": {
+		".json": {
+			"strategy": "deep"
+		},
+		".md": {
+			"strategy": "shallow"
+		}
+	}
+}
