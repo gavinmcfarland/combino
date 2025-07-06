@@ -1,10 +1,5 @@
-import {
-	Plugin,
-	PluginOptions,
-	FileHook,
-	FileHookContext,
-	FileHookResult,
-} from "./types.js";
+import Handlebars from 'handlebars';
+import { Plugin, PluginOptions, FileHook, FileHookContext, FileHookResult } from './types.js';
 
 /**
  * Handlebars Template Engine
@@ -16,7 +11,7 @@ class HandlebarsTemplateEngine {
 	async initialize(): Promise<void> {
 		if (this.initialized) return;
 		try {
-			const { default: Handlebars } = await import("handlebars");
+			const { default: Handlebars } = await import('handlebars');
 			this.handlebars = Handlebars;
 			this.initialized = true;
 		} catch (error) {
@@ -39,12 +34,12 @@ class HandlebarsTemplateEngine {
 	hasTemplateSyntax(content: string): boolean {
 		// Check for Handlebars syntax patterns
 		const handlebarsPatterns = [
-			"{{", // Output expression
-			"{{{", // Unescaped output
-			"{{#", // Block helper
-			"{{/", // End block
-			"{{>", // Partial
-			"{{!", // Comment
+			'{{', // Output expression
+			'{{{', // Unescaped output
+			'{{#', // Block helper
+			'{{/', // End block
+			'{{>', // Partial
+			'{{!', // Comment
 		];
 		return handlebarsPatterns.some((pattern) => content.includes(pattern));
 	}
@@ -54,9 +49,7 @@ class HandlebarsTemplateEngine {
  * Handlebars Transform Hook
  * This handles template rendering through the transform pipeline
  */
-async function handlebarsTransform(
-	context: FileHookContext,
-): Promise<FileHookResult> {
+async function handlebarsTransform(context: FileHookContext): Promise<FileHookResult> {
 	const engine = new HandlebarsTemplateEngine();
 	const renderedContent = await engine.render(context.content, context.data);
 	return {
@@ -69,39 +62,24 @@ async function handlebarsTransform(
  * Handlebars Plugin Factory Function
  * This is the main export for the standalone Handlebars plugin
  */
-export function handlebars(
-	options: PluginOptions = {},
-	transform?: FileHook,
-): Plugin {
-	// Create a combined transform function that handles both Handlebars rendering and custom transforms
-	const combinedTransform = async (
-		context: FileHookContext,
-	): Promise<FileHookResult> => {
-		// First apply Handlebars rendering
-		let result = await handlebarsTransform(context);
-
-		// Then apply any custom transform if provided
-		if (transform) {
-			const customContext: FileHookContext = {
-				...context,
-				content: result.content,
-				targetPath: result.targetPath ?? context.targetPath,
-			};
-			const customResult = await Promise.resolve(
-				transform(customContext),
-			);
-			result = {
-				content: customResult.content,
-				targetPath: customResult.targetPath ?? result.targetPath,
-			};
-		}
-
-		return result;
-	};
-
+export function handlebars(options: any = {}): Plugin {
 	return {
-		filePattern: ["*"],
-		transform: combinedTransform,
+		filePattern: options.patterns || ['*.hbs', '*.handlebars'],
+		process: async (context: FileHookContext): Promise<FileHookResult> => {
+			try {
+				const template = Handlebars.compile(context.content, options);
+				const content = template(context.data);
+				return { content };
+			} catch (error) {
+				console.error('Handlebars processing error:', error);
+				return { content: context.content };
+			}
+		},
+		transform: async (context: FileHookContext): Promise<FileHookResult> => {
+			// Transform hook can be used for additional processing
+			// For now, just return the content as-is
+			return { content: context.content };
+		},
 	};
 }
 

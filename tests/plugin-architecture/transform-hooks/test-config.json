@@ -1,11 +1,11 @@
 {
-    "data": {
-        "name": "World",
-        "framework": "react"
-    },
-    "plugins": ["ejs", "handlebars"],
-    "pluginConfigs": {
-        "ejs": { "patterns": ["*.ejs"] },
-        "handlebars": { "patterns": ["*.hbs"] }
-    }
+	"data": {
+		"name": "World",
+		"framework": "react"
+	},
+	"plugins": ["ejs", "handlebars"],
+	"pluginConfigs": {
+		"ejs": { "patterns": ["*.ejs"] },
+		"handlebars": { "patterns": ["*.hbs"] }
+	}
 }

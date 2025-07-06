@@ -1,0 +1,14 @@
+{
+	"data": {
+		"project.name": "Config Project",
+		"project.version": "2.0.0"
+	},
+	"merge": {
+		".json": {
+			"strategy": "deep"
+		},
+		".md": {
+			"strategy": "replace"
+		}
+	}
+}

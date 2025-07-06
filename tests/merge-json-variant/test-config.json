@@ -1,8 +1,8 @@
 {
-    "outputDir": "./output",
-    "include": ["./input"],
-    "data": {
-        "globalVar": "global-value",
-        "framework": "react"
-    }
+	"outputDir": "./output",
+	"include": ["./input"],
+	"data": {
+		"globalVar": "global-value",
+		"framework": "react"
+	}
 }

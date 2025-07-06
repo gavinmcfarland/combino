@@ -153,12 +153,8 @@ npm install -g combino
     ### Programmatic Usage
 
     ```js
-    import { Combino } from "combino";
-    import {
-        EJSTemplateEngine,
-        HandlebarsTemplateEngine,
-        MustacheTemplateEngine,
-    } from "combino/template-engines";
+    import { Combino } from 'combino';
+    import { EJSTemplateEngine, HandlebarsTemplateEngine, MustacheTemplateEngine } from 'combino/template-engines';
 
     // Use EJS (requires: npm install ejs)
     const combinoEjs = new Combino(new EJSTemplateEngine());
@@ -171,8 +167,8 @@ npm install -g combino
 
     // Or pass via options
     await combino.combine({
-        include: ["templates/base", "templates/react"],
-        outputDir: "output",
+        include: ['templates/base', 'templates/react'],
+        outputDir: 'output',
         config,
     });
     ```
@@ -229,10 +225,7 @@ npm install -g combino
     ```
 
     ```js
-    include: [
-        { source: "../base" },
-        { source: `../${framework}/components`, target: "src/components" },
-    ];
+    include: [{ source: '../base' }, { source: `../${framework}/components`, target: 'src/components' }];
     ```
 
 ---
@@ -250,7 +243,7 @@ npm install -g combino
     ```
 
     ```js
-    exclude: ["node_modules/**", "*.log", ".DS_Store", "temp/"];
+    exclude: ['node_modules/**', '*.log', '.DS_Store', 'temp/'];
     ```
 
 ---
@@ -309,23 +302,20 @@ Combino supports a unified configuration structure that works for both `.combino
 const combino = new Combino();
 
 const config = {
-    include: [
-        { source: "../base" },
-        { source: "../react/components", target: "src/components" },
-    ],
-    exclude: ["node_modules/**", "*.log"],
+    include: [{ source: '../base' }, { source: '../react/components', target: 'src/components' }],
+    exclude: ['node_modules/**', '*.log'],
     data: {
-        project: { name: "My Project", version: "1.0.0" },
+        project: { name: 'My Project', version: '1.0.0' },
     },
     merge: {
-        "*.json": { strategy: "deep" },
-        "*.{md,yaml}": { strategy: "replace" },
+        '*.json': { strategy: 'deep' },
+        '*.{md,yaml}': { strategy: 'replace' },
     },
 };
 
 await combino.combine({
-    include: ["templates/base", "templates/react"],
-    outputDir: "output",
+    include: ['templates/base', 'templates/react'],
+    outputDir: 'output',
     config,
 });
 ```

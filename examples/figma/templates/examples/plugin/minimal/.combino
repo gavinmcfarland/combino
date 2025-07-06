@@ -1,5 +1,0 @@
-[include]
-../../../base
-
-[data]
-description = "An example of a minimalistic plugin structure"

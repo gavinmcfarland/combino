@@ -1,0 +1,15 @@
+---
+data:
+  name: override-app
+  version: 2.0.0
+  dependencies:
+    - react
+    - react-dom
+    - typescript
+---
+
+{
+  "name": "<%- name -%>",
+  "version": "<%- version -%>",
+  "dependencies": <%- JSON.stringify(dependencies) -%>
+}

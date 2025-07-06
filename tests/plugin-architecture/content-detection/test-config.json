@@ -1,11 +1,11 @@
 {
-    "data": {
-        "name": "World",
-        "other": "Universe"
-    },
-    "plugins": ["ejs", "handlebars"],
-    "pluginConfigs": {
-        "ejs": { "patterns": ["*"] },
-        "handlebars": { "patterns": ["*"] }
-    }
+	"data": {
+		"name": "World",
+		"other": "Universe"
+	},
+	"plugins": ["ejs", "handlebars"],
+	"pluginConfigs": {
+		"ejs": { "patterns": ["*"] },
+		"handlebars": { "patterns": ["*"] }
+	}
 }

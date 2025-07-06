@@ -9,10 +9,7 @@ The `directory-compare.ts` module provides utilities to compare directories recu
 ### Usage
 
 ```typescript
-import {
-    assertDirectoriesEqual,
-    compareDirectories,
-} from "../utils/directory-compare.js";
+import { assertDirectoriesEqual, compareDirectories } from '../utils/directory-compare.js';
 
 // Simple assertion - throws error if directories differ
 assertDirectoriesEqual(outputDir, expectedDir);
@@ -21,11 +18,11 @@ assertDirectoriesEqual(outputDir, expectedDir);
 const result = compareDirectories(outputDir, expectedDir, {
     ignoreLineEndings: true,
     ignoreWhitespace: true,
-    textExtensions: [".json", ".md", ".txt"],
+    textExtensions: ['.json', '.md', '.txt'],
 });
 
 if (!result.identical) {
-    console.log("Differences found:", result.differences);
+    console.log('Differences found:', result.differences);
 }
 ```
 
@@ -40,10 +37,10 @@ if (!result.identical) {
 ### Example Test Pattern
 
 ```typescript
-describe("My Test Suite", () => {
+describe('My Test Suite', () => {
     const testDir = __dirname;
-    const outputDir = join(testDir, "output");
-    const expectedDir = join(testDir, "expected");
+    const outputDir = join(testDir, 'output');
+    const expectedDir = join(testDir, 'expected');
 
     beforeAll(async () => {
         // Clean up and run your tool
@@ -57,7 +54,7 @@ describe("My Test Suite", () => {
         await yourTool.generate(outputDir);
     });
 
-    it("should generate expected output", () => {
+    it('should generate expected output', () => {
         assertDirectoriesEqual(outputDir, expectedDir);
     });
 });

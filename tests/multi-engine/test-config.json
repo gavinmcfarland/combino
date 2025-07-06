@@ -1,12 +1,12 @@
 {
-    "data": {
-        "name": "World",
-        "other": "Universe"
-    },
-    "plugins": ["ejs", "handlebars"],
-    "description": "Multi-Engine Template Support",
-    "pluginConfigs": {
-        "ejs": { "patterns": ["*.ejs", "*.txt"] },
-        "handlebars": { "patterns": ["*.hbs", "*.txt"] }
-    }
+	"data": {
+		"name": "World",
+		"other": "Universe"
+	},
+	"plugins": ["ejs", "handlebars"],
+	"description": "Multi-Engine Template Support",
+	"pluginConfigs": {
+		"ejs": { "patterns": ["*.ejs", "*.txt"] },
+		"handlebars": { "patterns": ["*.hbs", "*.txt"] }
+	}
 }

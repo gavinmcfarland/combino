@@ -15,14 +15,14 @@ npm install combino
 ## Usage
 
 ```js
-import { Combino } from "combino";
+import { Combino } from 'combino';
 
 await combino.combine({
-    outputDir: "./output",
-    templateEngine: "ejs",
-    include: ["./templates/base", "./template/svelte"],
+    outputDir: './output',
+    templateEngine: 'ejs',
+    include: ['./templates/base', './template/svelte'],
     data: {
-        framework: "svelte",
+        framework: 'svelte',
     },
 });
 ```
@@ -40,9 +40,7 @@ interface TemplateOptions {
     templateEngine?: string;
     onFileProcessed?: (
         context: FileHookContext,
-    ) =>
-        | Promise<{ content: string; targetPath?: string }>
-        | { content: string; targetPath?: string };
+    ) => Promise<{ content: string; targetPath?: string }> | { content: string; targetPath?: string };
 }
 
 interface FileHookContext {
@@ -188,14 +186,14 @@ svelte.config.js          # Unique file copied from svelte template
 
     ```js
     await combino.combine({
-        outputDir: "./output",
-        include: ["./templates/base"],
-        data: { framework: "react" },
+        outputDir: './output',
+        include: ['./templates/base'],
+        data: { framework: 'react' },
         onFileProcessed: (context) => {
             let newPath = context.targetPath;
             // Example: change file extension
-            if (context.targetPath.endsWith(".ts")) {
-                newPath = context.targetPath.replace(/\.ts$/, ".js");
+            if (context.targetPath.endsWith('.ts')) {
+                newPath = context.targetPath.replace(/\.ts$/, '.js');
             }
             // Add a comment to all JavaScript files
             return {

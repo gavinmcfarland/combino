@@ -1,10 +1,13 @@
 {
-    "name": "Override Project Name",
-    "version": "1.0.0",
-    "framework": "react",
-    "globalVar": "global-value",
-    "templateVar": "base-template-value",
-    "overrideVar": "override-template-value",
-    "dependencies": "[\"react\", \"react-dom\"]",
-    "projectName": "Override Project Name"
+	"name": "Override Project Name",
+	"version": "1.0.0",
+	"framework": "react",
+	"globalVar": "global-value",
+	"templateVar": "base-template-value",
+	"overrideVar": "override-template-value",
+	"dependencies": [
+		"react",
+		"react-dom"
+	],
+	"projectName": "Override Project Name"
 }

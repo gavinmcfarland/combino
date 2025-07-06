@@ -1,4 +1,4 @@
 {
-    "overrideVar": "<%- overrideVar -%>",
-    "projectName": "<%- projectName -%>"
+	"overrideVar": "<%- overrideVar -%>",
+	"projectName": "<%- projectName -%>"
 }

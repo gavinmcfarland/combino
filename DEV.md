@@ -30,6 +30,7 @@ npm run publish
 ```
 
 This command will:
+
 1. Run tests to ensure everything works
 2. Build the project
 3. Update version numbers and generate changelog
@@ -48,6 +49,7 @@ npm run changeset
 ```
 
 This will prompt you to:
+
 - Select which packages have changed (if multiple)
 - Choose the type of change (major, minor, patch)
 - Write a description of the changes

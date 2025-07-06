@@ -1,6 +1,6 @@
 {
-    "name": "override-project",
-    "dependencies": {
-        "override-dependency": "^1.0.0"
-    }
+	"name": "override-project",
+	"dependencies": {
+		"override-dependency": "^1.0.0"
+	}
 }

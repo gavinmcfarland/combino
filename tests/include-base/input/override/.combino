@@ -1,5 +1,0 @@
-[merge:*.json]
-strategy = deep
-
-[merge:*.md]
-strategy = shallow

@@ -1,12 +1,12 @@
 {
-    "name": "<%= project.name %>",
-    "version": "<%= project.version %>",
-    "description": "<%= project.description %>",
-    "main": "index.js",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC"
+	"name": "<%= project.name %>",
+	"version": "<%= project.version %>",
+	"description": "<%= project.description %>",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC"
 }

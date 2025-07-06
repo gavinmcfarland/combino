@@ -36,9 +36,7 @@ export interface FileHookResult {
 	targetPath?: string;
 }
 
-export type FileHook = (
-	context: FileHookContext,
-) => Promise<FileHookResult> | FileHookResult;
+export type FileHook = (context: FileHookContext) => Promise<FileHookResult> | FileHookResult;
 
 export interface Plugin {
 	/** File patterns this plugin should handle (e.g., ["*.ejs", "*.hbs"]) */
@@ -95,23 +93,14 @@ export class PluginManager {
 	}
 
 	private matchesPattern(filePath: string, pattern: string): boolean {
-		const regex = new RegExp(
-			pattern
-				.replace(/\./g, "\\.")
-				.replace(/\*/g, ".*")
-				.replace(/\?/g, "."),
-		);
+		const regex = new RegExp(pattern.replace(/\./g, '\\.').replace(/\*/g, '.*').replace(/\?/g, '.'));
 		return regex.test(filePath);
 	}
 
-	async render(
-		content: string,
-		data: Record<string, any>,
-		filePath?: string,
-	): Promise<string> {
+	async render(content: string, data: Record<string, any>, filePath?: string): Promise<string> {
 		const context: FileHookContext = {
-			sourcePath: filePath || "",
-			targetPath: filePath || "",
+			sourcePath: filePath || '',
+			targetPath: filePath || '',
 			content,
 			data,
 		};
@@ -127,9 +116,7 @@ export class PluginManager {
 
 			// If plugin has specific file patterns, only include if it matches
 			if (plugin.filePattern && plugin.filePattern.length > 0) {
-				return plugin.filePattern.some((pattern) =>
-					this.matchesPattern(context.targetPath, pattern),
-				);
+				return plugin.filePattern.some((pattern) => this.matchesPattern(context.targetPath, pattern));
 			}
 
 			// If plugin has no patterns, include it for all files
@@ -142,25 +129,23 @@ export class PluginManager {
 		};
 		let currentContext = {
 			...context,
-			targetPath: context.targetPath ?? "",
+			targetPath: context.targetPath ?? '',
 		};
 
 		for (const plugin of matchingPlugins) {
 			try {
-				const hookResult = await Promise.resolve(
-					plugin.transform!(currentContext),
-				);
+				const hookResult = await Promise.resolve(plugin.transform!(currentContext));
 				result = {
 					content: hookResult.content,
 					targetPath:
-						typeof hookResult.targetPath === "string"
+						typeof hookResult.targetPath === 'string'
 							? hookResult.targetPath
-							: (currentContext.targetPath ?? ""),
+							: (currentContext.targetPath ?? ''),
 				};
 				currentContext = {
 					...currentContext,
 					content: result.content,
-					targetPath: result.targetPath ?? "",
+					targetPath: result.targetPath ?? '',
 				};
 			} catch (error) {
 				console.error(`Error transforming with plugin:`, error);
@@ -178,9 +163,7 @@ export class PluginManager {
 
 			// If plugin has specific file patterns, only include if it matches
 			if (plugin.filePattern && plugin.filePattern.length > 0) {
-				return plugin.filePattern.some((pattern) =>
-					this.matchesPattern(context.targetPath, pattern),
-				);
+				return plugin.filePattern.some((pattern) => this.matchesPattern(context.targetPath, pattern));
 			}
 
 			// If plugin has no patterns, include it for all files
@@ -193,25 +176,23 @@ export class PluginManager {
 		};
 		let currentContext = {
 			...context,
-			targetPath: context.targetPath ?? "",
+			targetPath: context.targetPath ?? '',
 		};
 
 		for (const plugin of matchingPlugins) {
 			try {
-				const hookResult = await Promise.resolve(
-					plugin.process!(currentContext),
-				);
+				const hookResult = await Promise.resolve(plugin.process!(currentContext));
 				result = {
 					content: hookResult.content,
 					targetPath:
-						typeof hookResult.targetPath === "string"
+						typeof hookResult.targetPath === 'string'
 							? hookResult.targetPath
-							: (currentContext.targetPath ?? ""),
+							: (currentContext.targetPath ?? ''),
 				};
 				currentContext = {
 					...currentContext,
 					content: result.content,
-					targetPath: result.targetPath ?? "",
+					targetPath: result.targetPath ?? '',
 				};
 			} catch (error) {
 				console.error(`Error processing with plugin:`, error);
@@ -222,10 +203,7 @@ export class PluginManager {
 		return result;
 	}
 
-	async transformWithTemplates(
-		context: FileHookContext,
-		allTemplates: TemplateInfo[],
-	): Promise<FileHookResult> {
+	async transformWithTemplates(context: FileHookContext, allTemplates: TemplateInfo[]): Promise<FileHookResult> {
 		// Add template information to the context
 		const contextWithTemplates: FileHookContext = {
 			...context,

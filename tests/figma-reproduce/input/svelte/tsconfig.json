@@ -1,14 +1,14 @@
 {
-    "references": [
-        {
-            "$key": "./tsconfig.ui.json",
-            "path": "./tsconfig.ui.json",
-            "compilerOptions": {
-                "composite": true,
-                "outDir": "dist/ui"
-            },
-            "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte"],
-            "extends": "@tsconfig/svelte/tsconfig.json"
-        }
-    ]
+	"references": [
+		{
+			"$key": "./tsconfig.ui.json",
+			"path": "./tsconfig.ui.json",
+			"compilerOptions": {
+				"composite": true,
+				"outDir": "dist/ui"
+			},
+			"include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte"],
+			"extends": "@tsconfig/svelte/tsconfig.json"
+		}
+	]
 }

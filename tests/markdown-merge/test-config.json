@@ -1,7 +1,7 @@
 {
-    "data": {
-        "framework": "react"
-    },
-    "plugins": ["ejs"],
-    "description": "Markdown merge test with default configuration"
+	"data": {
+		"framework": "react"
+	},
+	"plugins": ["ejs"],
+	"description": "Markdown merge test with default configuration"
 }

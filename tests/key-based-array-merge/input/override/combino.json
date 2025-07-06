@@ -1,0 +1,7 @@
+{
+	"merge": {
+		".json": {
+			"strategy": "deep"
+		}
+	}
+}

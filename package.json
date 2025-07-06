@@ -1,76 +1,78 @@
 {
-    "name": "combino",
-    "version": "0.1.5",
-    "type": "module",
-    "description": "A flexible scaffolding tool for intelligently merging template folders",
-    "main": "./dist/index.js",
-    "module": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js",
-            "require": "./dist/index.js"
-        }
-    },
-    "bin": {
-        "combino": "./dist/cli.js"
-    },
-    "scripts": {
-        "build": "tsc",
-        "build:watch": "tsc --watch",
-        "test:watch": "vitest",
-        "test": "vitest run",
-        "test:ui": "vitest --ui",
-        "lint": "eslint src/**/*.ts",
-        "start": "node dist/cli.js",
-        "dev": "ts-node src/cli.ts",
-        "changeset": "changeset",
-        "version": "changeset version",
-        "release": "changeset publish",
-        "prepublish": "npm run test && npm run build",
-        "publish": "npm run prepublish && npm run version && npm run release"
-    },
-    "keywords": [
-        "scaffolding",
-        "templates",
-        "merge",
-        "project-generation"
-    ],
-    "author": "",
-    "license": "MIT",
-    "devDependencies": {
-        "@babel/traverse": "^7.27.7",
-        "@changesets/cli": "^2.29.4",
-        "@types/commander": "^2.12.0",
-        "@types/deepmerge": "^2.1.0",
-        "@types/ejs": "^3.1.5",
-        "@types/glob": "^8.1.0",
-        "@types/ini": "^4.1.1",
-        "@types/node": "^20.17.55",
-        "@typescript-eslint/eslint-plugin": "^5.0.0",
-        "@typescript-eslint/parser": "^5.0.0",
-        "@vitest/ui": "^1.0.0",
-        "ejs": "^3.1.10",
-        "ejs-mate": "^4.0.0",
-        "eslint": "^8.0.0",
-        "strip-ts": "^0.0.0-alpha.4",
-        "ts-node": "^10.9.2",
-        "typescript": "^5.0.0",
-        "vitest": "^1.0.0"
-    },
-    "dependencies": {
-        "chalk": "^5.4.1",
-        "commander": "^11.1.0",
-        "deepmerge": "^4.3.0",
-        "expr-eval": "^2.0.2",
-        "glob": "^10.0.0",
-        "gray-matter": "^4.0.3",
-        "handlebars": "^4.7.8",
-        "ini": "^4.1.1",
-        "jsonc-parser": "^3.3.1",
-        "mustache": "^4.2.0",
-        "prettier": "^3.5.3",
-        "prettier-plugin-svelte": "^3.4.0"
-    }
+	"name": "combino",
+	"version": "0.1.5",
+	"type": "module",
+	"description": "A flexible scaffolding tool for intelligently merging template folders",
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.js"
+		}
+	},
+	"bin": {
+		"combino": "./dist/cli.js"
+	},
+	"scripts": {
+		"build": "tsc",
+		"build:watch": "tsc --watch",
+		"test:watch": "vitest",
+		"test": "vitest run",
+		"test:ui": "vitest --ui",
+		"lint": "eslint src/**/*.ts",
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
+		"start": "node dist/cli.js",
+		"dev": "ts-node src/cli.ts",
+		"changeset": "changeset",
+		"version": "changeset version",
+		"release": "changeset publish",
+		"prepublish": "npm run test && npm run build",
+		"publish": "npm run prepublish && npm run version && npm run release"
+	},
+	"keywords": [
+		"scaffolding",
+		"templates",
+		"merge",
+		"project-generation"
+	],
+	"author": "",
+	"license": "MIT",
+	"devDependencies": {
+		"@babel/traverse": "^7.27.7",
+		"@changesets/cli": "^2.29.4",
+		"@types/commander": "^2.12.0",
+		"@types/deepmerge": "^2.1.0",
+		"@types/ejs": "^3.1.5",
+		"@types/expr-eval": "^1.0.2",
+		"@types/glob": "^8.1.0",
+		"@types/mustache": "^4.2.6",
+		"@types/node": "^20.17.55",
+		"@typescript-eslint/eslint-plugin": "^5.0.0",
+		"@typescript-eslint/parser": "^5.0.0",
+		"@vitest/ui": "^1.0.0",
+		"ejs": "^3.1.10",
+		"ejs-mate": "^4.0.0",
+		"eslint": "^8.0.0",
+		"strip-ts": "^0.0.0-alpha.4",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.0.0",
+		"vitest": "^1.0.0"
+	},
+	"dependencies": {
+		"chalk": "^5.4.1",
+		"commander": "^11.1.0",
+		"deepmerge": "^4.3.0",
+		"expr-eval": "^2.0.2",
+		"glob": "^10.0.0",
+		"gray-matter": "^4.0.3",
+		"handlebars": "^4.7.8",
+		"jsonc-parser": "^3.3.1",
+		"mustache": "^4.2.0",
+		"prettier": "^3.5.3",
+		"prettier-plugin-svelte": "^3.4.0"
+	}
 }

@@ -1,12 +1,12 @@
 {
-    "data": {
-        "name": "World",
-        "other": "Universe"
-    },
-    "plugins": ["ejs", "handlebars", "mustache"],
-    "pluginConfigs": {
-        "ejs": { "patterns": ["*.ejs"] },
-        "handlebars": { "patterns": ["*.hbs"] },
-        "mustache": { "patterns": ["*.mustache"] }
-    }
+	"data": {
+		"name": "World",
+		"other": "Universe"
+	},
+	"plugins": ["ejs", "handlebars", "mustache"],
+	"pluginConfigs": {
+		"ejs": { "patterns": ["*.ejs"] },
+		"handlebars": { "patterns": ["*.hbs"] },
+		"mustache": { "patterns": ["*.mustache"] }
+	}
 }

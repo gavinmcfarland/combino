@@ -1,0 +1,7 @@
+{
+	"merge": {
+		".md": {
+			"strategy": "shallow"
+		}
+	}
+}

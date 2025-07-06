@@ -1,0 +1,156 @@
+# Cursor Rules for Combino Project
+
+## Configuration Format
+
+Combino now uses JSON exclusively for configuration files. All config files should use the `.json` extension and contain valid JSON.
+
+### Config File Naming
+- `combino.json` - Standard config file in template directories
+- `config.json` - Alternative config file name
+- `package.json.json` - Companion file configs
+
+### JSON Config Structure
+```json
+{
+  "include": ["source1", "source2"],
+  "exclude": ["*.tmp", "node_modules"],
+  "data": {
+    "framework": "react",
+    "language": "ts"
+  },
+  "merge": {
+    "*.json": {
+      "strategy": "deep"
+    },
+    "*.md": {
+      "strategy": "shallow"
+    }
+  }
+}
+```
+
+## Shell Command Rules
+
+When writing shell commands, especially those with regex patterns or special characters:
+
+1. **Avoid regex patterns with $ in fish shell**: Fish shell interprets `$` as variable expansion. Use single quotes around regex patterns or escape the `$` character.
+
+2. **Use single quotes for regex patterns**: Always wrap regex patterns in single quotes to prevent shell interpretation of special characters.
+
+3. **Examples of good vs bad commands**:
+   - ❌ Bad: `grep -E "\.(combino|config)\.json$"`
+   - ✅ Good: `grep -E '\.(combino|config)\.json$'`
+   - ✅ Good: `grep -E "\.(combino|config)\.json\$"`
+
+4. **When using find with grep**: Always use single quotes for the grep pattern to avoid shell interpretation issues.
+
+5. **Alternative approaches**: Consider using `find` with `-regex` instead of piping to `grep` when possible.
+
+## Test Creation Rules
+
+When creating tests for this project, ALWAYS follow this exact structure:
+
+### Test Directory Structure
+```
+tests/
+└── [test-name]/
+    ├── input/
+    │   ├── base/
+    │   │   ├── .json (optional config file)
+    │   │   ├── package.json
+    │   │   ├── README.md
+    │   │   └── [other template files]
+    │   ├── [variant1]/
+    │   │   ├── .json (optional config file)
+    │   │   ├── package.json
+    │   │   ├── README.md
+    │   │   └── [other template files]
+    │   └── [variant2]/
+    │       ├── .json (optional config file)
+    │       ├── package.json
+    │       ├── README.md
+    │       └── [other template files]
+    ├── expected/
+    │   ├── package.json
+    │   ├── README.md
+    │   └── [expected output files]
+    ├── output/ (auto-generated, don't create manually)
+    └── test-config.json
+```
+
+### Test Configuration File (test-config.json)
+```json
+{
+    "data": {
+        "framework": "react",
+        "language": "ts",
+        "type": "web"
+    },
+    "plugins": ["ejs"],
+    "inputDirs": ["input/base", "input/typescript"],
+    "description": "Clear description of what this test validates",
+    "skip": false,
+    "reason": "Optional reason for skipping"
+}
+```
+
+### Key Rules for Test Creation:
+
+1. **Test Directory Naming**: Use kebab-case for test directory names (e.g., `my-feature-test`, `conditional-logic-test`)
+
+2. **Input Structure**:
+   - Always have an `input/` directory
+   - Include a `base/` subdirectory with the base templates
+   - Add variant directories as needed (e.g., `typescript/`, `react/`, `vue/`)
+   - Each input directory should contain complete template files
+
+3. **Expected Output**:
+   - Create an `expected/` directory with the exact files that should be generated
+   - Files should match what the test should produce after merging
+   - Include all expected files, not just the ones that change
+
+4. **Test Configuration**:
+   - Always include a `test-config.json` file
+   - Set appropriate `data` values for the test scenario
+   - Specify which `plugins` to use (default: `["ejs"]`)
+   - Use `inputDirs` if you want to limit which input directories are used
+   - Provide a clear `description` of what the test validates
+
+5. **Template Files**:
+   - Use `.json` files for configuration when needed
+   - Include realistic template files (package.json, README.md, etc.)
+   - Use EJS syntax for templating: `<%= variable %>`, `<%- include %>`, etc.
+
+6. **Test Validation**:
+   - The test runner will compare `output/` with `expected/`
+   - Output directory is auto-generated, don't create it manually
+   - Tests pass when output matches expected exactly
+
+### Example Test Creation Process:
+
+1. Create the test directory: `tests/my-new-feature-test/`
+2. Create `input/base/` with base templates
+3. Create `input/variant/` with variant templates (if needed)
+4. Create `expected/` with expected output files
+5. Create `test-config.json` with appropriate configuration
+6. Run tests with `npm test` to verify
+
+### Common Test Patterns:
+
+- **Basic Merge**: Use `base/` and one variant directory
+- **Conditional Logic**: Use conditional syntax in templates with different data values
+- **Plugin Testing**: Test different plugins by changing the `plugins` array
+- **Complex Merging**: Use multiple input directories with different merge strategies
+
+### File Naming Conventions:
+- Test directories: kebab-case
+- Template files: standard naming (package.json, README.md, etc.)
+- Config files: .json or config.json
+- Test config: always test-config.json
+
+### Testing Best Practices:
+- Keep tests focused on one specific feature or scenario
+- Use descriptive test names and descriptions
+- Include edge cases and error conditions
+- Test both simple and complex merge scenarios
+- Verify that the expected output is correct before running tests

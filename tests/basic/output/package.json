@@ -1,13 +1,17 @@
 {
-	"name": "project-name",
-	"scripts": {
-		"start": "ts-node src/index.ts",
-		"build": "tsc"
-	},
-	"dependencies": {
-		"express": "^4.17.1",
-		"typescript": "^4.5.0",
-		"ts-node": "^10.4.0"
-	},
-	"files": ["src/**/*.ts", "src/**/*.js", "test/**/*.ts"]
+  "name": "project-name",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "typescript": "^4.5.0",
+    "ts-node": "^10.4.0"
+  },
+  "files": [
+    "src/**/*.ts",
+    "src/**/*.js",
+    "test/**/*.ts"
+  ]
 }

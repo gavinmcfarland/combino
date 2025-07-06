@@ -1,0 +1,11 @@
+# Configuration File
+name=<%= name %>
+version=<%= version %>
+author=<%= author %>
+
+# This file tests text processing
+# Process hook should add a comment [PROCESSED]
+# Transform hook should modify content [TRANSFORMED]
+
+
+# Added by plugin process hook

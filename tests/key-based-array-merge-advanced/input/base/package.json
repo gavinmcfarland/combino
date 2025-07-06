@@ -1,49 +1,49 @@
 {
-    "name": "advanced-test",
-    "version": "1.0.0",
-    "scripts": {
-        "build": "tsc",
-        "test": "jest",
-        "dev": "vite"
-    },
-    "dependencies": [
-        {
-            "name": "react",
-            "version": "^18.0.0"
-        },
-        {
-            "name": "typescript",
-            "version": "^5.0.0"
-        }
-    ],
-    "devDependencies": [
-        {
-            "name": "vite",
-            "version": "^4.0.0"
-        },
-        {
-            "name": "jest",
-            "version": "^29.0.0"
-        }
-    ],
-    "configurations": [
-        {
-            "id": "development",
-            "env": "development",
-            "debug": true,
-            "features": [
-                "hot-reload",
-                "source-maps"
-            ]
-        },
-        {
-            "id": "production",
-            "env": "production",
-            "debug": false,
-            "features": [
-                "minification",
-                "optimization"
-            ]
-        }
-    ]
+	"name": "advanced-test",
+	"version": "1.0.0",
+	"scripts": {
+		"build": "tsc",
+		"test": "jest",
+		"dev": "vite"
+	},
+	"dependencies": [
+		{
+			"name": "react",
+			"version": "^18.0.0"
+		},
+		{
+			"name": "typescript",
+			"version": "^5.0.0"
+		}
+	],
+	"devDependencies": [
+		{
+			"name": "vite",
+			"version": "^4.0.0"
+		},
+		{
+			"name": "jest",
+			"version": "^29.0.0"
+		}
+	],
+	"configurations": [
+		{
+			"id": "development",
+			"env": "development",
+			"debug": true,
+			"features": [
+				"hot-reload",
+				"source-maps"
+			]
+		},
+		{
+			"id": "production",
+			"env": "production",
+			"debug": false,
+			"features": [
+				"minification",
+				"optimization"
+			]
+		}
+	]
 }

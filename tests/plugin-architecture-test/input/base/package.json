@@ -1,0 +1,14 @@
+{
+	"name": "<%= name.toLowerCase() %>",
+	"version": "<%= version %>",
+	"description": "Test package for plugin architecture",
+	"author": "<%= author %>",
+	"scripts": {
+		"test": "echo \"Test script\""
+	},
+	"keywords": [
+		"test",
+		"plugin",
+		"architecture"
+	]
+}

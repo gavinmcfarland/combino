@@ -4,5 +4,5 @@
 
 ## Features
 
--   React support
--   Modern UI components
+- <%= framework %> support
+- Modern UI components

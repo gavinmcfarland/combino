@@ -1,9 +1,9 @@
-import { promises as fs } from "fs";
-import deepmerge from "deepmerge";
-import { MergeStrategy } from "../types.js";
-import ejs from "ejs";
-import * as jsonc from "jsonc-parser";
-import { PluginManager } from "../plugins/types.js";
+import { promises as fs } from 'fs';
+import deepmerge from 'deepmerge';
+import { MergeStrategy } from '../types.js';
+import ejs from 'ejs';
+import * as jsonc from 'jsonc-parser';
+import { PluginManager } from '../plugins/types.js';
 
 // Custom array merge function that handles key-based merging for objects
 const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
@@ -14,10 +14,7 @@ const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
 
 	// Check if all items are primitives (strings, numbers, booleans)
 	const allPrimitives = allItems.every(
-		(item) =>
-			typeof item === "string" ||
-			typeof item === "number" ||
-			typeof item === "boolean",
+		(item) => typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean',
 	);
 
 	if (allPrimitives) {
@@ -27,9 +24,7 @@ const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
 	}
 
 	// If all objects have 'path', use 'path' as the key
-	const allHavePath = allItems.every(
-		(item) => typeof item === "object" && item !== null && "path" in item,
-	);
+	const allHavePath = allItems.every((item) => typeof item === 'object' && item !== null && 'path' in item);
 
 	if (allHavePath) {
 		const mergedMap = new Map();
@@ -50,9 +45,7 @@ const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
 			if (mergedMap.has(keyValue)) {
 				// Use deepmerge without recursive arrayMerge to avoid infinite recursion
 				const merged = deepmerge(mergedMap.get(keyValue), rest, {
-					arrayMerge: (target, source) => [
-						...new Set([...target, ...source]),
-					],
+					arrayMerge: (target, source) => [...new Set([...target, ...source])],
 				});
 				mergedMap.set(keyValue, merged);
 			} else {
@@ -88,16 +81,15 @@ const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
 
 	// First, add all target items to establish the base order
 	for (const item of targetArray) {
-		if (typeof item === "object" && item !== null && "$key" in item) {
+		if (typeof item === 'object' && item !== null && '$key' in item) {
 			const keyField = item.$key;
 			const keyValue = item[keyField];
 			const { $key, ...rest } = item;
 			mergedMap.set(keyValue, rest);
 			targetKeys.add(keyValue);
-		} else if (typeof item === "object" && item !== null) {
+		} else if (typeof item === 'object' && item !== null) {
 			// Try to use 'name' or 'id' as fallback
-			const keyField =
-				"name" in item ? "name" : "id" in item ? "id" : undefined;
+			const keyField = 'name' in item ? 'name' : 'id' in item ? 'id' : undefined;
 			if (keyField) {
 				const keyValue = item[keyField];
 				mergedMap.set(keyValue, item);
@@ -118,33 +110,28 @@ const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
 
 	// Then merge with source items
 	for (const item of sourceArray) {
-		if (typeof item === "object" && item !== null && "$key" in item) {
+		if (typeof item === 'object' && item !== null && '$key' in item) {
 			const keyField = item.$key;
 			const keyValue = item[keyField];
 			const { $key, ...rest } = item;
 			if (mergedMap.has(keyValue)) {
 				// Use deepmerge without recursive arrayMerge to avoid infinite recursion
 				const merged = deepmerge(mergedMap.get(keyValue), rest, {
-					arrayMerge: (target, source) => [
-						...new Set([...target, ...source]),
-					],
+					arrayMerge: (target, source) => [...new Set([...target, ...source])],
 				});
 				mergedMap.set(keyValue, merged);
 			} else {
 				mergedMap.set(keyValue, rest);
 			}
-		} else if (typeof item === "object" && item !== null) {
+		} else if (typeof item === 'object' && item !== null) {
 			// Try to use 'name' or 'id' as fallback
-			const keyField =
-				"name" in item ? "name" : "id" in item ? "id" : undefined;
+			const keyField = 'name' in item ? 'name' : 'id' in item ? 'id' : undefined;
 			if (keyField) {
 				const keyValue = item[keyField];
 				if (mergedMap.has(keyValue)) {
 					// Use deepmerge without recursive arrayMerge to avoid infinite recursion
 					const merged = deepmerge(mergedMap.get(keyValue), item, {
-						arrayMerge: (target, source) => [
-							...new Set([...target, ...source]),
-						],
+						arrayMerge: (target, source) => [...new Set([...target, ...source])],
 					});
 					mergedMap.set(keyValue, merged);
 				} else {
@@ -172,12 +159,11 @@ const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
 	// First, add items in the order they appear in targetArray
 	for (const item of targetArray) {
 		let keyValue: string;
-		if (typeof item === "object" && item !== null && "$key" in item) {
+		if (typeof item === 'object' && item !== null && '$key' in item) {
 			const keyField = item.$key;
 			keyValue = item[keyField];
-		} else if (typeof item === "object" && item !== null) {
-			const keyField =
-				"name" in item ? "name" : "id" in item ? "id" : undefined;
+		} else if (typeof item === 'object' && item !== null) {
+			const keyField = 'name' in item ? 'name' : 'id' in item ? 'id' : undefined;
 			if (keyField) {
 				keyValue = item[keyField];
 			} else {
@@ -188,7 +174,7 @@ const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
 		}
 
 		if (mergedMap.has(keyValue)) {
-			if (typeof item === "object" && item !== null && "$key" in item) {
+			if (typeof item === 'object' && item !== null && '$key' in item) {
 				const keyField = item.$key;
 				result.push({
 					[keyField]: keyValue,
@@ -203,12 +189,11 @@ const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
 	// Then add any new items from sourceArray that weren't in targetArray
 	for (const item of sourceArray) {
 		let keyValue: string;
-		if (typeof item === "object" && item !== null && "$key" in item) {
+		if (typeof item === 'object' && item !== null && '$key' in item) {
 			const keyField = item.$key;
 			keyValue = item[keyField];
-		} else if (typeof item === "object" && item !== null) {
-			const keyField =
-				"name" in item ? "name" : "id" in item ? "id" : undefined;
+		} else if (typeof item === 'object' && item !== null) {
+			const keyField = 'name' in item ? 'name' : 'id' in item ? 'id' : undefined;
 			if (keyField) {
 				keyValue = item[keyField];
 			} else {
@@ -219,7 +204,7 @@ const arrayMerge = (targetArray: any[], sourceArray: any[]) => {
 		}
 
 		if (!targetKeys.has(keyValue)) {
-			if (typeof item === "object" && item !== null && "$key" in item) {
+			if (typeof item === 'object' && item !== null && '$key' in item) {
 				const keyField = item.$key;
 				result.push({
 					[keyField]: keyValue,
@@ -242,12 +227,7 @@ const customMerge = (target: any, source: any) => {
 	}
 
 	// For objects, use deepmerge with our custom array merge
-	if (
-		typeof target === "object" &&
-		target !== null &&
-		typeof source === "object" &&
-		source !== null
-	) {
+	if (typeof target === 'object' && target !== null && typeof source === 'object' && source !== null) {
 		return deepmerge(target, source, {
 			arrayMerge,
 		});
@@ -269,14 +249,12 @@ function parseJsonWithComments(content: string): any {
 			const result = jsonc.parse(content, errors);
 			if (errors.length > 0) {
 				throw new Error(
-					`JSON parsing errors: ${errors.map((e) => `Error at ${e.offset}: ${e.length} characters`).join(", ")}`,
+					`JSON parsing errors: ${errors.map((e) => `Error at ${e.offset}: ${e.length} characters`).join(', ')}`,
 				);
 			}
 			return result;
 		} catch (jsoncError) {
-			throw new Error(
-				`Failed to parse JSON with comments: ${jsoncError}`,
-			);
+			throw new Error(`Failed to parse JSON with comments: ${jsoncError}`);
 		}
 	}
 }
@@ -289,10 +267,8 @@ export async function mergeJson(
 	data?: Record<string, any>,
 	pluginManager?: PluginManager | null,
 ): Promise<string> {
-	const targetContent = await fs
-		.readFile(targetPath, "utf-8")
-		.catch(() => "");
-	const sourceContent = await fs.readFile(sourcePath, "utf-8");
+	const targetContent = await fs.readFile(targetPath, 'utf-8').catch(() => '');
+	const sourceContent = await fs.readFile(sourcePath, 'utf-8');
 
 	// Process templates before parsing JSON
 	const processTemplate = async (
@@ -305,51 +281,33 @@ export async function mergeJson(
 		}
 		try {
 			const context = {
-				sourcePath: filePath || "",
-				targetPath: filePath || "",
+				sourcePath: filePath || '',
+				targetPath: filePath || '',
 				content,
 				data: templateData,
 			};
 			const result = await pluginManager.process(context);
 			return result.content;
 		} catch (error) {
-			console.error("Error processing template:", error);
+			console.error('Error processing template:', error);
 			return content;
 		}
 	};
 
-	const processedTargetContent = await processTemplate(
-		targetContent,
-		data,
-		targetPath,
-	);
-	const processedSourceContent = await processTemplate(
-		sourceContent,
-		data,
-		sourcePath,
-	);
+	const processedTargetContent = await processTemplate(targetContent, data, targetPath);
+	const processedSourceContent = await processTemplate(sourceContent, data, sourcePath);
 
 	// Handle empty or blank files by treating them as empty objects
-	const targetJson = processedTargetContent.trim()
-		? parseJsonWithComments(processedTargetContent)
-		: {};
-	const sourceJson = processedSourceContent.trim()
-		? parseJsonWithComments(processedSourceContent)
-		: {};
+	const targetJson = processedTargetContent.trim() ? parseJsonWithComments(processedTargetContent) : {};
+	const sourceJson = processedSourceContent.trim() ? parseJsonWithComments(processedSourceContent) : {};
 
 	// Get base template for property order if provided
 	let baseJson: any = {};
 	if (baseTemplatePath) {
 		try {
-			const baseContent = await fs.readFile(baseTemplatePath, "utf-8");
-			const processedBaseContent = await processTemplate(
-				baseContent,
-				data,
-				baseTemplatePath,
-			);
-			baseJson = processedBaseContent.trim()
-				? parseJsonWithComments(processedBaseContent)
-				: {};
+			const baseContent = await fs.readFile(baseTemplatePath, 'utf-8');
+			const processedBaseContent = await processTemplate(baseContent, data, baseTemplatePath);
+			baseJson = processedBaseContent.trim() ? parseJsonWithComments(processedBaseContent) : {};
 		} catch (error) {
 			// If base template doesn't exist, fall back to target/source logic
 			baseJson = {};
@@ -358,7 +316,7 @@ export async function mergeJson(
 
 	let merged: any;
 	switch (strategy) {
-		case "deep":
+		case 'deep':
 			merged = deepmerge(targetJson, sourceJson, {
 				arrayMerge,
 			});
@@ -371,7 +329,7 @@ export async function mergeJson(
 				merged = preservePropertyOrder(targetJson, merged);
 			}
 			break;
-		case "shallow":
+		case 'shallow':
 			merged = { ...targetJson, ...sourceJson };
 			if (Object.keys(baseJson).length > 0) {
 				merged = preservePropertyOrder(baseJson, merged);
@@ -381,7 +339,7 @@ export async function mergeJson(
 				merged = preservePropertyOrder(targetJson, merged);
 			}
 			break;
-		case "replace":
+		case 'replace':
 			merged = sourceJson;
 			break;
 		default:

@@ -1,0 +1,13 @@
+{
+	"data": {
+		"projectName": "Base Template Project",
+		"version": "1.0.0",
+		"templateVar": "base-template-value",
+		"dependencies": ["react", "react-dom"]
+	},
+	"merge": {
+		".json": {
+			"strategy": "deep"
+		}
+	}
+}

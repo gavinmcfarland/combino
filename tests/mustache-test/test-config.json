@@ -1,8 +1,13 @@
 {
-    "data": {
-        "framework": "react",
-        "name": "World"
-    },
-    "plugins": ["mustache"],
-    "description": "Test using Mustache template engine"
+	"data": {
+		"framework": "react",
+		"name": "World"
+	},
+	"plugins": ["mustache"],
+	"pluginConfigs": {
+		"mustache": {
+			"patterns": ["*.md"]
+		}
+	},
+	"description": "Test using Mustache template engine"
 }

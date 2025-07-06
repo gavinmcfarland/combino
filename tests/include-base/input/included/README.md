@@ -4,5 +4,5 @@
 
 ## Features
 
--   React support
--   Modern UI components
+- React support
+- Modern UI components
