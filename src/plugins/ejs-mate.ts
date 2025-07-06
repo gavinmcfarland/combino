@@ -53,7 +53,7 @@ interface BlockParseResult {
 
 // ===== CONSTANTS =====
 
-const LAYOUT_DIRECTORIES = ['base', 'layout', 'layouts'];
+const LAYOUT_DIRECTORIES = ['base', 'common', 'layout', 'layouts'];
 const LAYOUT_EXTENSIONS = ['.ejs', '.md', '.html', '.txt'];
 
 // Regex patterns
