@@ -346,7 +346,7 @@ export async function mergeJson(
 			throw new Error(`Unsupported merge strategy for JSON: ${strategy}`);
 	}
 
-	return JSON.stringify(merged, null, 2);
+	return JSON.stringify(merged);
 }
 
 // Helper function to preserve property order from base template

@@ -124,9 +124,10 @@ export class FileFormatter {
 			};
 
 			try {
-				const configPath = await prettier.resolveConfig(filePath);
-				if (configPath) {
-					prettierConfig = (await prettier.resolveConfig(filePath)) || {};
+				const resolvedConfig = await prettier.resolveConfig(filePath);
+				if (resolvedConfig) {
+					// Merge resolved config with our defaults, preserving our defaults for any missing values
+					prettierConfig = { ...prettierConfig, ...resolvedConfig };
 				}
 			} catch (error) {
 				// If no config found, use default settings
@@ -134,12 +135,18 @@ export class FileFormatter {
 
 			// Format the content
 			const finalConfig = {
-				...prettierConfig,
+				useTabs: true,
+				singleQuote: true,
+				printWidth: 120,
 				parser,
-				plugins: [prettierPluginSvelte, ...(prettierConfig.plugins || [])],
+				// Only include Svelte plugin for Svelte files
+				plugins:
+					ext === '.svelte'
+						? [prettierPluginSvelte, ...(prettierConfig.plugins || [])]
+						: prettierConfig.plugins || [],
 			};
 
-			const formatted = prettier.format(content, finalConfig);
+			const formatted = await prettier.format(content, finalConfig);
 
 			// Handle case where prettier.format returns undefined
 			if (formatted === undefined || formatted === null) {

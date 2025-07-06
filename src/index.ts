@@ -59,11 +59,14 @@ export class Combino {
 			this.pluginManager,
 		);
 
-		// Step 6: Format files with Prettier (centralized formatting)
-		const formattedFiles = await this.fileFormatter.formatFiles(transformedFiles);
+		// Step 6: Merge files (without formatting)
+		const mergedFiles = await this.fileWriter.mergeFiles(transformedFiles);
 
-		// Step 7: Merge files and write to output
-		await this.fileWriter.mergeAndWriteFiles(formattedFiles, options.outputDir);
+		// Step 7: Format merged files with Prettier (centralized formatting)
+		const formattedFiles = await this.fileFormatter.formatFiles(mergedFiles);
+
+		// Step 8: Write formatted files to output
+		await this.fileWriter.writeFiles(formattedFiles, options.outputDir);
 	}
 }
 
