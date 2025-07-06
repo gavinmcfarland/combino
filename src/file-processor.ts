@@ -236,6 +236,15 @@ export class FileProcessor {
 			}
 		}
 
+		// Check include config (for files that come from included directories)
+		if (file.includeConfig?.merge) {
+			for (const [pattern, config] of Object.entries(file.includeConfig.merge)) {
+				if (this.matchesPattern(file.targetPath, pattern)) {
+					return config.strategy || 'replace';
+				}
+			}
+		}
+
 		// Check template config
 		if (templateConfig?.merge) {
 			for (const [pattern, config] of Object.entries(templateConfig.merge)) {

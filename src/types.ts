@@ -97,7 +97,8 @@ export interface ResolvedFile {
 	sourcePath: string;
 	targetPath: string;
 	content: string;
-	config?: TemplateConfig;
+	config?: CombinoConfig;
+	includeConfig?: CombinoConfig;
 }
 
 export interface ProcessedFile {

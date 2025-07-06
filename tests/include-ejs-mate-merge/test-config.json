@@ -2,7 +2,6 @@
 	"data": {
 		"framework": "vue"
 	},
-	"inputDirs": ["input/basic", "input/svelte"],
 	"plugins": ["ejs-mate"],
 	"description": "Merge layouts with ejs-mate and includes in config"
 }

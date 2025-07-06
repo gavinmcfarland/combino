@@ -24,20 +24,41 @@ export class FileMerger {
 
 		// Determine file type and merge strategy
 		const firstFile = sortedFiles[0];
-		const strategy = firstFile.mergeStrategy || 'replace';
 		const fileExtension = this.getFileExtension(firstFile.targetPath);
 
+		// Determine the merge strategy to use
+		// Priority: 1. Non-default strategy from any file, 2. First file's strategy, 3. Default 'replace'
+		let strategy: MergeStrategy = 'replace';
+
+		// Look for a non-default merge strategy from any file
+		for (const file of sortedFiles) {
+			if (file.mergeStrategy && file.mergeStrategy !== 'replace') {
+				strategy = file.mergeStrategy;
+				break;
+			}
+		}
+
+		// If no non-default strategy found, use the first file's strategy
+		if (strategy === 'replace') {
+			strategy = firstFile.mergeStrategy || 'replace';
+		}
+
 		// Use appropriate merger based on file type
+		let result: string;
 		switch (fileExtension) {
 			case 'json':
 			case 'jsonc':
-				return this.mergeJsonFiles(sortedFiles, strategy);
+				result = await this.mergeJsonFiles(sortedFiles, strategy);
+				break;
 			case 'md':
 			case 'markdown':
-				return this.mergeMarkdownFiles(sortedFiles, strategy);
+				result = await this.mergeMarkdownFiles(sortedFiles, strategy);
+				break;
 			default:
-				return this.mergeTextFiles(sortedFiles, strategy);
+				result = await this.mergeTextFiles(sortedFiles, strategy);
 		}
+
+		return result;
 	}
 
 	private getFileExtension(filePath: string): string {

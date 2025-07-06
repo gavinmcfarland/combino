@@ -112,12 +112,37 @@ export class TemplateResolver {
 		if (config?.include) {
 			for (const include of config.include) {
 				const includeSourcePath = resolve(templatePath, include.source);
-				const includeFiles = await this.fileProcessor.getTemplateFiles(includeSourcePath, mergedConfig);
 
-				// Map the files to the target directory if specified
+				// Load the configuration from the included directory
+				const includeConfigPath = join(includeSourcePath, 'combino.json');
+				let includeConfig: CombinoConfig | undefined;
+				try {
+					includeConfig = await this.configParser.parseConfigFile(includeConfigPath);
+				} catch {
+					// Include config file doesn't exist or is invalid, continue without it
+				}
+
+				// Merge the include config with the main config for file processing
+				const includeProcessingConfig = {
+					...mergedConfig,
+					// Merge the include config's merge strategies
+					merge: {
+						...mergedConfig.merge,
+						...includeConfig?.merge,
+					},
+				};
+
+				const includeFiles = await this.fileProcessor.getTemplateFiles(
+					includeSourcePath,
+					includeProcessingConfig,
+				);
+
+				// Map the files to the target directory if specified and apply include config
 				const mappedFiles = includeFiles.map((file) => ({
 					...file,
 					targetPath: include.target ? join(include.target, file.targetPath) : file.targetPath,
+					// Store the include config so it can be used for merge strategy determination
+					includeConfig: includeConfig,
 				}));
 
 				files.push(...mappedFiles);

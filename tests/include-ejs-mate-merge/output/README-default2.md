@@ -2,7 +2,7 @@
 
 ## Description
 
-override description
+The default description
 
 ## Content
 

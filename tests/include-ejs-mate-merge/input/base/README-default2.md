@@ -4,7 +4,9 @@
 
 ## Description
 
-<%= block('description') || 'The default description' %>
+<% block('description') %>
+The default description
+<% end %>
 
 ## Content
 

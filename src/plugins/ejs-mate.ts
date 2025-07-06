@@ -29,7 +29,7 @@ class Block {
 
 // Common rendering context for EJS
 interface EjsRenderingContext {
-	block: (name: string, html?: string) => Block;
+	block: (name: string, html?: string) => Block | undefined;
 	layout: (view: string) => void;
 	partial: (view: string) => string;
 	[key: string]: any;
@@ -285,14 +285,11 @@ function isLayoutFile(filePath: string, content?: string): boolean {
 function createRenderingContext(data: Record<string, any>, blocks: Record<string, Block>): EjsRenderingContext {
 	return {
 		...data,
-		block: (name: string, html?: string): Block => {
-			console.log(`BLOCK HELPER CALLED: ${name} with html: "${html}"`);
+		block: (name: string, html?: string): Block | undefined => {
 			if (!blocks[name]) {
-				console.log(`Creating new block for: ${name}`);
 				blocks[name] = new Block();
 			}
 			if (html) {
-				console.log(`Appending to block ${name}: "${html}"`);
 				blocks[name].append(html);
 			}
 			return blocks[name];
@@ -313,21 +310,16 @@ function createLayoutContext(
 	body: string,
 	blocks: Record<string, Block>,
 ): EjsRenderingContext {
-	console.log('=== LAYOUT CONTEXT START ===');
-	console.log('Blocks passed to layout context:', Object.keys(blocks), blocks);
-	console.log('Block contents in layout context:');
-	for (const [name, block] of Object.entries(blocks)) {
-		console.log(`  ${name}: "${block.toString()}"`);
-	}
-	console.log('=== LAYOUT CONTEXT END ===');
 	return {
 		...data,
 		body,
-		block: (name: string): Block => {
-			console.log(`LAYOUT BLOCK ACCESS: ${name}`);
-			const block = blocks[name] || new Block();
-			console.log(`LAYOUT BLOCK VALUE: ${name} = "${block.toString()}"`);
-			return block;
+		block: (name: string): Block | undefined => {
+			const block = blocks[name];
+			if (block) {
+				return block;
+			} else {
+				return undefined;
+			}
 		},
 		partial: (view: string): string => '',
 		layout: () => {},
@@ -342,9 +334,6 @@ async function renderWithBlocks(
 	data: Record<string, any>,
 ): Promise<{ body: string; blocks: Record<string, Block> }> {
 	const blocks: Record<string, Block> = {};
-	console.log('=== RENDER WITH BLOCKS START ===');
-	console.log('Initial blocks object:', Object.keys(blocks), blocks);
-	console.log('Content to render:', content.substring(0, 200) + '...');
 
 	const renderContext = createRenderingContext(data, blocks);
 
@@ -379,13 +368,6 @@ async function renderWithBlocks(
 		}, [] as string[])
 		.join('\n')
 		.trim(); // Remove trailing whitespace
-
-	console.log('Collected blocks after renderWithBlocks:', Object.keys(blocks), blocks);
-	console.log('Block contents:');
-	for (const [name, block] of Object.entries(blocks)) {
-		console.log(`  ${name}: "${block.toString()}"`);
-	}
-	console.log('=== RENDER WITH BLOCKS END ===');
 
 	return { body, blocks };
 }
@@ -472,8 +454,11 @@ async function processAutomaticLayout(
 		throw new Error(`Layout template not found: ${layoutPath}`);
 	}
 
-	// Preprocess the layout content for block end tags
-	const preprocessedLayoutContent = preprocessBlockEndTags(layoutTemplate.content || '');
+	// First preprocess layout blocks with default content
+	const layoutWithDefaultBlocks = preprocessLayoutBlocks(layoutTemplate.content || '');
+
+	// Then preprocess the layout content for block end tags
+	const preprocessedLayoutContent = preprocessBlockEndTags(layoutWithDefaultBlocks);
 
 	return await processLayout(context, layoutPath, preprocessedContent, preprocessedLayoutContent);
 }
@@ -492,8 +477,11 @@ async function processExplicitLayout(
 	// Find and render the layout template
 	const layoutContent = await findLayoutFileContent(context.sourcePath, layoutPath);
 
-	// Preprocess the layout content for block end tags
-	const preprocessedLayoutContent = preprocessBlockEndTags(layoutContent);
+	// First preprocess layout blocks with default content
+	const layoutWithDefaultBlocks = preprocessLayoutBlocks(layoutContent);
+
+	// Then preprocess the layout content for block end tags
+	const preprocessedLayoutContent = preprocessBlockEndTags(layoutWithDefaultBlocks);
 
 	return await processLayout(context, layoutPath, contentWithoutLayout, preprocessedLayoutContent);
 }
@@ -548,6 +536,78 @@ function findLayoutTemplate(context: FileHookContext, layoutPath: string): { con
 	}
 
 	return null;
+}
+
+/**
+ * Preprocess layout files to handle blocks with default content
+ * Converts: <% block('name') %>default content<% end %>
+ * To: <%= block('name') || `default content` %>
+ */
+function preprocessLayoutBlocks(content: string): string {
+	let blockStack: string[] = [];
+	let currentBlockName: string | null = null;
+	let currentBlockContent: string[] = [];
+	let inBlock = false;
+	let blockStartIndex = 0;
+	let blockStartIndentation = '';
+
+	// Split content into lines to process block tags
+	const lines = content.split('\n');
+	const processedLines: string[] = [];
+
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i];
+
+		// Check for block start (only blocks without content on the same line)
+		const blockStartMatch = line.match(/^(\s*)<% block\('([^']+)'\) %>(\s*)$/);
+		if (blockStartMatch && !inBlock) {
+			// Start a new block
+			inBlock = true;
+			currentBlockName = blockStartMatch[2];
+			currentBlockContent = [];
+			blockStartIndex = processedLines.length;
+			blockStack.push(currentBlockName);
+
+			// Store the indentation for later use
+			blockStartIndentation = blockStartMatch[1];
+
+			// Add a placeholder that we'll replace later
+			processedLines.push('__BLOCK_PLACEHOLDER__');
+			continue;
+		}
+
+		// Check for block end
+		if (BLOCK_END_PATTERN.test(line) && inBlock) {
+			// End the current block
+			inBlock = false;
+			blockStack.pop();
+
+			const blockContent = currentBlockContent.join('\n');
+
+			// Create the new block line with fallback syntax
+			const newBlockLine = `${blockStartIndentation}<%= block('${currentBlockName}') || \`${blockContent}\` %>`;
+
+			processedLines[blockStartIndex] = newBlockLine;
+
+			// Reset block state
+			currentBlockName = null;
+			currentBlockContent = [];
+			blockStartIndentation = '';
+			// Skip adding the end line
+			continue;
+		}
+
+		// If we're inside a block, collect the content
+		if (inBlock) {
+			currentBlockContent.push(line);
+		} else {
+			// Regular line, add it as is
+			processedLines.push(line);
+		}
+	}
+
+	const result = processedLines.join('\n');
+	return result;
 }
 
 // Default export for convenience
