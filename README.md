@@ -4,7 +4,7 @@
 
 Combino is a composable scaffolding engine that lets you build fully customised project structures by combining modular template folders with strategic merging, dynamic conditions, and reusable logic.
 
-## Instal
+## Install
 
 Add the npm package to your project.
 
@@ -12,7 +12,7 @@ Add the npm package to your project.
 npm install combino
 ```
 
-## Usage
+## Quickstart
 
 ```js
 import { Combino } from 'combino';
@@ -51,7 +51,7 @@ interface CombinoConfig {
 
 </details>
 
-## Example
+## How it works
 
 At its core, Combino copies files from both template directories.
 
@@ -217,31 +217,12 @@ export function plugin(options = {}): Plugin {
 
 Plugins can use two hooks to process files at different stages:
 
-- **`compile`**
-
-    Processes individual template files before merging. After template resolution, before file merging. Use for template rendering, syntax processing, content generation.
-
-- **`assemble`**
-
-    Processes files after merging but before formatting. After file merging, before code formatting. Use for final transformations, cleanup, file conversion.
-
-### Plugin Context
-
-Each hook receives a context object with:
-
-```ts
-interface FileHookContext {
-    sourcePath: string; // Original file path
-    id: string; // Target file path
-    content: string; // File content
-    data: Record<string, any>; // Template data
-    allTemplates?: TemplateInfo[]; // All template information (compile hook only)
-}
-```
+- **`compile`**: Processes individual template files before merging.
+- **`assemble`**: Processes files after merging but before formatting.
 
 ## Configure
 
-Combino will load `combino.json` or `config.json` files that exist within each template.
+Combino will load `combino.json` files that exist within each template.
 
 ```json
 {
