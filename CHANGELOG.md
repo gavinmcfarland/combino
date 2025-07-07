@@ -1,5 +1,11 @@
 # combino
 
+## 0.1.7
+
+### Patch Changes
+
+- Updated exported types
+
 ## 0.1.6
 
 ### Patch Changes
