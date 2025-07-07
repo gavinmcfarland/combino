@@ -53,12 +53,8 @@ interface BlockParseResult {
 
 // ===== CONSTANTS =====
 
-const LAYOUT_DIRECTORIES = ['base', 'common', 'layout', 'layouts'];
-const LAYOUT_EXTENSIONS = ['.ejs', '.md', '.html', '.txt'];
-
 // Regex patterns
 const PATTERNS = {
-	layoutBlock: /<%-?\s*(?:block\(|body)/,
 	explicitLayout: /<% layout\(['"]([^'"]+)['"]\) %>/,
 	blockStart: /^\s*<%\s*block\(['"]([^'\"]+)['"]\)\s*%>\s*$/,
 	blockEnd: /^\s*<%\s*end\s*%>\s*$/,
@@ -70,24 +66,31 @@ const PATTERNS = {
 // ===== UTILITY FUNCTIONS =====
 
 /**
- * Check if a directory path contains layout directories
+ * Collect layout directories from template configurations
  */
-function isLayoutDirectory(dirPath: string): boolean {
-	return LAYOUT_DIRECTORIES.some(
-		(layoutDir) =>
-			dirPath.includes(`/${layoutDir}`) ||
-			dirPath.includes(`\\${layoutDir}`) ||
-			dirPath.endsWith(`/${layoutDir}`) ||
-			dirPath.endsWith(`\\${layoutDir}`),
-	);
-}
+function collectLayoutDirectories(context: FileHookContext): string[] {
+	const layoutDirectories: string[] = [];
 
-/**
- * Check if a file is a layout file based on its directory or content
- */
-function isLayoutFile(filePath: string, content?: string): boolean {
-	const fileDir = path.dirname(filePath);
-	return isLayoutDirectory(fileDir) || Boolean(content && PATTERNS.layoutBlock.test(content));
+	if (context.allTemplates) {
+		for (const template of context.allTemplates) {
+			if (template.config?.layout) {
+				for (const layoutDir of template.config.layout) {
+					// Resolve relative paths relative to the template path
+					const resolvedLayoutDir =
+						layoutDir.startsWith('./') || layoutDir.startsWith('../')
+							? path.resolve(template.path, layoutDir)
+							: layoutDir;
+
+					// Add to layout directories if not already present
+					if (!layoutDirectories.includes(resolvedLayoutDir)) {
+						layoutDirectories.push(resolvedLayoutDir);
+					}
+				}
+			}
+		}
+	}
+
+	return layoutDirectories;
 }
 
 /**
@@ -96,17 +99,7 @@ function isLayoutFile(filePath: string, content?: string): boolean {
 function shouldSkipProcessing(context: FileHookContext): boolean {
 	// Skip output files to prevent circular processing
 	const isOutputFile = context.sourcePath.includes('/output/') || context.sourcePath.includes('\\output\\');
-
-	if (isOutputFile) {
-		return true;
-	}
-
-	// Skip if no template information available
-	if (!context.allTemplates) {
-		return true;
-	}
-
-	return false;
+	return isOutputFile;
 }
 
 /**
@@ -337,54 +330,6 @@ async function renderLayout(
 	return await ejsEngine.render(layoutContent, layoutContext, { async: true });
 }
 
-// ===== LAYOUT DETECTION =====
-
-/**
- * Detect automatic layout based on template structure
- */
-function detectAutomaticLayout(context: FileHookContext): string | null {
-	if (!context.allTemplates) return null;
-
-	const currentFileName = path.basename(context.sourcePath);
-	const currentDir = path.dirname(context.sourcePath);
-
-	// If current file is a layout file, don't look for layouts for it
-	if (isLayoutDirectory(currentDir)) {
-		return null;
-	}
-
-	// Look for layout templates
-	for (const template of context.allTemplates) {
-		for (const file of template.files) {
-			const fileName = path.basename(file.sourcePath);
-
-			// Check if filename matches and it's a layout file
-			if (
-				fileName === currentFileName &&
-				isLayoutFile(file.sourcePath, file.content) &&
-				file.sourcePath !== context.sourcePath
-			) {
-				// Calculate relative path from current file to layout file
-				return path.relative(currentDir, file.sourcePath);
-			}
-		}
-	}
-
-	return null;
-}
-
-/**
- * Check if a file should be suppressed as a layout file
- */
-function shouldSuppressAsLayout(content: string, sourcePath: string): boolean {
-	const hasLayoutBlocks = PATTERNS.layoutBlock.test(content);
-	const hasBodyBlock = PATTERNS.bodyBlock.test(content);
-	const isInLayoutDir = isLayoutDirectory(path.dirname(sourcePath));
-
-	// Only suppress if it has layout blocks AND (has body block OR is in layout directory)
-	return hasLayoutBlocks && (hasBodyBlock || isInLayoutDir);
-}
-
 // ===== LAYOUT PROCESSING =====
 
 /**
@@ -408,12 +353,19 @@ function findLayoutTemplate(context: FileHookContext, layoutPath: string): { con
 }
 
 /**
- * Find layout file content from filesystem
+ * Find layout file content from filesystem, checking configured layout directories
  */
-async function findLayoutFileContent(sourcePath: string, layoutPath: string): Promise<string> {
+async function findLayoutFileContent(
+	context: FileHookContext,
+	sourcePath: string,
+	layoutPath: string,
+): Promise<string> {
+	const LAYOUT_EXTENSIONS = ['.ejs', '.md', '.html', '.txt'];
+
+	// First try relative to the source file
 	const resolvedLayoutPath = resolveLayoutPath(sourcePath, layoutPath);
 
-	// First try the exact path
+	// Try the exact path
 	if (fs.existsSync(resolvedLayoutPath)) {
 		return fs.readFileSync(resolvedLayoutPath, 'utf8');
 	}
@@ -426,8 +378,27 @@ async function findLayoutFileContent(sourcePath: string, layoutPath: string): Pr
 		}
 	}
 
+	// If not found relative to source, try configured layout directories
+	const layoutDirectories = collectLayoutDirectories(context);
+	for (const layoutDir of layoutDirectories) {
+		const layoutInConfiguredDir = path.resolve(layoutDir, layoutPath);
+
+		// Try exact path in configured directory
+		if (fs.existsSync(layoutInConfiguredDir)) {
+			return fs.readFileSync(layoutInConfiguredDir, 'utf8');
+		}
+
+		// Try with extensions in configured directory
+		for (const ext of LAYOUT_EXTENSIONS) {
+			const pathWithExt = layoutInConfiguredDir + ext;
+			if (fs.existsSync(pathWithExt)) {
+				return fs.readFileSync(pathWithExt, 'utf8');
+			}
+		}
+	}
+
 	throw new Error(
-		`Layout file not found: ${layoutPath} (tried: ${resolvedLayoutPath} and with extensions: ${LAYOUT_EXTENSIONS.join(', ')})`,
+		`Layout file not found: ${layoutPath} (searched relative to ${sourcePath} and in configured layout directories: ${layoutDirectories.join(', ')})`,
 	);
 }
 
@@ -461,24 +432,6 @@ async function processLayout(
 }
 
 /**
- * Process automatic layout detection
- */
-async function processAutomaticLayout(
-	context: FileHookContext,
-	layoutPath: string,
-	preprocessedContent: string,
-): Promise<LayoutResult> {
-	// Find the layout template in the template information
-	const layoutTemplate = findLayoutTemplate(context, layoutPath);
-	if (!layoutTemplate) {
-		throw new Error(`Layout template not found: ${layoutPath}`);
-	}
-
-	const processedLayoutContent = await processLayoutContent(layoutTemplate.content || '');
-	return await processLayout(context, layoutPath, preprocessedContent, processedLayoutContent);
-}
-
-/**
  * Process explicit layout directive
  */
 async function processExplicitLayout(
@@ -490,7 +443,7 @@ async function processExplicitLayout(
 	const contentWithoutLayout = preprocessedContent.replace(PATTERNS.explicitLayout, '');
 
 	// Find and render the layout template
-	const layoutContent = await findLayoutFileContent(context.sourcePath, layoutPath);
+	const layoutContent = await findLayoutFileContent(context, context.sourcePath, layoutPath);
 	const processedLayoutContent = await processLayoutContent(layoutContent);
 
 	return await processLayout(context, layoutPath, contentWithoutLayout, processedLayoutContent);
@@ -505,24 +458,81 @@ async function processWithoutLayout(content: string, data: Record<string, any>):
 	return await ejsEngine.render(content, renderContext, { async: true });
 }
 
+/**
+ * Find automatic layout file in configured directories
+ * Looks for layout files that match the current filename or common layout names
+ */
+async function findAutomaticLayout(context: FileHookContext): Promise<string | null> {
+	const layoutDirectories = collectLayoutDirectories(context);
+	if (layoutDirectories.length === 0) {
+		return null;
+	}
+
+	const currentFileName = path.basename(context.sourcePath);
+	const currentBaseName = path.basename(currentFileName, path.extname(currentFileName));
+
+	// Try to find layout files in configured directories
+	for (const layoutDir of layoutDirectories) {
+		const candidates = [
+			// Try exact filename match
+			currentFileName,
+			// Try common layout names
+			'layout.md',
+			'layout.ejs',
+			'layout.html',
+			'base.md',
+			'base.ejs',
+			'base.html',
+			'main.md',
+			'main.ejs',
+			'main.html',
+			'index.md',
+			'index.ejs',
+			'index.html',
+			'README.md',
+			'readme.md',
+		];
+
+		for (const candidate of candidates) {
+			const layoutPath = path.resolve(layoutDir, candidate);
+			if (fs.existsSync(layoutPath)) {
+				try {
+					return fs.readFileSync(layoutPath, 'utf8');
+				} catch (error) {
+					continue; // Try next candidate
+				}
+			}
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Process automatic layout (when no explicit layout directive is found)
+ */
+async function processAutomaticLayout(
+	context: FileHookContext,
+	preprocessedContent: string,
+	layoutContent: string,
+): Promise<LayoutResult> {
+	return await processLayout(context, 'auto', preprocessedContent, layoutContent);
+}
+
 // ===== MAIN PLUGIN =====
 
 /**
  * EJS-Mate Plugin Factory Function
- * Creates a plugin that processes templates with flexible layout support
- * Supports layouts across different file types and directories
- * Automatically detects layouts based on template structure
+ * Simplified version that only supports explicit layout directives
  */
 export function ejsMate(filePattern?: string[]): Plugin {
 	return {
 		filePattern: filePattern,
 
-		// Transform hook: Used during template processing phase with full template context
-		// This is where layout detection and block processing happens
+		// Process hook: Used during template processing phase
 		process: async (context) => {
 			try {
-				// In the process hook, data might not be fully available yet
-				// So we provide a safe default context that won't cause errors
+				// Safe data context for process hook
 				const safeData = context.data || {};
 				const renderedContent = await ejsEngine.render(context.content, safeData, { async: true });
 				return {
@@ -538,6 +548,7 @@ export function ejsMate(filePattern?: string[]): Plugin {
 			}
 		},
 
+		// Transform hook: Used during template processing phase with full template context
 		transform: async (context: FileHookContext) => {
 			try {
 				// Early returns for files that shouldn't be processed
@@ -548,24 +559,20 @@ export function ejsMate(filePattern?: string[]): Plugin {
 				// Preprocess block end tags before layout processing
 				const preprocessedContent = preprocessContentBlocks(context.content);
 
-				// Check for explicit layout
+				// Check for explicit layout directive
 				const layoutMatch = preprocessedContent.match(PATTERNS.explicitLayout);
 				if (layoutMatch) {
 					return await processExplicitLayout(context, layoutMatch[1], preprocessedContent);
 				}
 
-				// Check for automatic layout
-				const autoLayout = detectAutomaticLayout(context);
-				if (autoLayout) {
-					return await processAutomaticLayout(context, autoLayout, preprocessedContent);
+				// Check for automatic layout from configured directories
+				const automaticLayoutContent = await findAutomaticLayout(context);
+				if (automaticLayoutContent) {
+					const processedLayoutContent = await processLayoutContent(automaticLayoutContent);
+					return await processAutomaticLayout(context, preprocessedContent, processedLayoutContent);
 				}
 
-				// Check if this is a layout template that should be suppressed
-				if (shouldSuppressAsLayout(preprocessedContent, context.sourcePath) && !layoutMatch && !autoLayout) {
-					return createResult('', context.targetPath);
-				}
-
-				// No layout processing needed, but still need to render EJS variables with block helpers
+				// No layout processing needed, render EJS with block helpers
 				const renderedContent = await processWithoutLayout(preprocessedContent, context.data);
 				return createResult(renderedContent, context.targetPath);
 			} catch (error) {

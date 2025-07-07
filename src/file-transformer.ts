@@ -14,6 +14,7 @@ export class FileTransformer {
 		const templateInfos: TemplateInfo[] = templates.map((template) => ({
 			path: template.path,
 			targetDir: template.targetDir,
+			config: template.config,
 			files: template.files.map((file) => ({
 				sourcePath: file.sourcePath,
 				targetPath: file.targetPath,

@@ -8,6 +8,11 @@ export interface TemplateInfo {
 	path: string;
 	/** The target directory (if specified) */
 	targetDir?: string;
+	/** Template configuration (including layout directories) */
+	config?: {
+		layout?: string[];
+		[key: string]: any;
+	};
 	/** All files in this template */
 	files: Array<{
 		sourcePath: string;

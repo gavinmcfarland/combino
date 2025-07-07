@@ -1,0 +1,16 @@
+{
+	"data": {
+		"title": "Explicit Layout Test",
+		"content": "This content uses explicit layout directives!",
+		"user": {
+			"name": "Alice Johnson",
+			"email": "alice@example.com"
+		}
+	},
+	"plugins": ["ejs-mate"],
+	"pluginConfigs": {
+		"ejs-mate": { "patterns": ["*.ejs", "*.md"] }
+	},
+	"description": "Test simplified EJS-Mate plugin with explicit layout directives",
+	"skip": false
+}

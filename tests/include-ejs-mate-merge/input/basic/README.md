@@ -1,7 +1,0 @@
-<% block('description') %>
-override description
-<% end %>
-
-Welcome to the project!
-
-<% block('footer').append('_Generated with include merge_') %>

@@ -23,6 +23,8 @@ export interface CombinoConfig {
 	data?: Record<string, any>;
 	/** Merge strategy configuration for different file patterns */
 	merge?: Record<string, Record<string, any>>;
+	/** Layout directories configuration for template engines like EJS-Mate */
+	layout?: string[];
 }
 
 export interface TemplateConfig {
