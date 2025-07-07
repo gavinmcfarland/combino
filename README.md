@@ -179,6 +179,83 @@ svelte.config.js          # Unique file copied from svelte template
     }
     ```
 
+## Plugins
+
+Combino uses a powerful plugin system to process templates and transform files. Plugins can handle template rendering, syntax transformations, and file modifications.
+
+### Using Plugins
+
+Add plugins to your Combino configuration:
+
+```js
+import { Combino } from 'combino';
+import myPlugin from './my-plugin';
+
+const combino = new Combino();
+
+await combino.combine({
+    outputDir: './output',
+    include: ['./templates/base', './templates/react'],
+    plugins: [myPlugin()],
+    data: {
+        framework: 'react',
+        language: 'typescript',
+    },
+});
+```
+
+### Creating Plugins
+
+Create your own plugins by implementing the Plugin interface:
+
+```js
+// Example plugin that converts extensions
+export function plugin(options = {}): Plugin {
+    const { from, to } = options;
+
+    return {
+        assemble: async (context) => {
+            const newId = context.id.replace(`.${from}`, `.${to}`);
+            return { content: context.content, id: newId };
+        },
+    };
+}
+```
+
+### Hooks
+
+Plugins can use two hooks to process files at different stages:
+
+#### `compile` Hook
+
+Processes individual template files before merging.
+
+- **When**: After template resolution, before file merging
+- **Use for**: Template rendering, syntax processing, content generation
+- **Context**: Individual file content and template data
+
+#### `assemble` Hook
+
+Processes files after merging but before formatting.
+
+- **When**: After file merging, before code formatting
+- **Use for**: Final transformations, cleanup, file conversion
+- **Context**: Merged file content and global data
+
+### Plugin Context
+
+Each hook receives a context object with:
+
+```ts
+interface FileHookContext {
+    sourcePath: string; // Original file path
+    id: string; // Target file path
+    content: string; // File content
+    data: Record<string, any>; // Template data
+    allTemplates?: TemplateInfo[]; // All template information (compile hook only)
+}
+```
+
 ## Configure
 
 Combino will load `combino.json` or `config.json` files that exist within each template.
