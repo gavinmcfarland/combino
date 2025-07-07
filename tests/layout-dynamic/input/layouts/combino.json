@@ -1,6 +1,5 @@
 {
 	"layout": ["./"],
-	"exclude": ["*.md"],
 	"data": {
 		"siteName": "My Configured Site"
 	}

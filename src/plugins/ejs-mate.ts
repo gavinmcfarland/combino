@@ -267,38 +267,21 @@ async function findLayoutContent(context: FileHookContext, layoutPath: string): 
 	throw new Error(`Layout file not found: ${layoutPath}`);
 }
 
-async function findAutomaticLayout(context: FileHookContext): Promise<string | null> {
+async function findDynamicLayout(context: FileHookContext): Promise<string | null> {
 	const layoutDirectories = collectLayoutDirectories(context);
 	if (layoutDirectories.length === 0) return null;
 
+	// Get just the filename from the source file
 	const currentFileName = path.basename(context.sourcePath);
-	const candidates = [
-		currentFileName,
-		'layout.md',
-		'layout.ejs',
-		'layout.html',
-		'base.md',
-		'base.ejs',
-		'base.html',
-		'main.md',
-		'main.ejs',
-		'main.html',
-		'index.md',
-		'index.ejs',
-		'index.html',
-		'README.md',
-		'readme.md',
-	];
 
+	// Only look for exact filename matches in configured layout directories
 	for (const layoutDir of layoutDirectories) {
-		for (const candidate of candidates) {
-			const layoutPath = path.resolve(layoutDir, candidate);
-			if (fs.existsSync(layoutPath)) {
-				try {
-					return fs.readFileSync(layoutPath, 'utf8');
-				} catch (error) {
-					continue;
-				}
+		const layoutPath = path.resolve(layoutDir, currentFileName);
+		if (fs.existsSync(layoutPath)) {
+			try {
+				return fs.readFileSync(layoutPath, 'utf8');
+			} catch (error) {
+				continue;
 			}
 		}
 	}
@@ -367,10 +350,10 @@ export function ejsMate(filePattern?: string[]): Plugin {
 					return await processWithLayout(context, layoutMatch[1], contentWithoutLayout, layoutContent);
 				}
 
-				// Check for automatic layout
-				const automaticLayoutContent = await findAutomaticLayout(context);
-				if (automaticLayoutContent) {
-					return await processWithLayout(context, 'auto', preprocessedContent, automaticLayoutContent);
+				// Check for dynamic layout in configured directories
+				const dynamicLayoutContent = await findDynamicLayout(context);
+				if (dynamicLayoutContent) {
+					return await processWithLayout(context, 'dynamic', preprocessedContent, dynamicLayoutContent);
 				}
 
 				// No layout, just render EJS
