@@ -67,4 +67,18 @@ export class Combino {
 
 export { PluginManager } from './plugins/types.js';
 export type { Plugin, FileHookContext, FileHookResult, FileHook } from './plugins/types.js';
-export type { TemplateOptions, CombinoConfig, MergeStrategy } from './types.js';
+export type {
+	TemplateOptions,
+	CombinoConfig,
+	MergeStrategy,
+	MergeConfig,
+	IncludeConfig,
+	IncludeItem,
+	TemplateConfig,
+	FileContent,
+	ConfigFile,
+	TemplateInfo,
+	ResolvedTemplate,
+	ResolvedFile,
+	ProcessedFile,
+} from './types.js';
