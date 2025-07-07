@@ -136,29 +136,35 @@ export class FileProcessor {
 		// Handle conditional file paths like [framework=="react"]App.tsx
 		let result = path;
 
-		// First pass: Handle conditional logic (conditions that determine inclusion/exclusion)
-		// This should NOT match ternary expressions that contain "?"
-		const conditionalRegex = /\[([^\]]*(?:==|!=|&&|\|\|)[^\]]*)\]/g;
+		// First pass: Handle all conditional logic (conditions that determine inclusion/exclusion)
+		// This includes both complex conditions and simple boolean conditions
+		const conditionalRegex = /\[([^\]]+)\]/g;
 		let match;
 
 		// Reset regex lastIndex
 		conditionalRegex.lastIndex = 0;
 
 		while ((match = conditionalRegex.exec(path)) !== null) {
-			const condition = match[1];
+			const expression = match[1];
 
 			// Skip ternary expressions (they contain "?" and ":")
-			if (condition.includes('?') && condition.includes(':')) {
+			if (expression.includes('?') && expression.includes(':')) {
 				continue;
 			}
 
-			const shouldInclude = this.evaluateCondition(condition, data);
+			// Check if this is a conditional expression (has operators or is a simple boolean)
+			const isConditional = this.isConditionalExpression(expression, data);
 
-			if (!shouldInclude) {
-				return null; // File should be excluded
+			if (isConditional) {
+				const shouldInclude = this.evaluateCondition(expression, data);
+
+				if (!shouldInclude) {
+					return null; // File should be excluded
+				}
+
+				// Remove the conditional brackets since the condition is true
+				result = result.replace(match[0], '');
 			}
-
-			result = result.replace(match[0], '');
 		}
 
 		// Second pass: Handle dynamic naming like [name] or ternary expressions
@@ -169,6 +175,32 @@ export class FileProcessor {
 		});
 
 		return result;
+	}
+
+	private isConditionalExpression(expression: string, data: Record<string, any>): boolean {
+		// Check if the expression contains conditional operators
+		if (
+			expression.includes('==') ||
+			expression.includes('!=') ||
+			expression.includes('&&') ||
+			expression.includes('||')
+		) {
+			return true;
+		}
+
+		// Check if the expression is a simple boolean variable in the data
+		try {
+			const cleanExpression = expression.trim();
+			// If it's a simple variable name and the value is a boolean, treat it as conditional
+			if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(cleanExpression)) {
+				const value = data[cleanExpression];
+				return typeof value === 'boolean';
+			}
+		} catch (error) {
+			// If we can't determine, assume it's not conditional
+		}
+
+		return false;
 	}
 
 	private evaluateCondition(condition: string, data: Record<string, any>): boolean {
