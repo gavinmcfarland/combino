@@ -3,13 +3,13 @@ import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { describe, it, beforeAll } from 'vitest';
 import { Combino } from '../src/index.js';
-import { ejs } from '../src/plugins/ejs.js';
-import { ejsMate } from '../src/plugins/ejs-mate.js';
-import { handlebars } from '../src/plugins/handlebars.js';
-import { mustache } from '../src/plugins/mustache.js';
+import ejs from '../src/plugins/ejs.js';
+import ejsMate from '../src/plugins/ejs-mate.js';
+import handlebars from '../src/plugins/handlebars.js';
+import mustache from '../src/plugins/mustache.js';
 import { Plugin } from '../src/plugins/types.js';
 import { assertDirectoriesEqual } from '../utils/directory-compare.js';
-import { stripTS } from '../src/plugins/combino-plugin-strip-ts.js';
+import stripTS from '../src/plugins/combino-plugin-strip-ts.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

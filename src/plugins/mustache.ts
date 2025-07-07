@@ -62,7 +62,7 @@ async function mustacheTransform(context: FileHookContext): Promise<FileHookResu
  * Mustache Plugin Factory Function
  * This is the main export for the standalone Mustache plugin
  */
-export function mustache(options: any = {}): Plugin {
+export default function plugin(options: any = {}): Plugin {
 	return {
 		filePattern: options.patterns || ['*.mustache'],
 		compile: async (context: FileHookContext): Promise<FileHookResult> => {
@@ -76,6 +76,3 @@ export function mustache(options: any = {}): Plugin {
 		},
 	};
 }
-
-// Default export for convenience
-export default mustache;

@@ -40,6 +40,14 @@ interface LayoutResult {
 	id: string;
 }
 
+interface BlockProcessingState {
+	inBlock: boolean;
+	currentBlockName: string | null;
+	currentBlockContent: string[];
+	blockStartIndex: number;
+	blockIndentation: string;
+}
+
 // ===== CONSTANTS =====
 
 const PATTERNS = {
@@ -55,6 +63,12 @@ const LAYOUT_EXTENSIONS = ['.ejs', '.md', '.html', '.txt'];
 
 // ===== UTILITY FUNCTIONS =====
 
+function resolveLayoutDirectory(templatePath: string, layoutDir: string): string {
+	return layoutDir.startsWith('./') || layoutDir.startsWith('../')
+		? path.resolve(templatePath, layoutDir)
+		: layoutDir;
+}
+
 function collectLayoutDirectories(context: FileHookContext): string[] {
 	const layoutDirectories: string[] = [];
 
@@ -62,11 +76,7 @@ function collectLayoutDirectories(context: FileHookContext): string[] {
 		for (const template of context.allTemplates) {
 			if (template.config?.layout) {
 				for (const layoutDir of template.config.layout) {
-					const resolvedLayoutDir =
-						layoutDir.startsWith('./') || layoutDir.startsWith('../')
-							? path.resolve(template.path, layoutDir)
-							: layoutDir;
-
+					const resolvedLayoutDir = resolveLayoutDirectory(template.path, layoutDir);
 					if (!layoutDirectories.includes(resolvedLayoutDir)) {
 						layoutDirectories.push(resolvedLayoutDir);
 					}
@@ -86,64 +96,142 @@ function resolveLayoutPath(sourcePath: string, layoutPath: string): string {
 	return path.resolve(path.dirname(sourcePath), layoutPath);
 }
 
-// ===== BLOCK PROCESSING =====
-
-function processBlocks(content: string, isLayout: boolean = false): string {
-	const lines = content.split('\n');
-	const processedLines: string[] = [];
-
-	let inBlock = false;
-	let currentBlockName: string | null = null;
-	let currentBlockContent: string[] = [];
-	let blockStartIndex = 0;
-	let blockIndentation = '';
-
-	// Handle inline blocks first
-	if (!isLayout) {
-		content = content.replace(PATTERNS.inlineBlock, (match, blockName, blockContent) => {
-			return `<% block('${blockName}', \`${blockContent.trim()}\`) %>`;
-		});
-		lines.splice(0, lines.length, ...content.split('\n'));
+function fileExistsWithExtensions(basePath: string, extensions: string[] = LAYOUT_EXTENSIONS): string | null {
+	// Try exact path first
+	if (fs.existsSync(basePath)) {
+		return basePath;
 	}
 
-	for (let i = 0; i < lines.length; i++) {
-		const line = lines[i];
+	// Try with extensions
+	for (const ext of extensions) {
+		const pathWithExt = basePath + ext;
+		if (fs.existsSync(pathWithExt)) {
+			return pathWithExt;
+		}
+	}
 
-		// Check for block start
-		const blockStartMatch = line.match(isLayout ? PATTERNS.layoutBlockStart : PATTERNS.blockStart);
-		if (blockStartMatch && !inBlock) {
-			inBlock = true;
-			currentBlockName = blockStartMatch[2] || blockStartMatch[1];
-			currentBlockContent = [];
-			blockStartIndex = processedLines.length;
-			blockIndentation = blockStartMatch[1] || '';
-			processedLines.push(line);
+	return null;
+}
+
+function readFileIfExists(filePath: string): string | null {
+	try {
+		return fs.readFileSync(filePath, 'utf8');
+	} catch (error) {
+		return null;
+	}
+}
+
+function cleanupBlankLines(content: string): string {
+	return content
+		.split('\n')
+		.reduce((acc, line) => {
+			const trimmedLine = line.trim();
+			if (acc.length === 0 && trimmedLine === '') return acc;
+
+			if (trimmedLine === '') {
+				const lastLine = acc[acc.length - 1];
+				if (lastLine && lastLine.trim() !== '') {
+					acc.push(line);
+				}
+			} else {
+				acc.push(line);
+			}
+			return acc;
+		}, [] as string[])
+		.join('\n')
+		.trim();
+}
+
+// ===== BLOCK PROCESSING =====
+
+function createBlockProcessingState(): BlockProcessingState {
+	return {
+		inBlock: false,
+		currentBlockName: null,
+		currentBlockContent: [],
+		blockStartIndex: 0,
+		blockIndentation: '',
+	};
+}
+
+function processInlineBlocks(content: string): string {
+	return content.replace(PATTERNS.inlineBlock, (match, blockName, blockContent) => {
+		return `<% block('${blockName}', \`${blockContent.trim()}\`) %>`;
+	});
+}
+
+function processBlockStart(
+	line: string,
+	state: BlockProcessingState,
+	processedLines: string[],
+	isLayout: boolean,
+): boolean {
+	const blockStartMatch = line.match(isLayout ? PATTERNS.layoutBlockStart : PATTERNS.blockStart);
+	if (blockStartMatch && !state.inBlock) {
+		state.inBlock = true;
+		state.currentBlockName = blockStartMatch[2] || blockStartMatch[1];
+		state.currentBlockContent = [];
+		state.blockStartIndex = processedLines.length;
+		state.blockIndentation = blockStartMatch[1] || '';
+		processedLines.push(line);
+		return true;
+	}
+	return false;
+}
+
+function processBlockEnd(
+	line: string,
+	state: BlockProcessingState,
+	processedLines: string[],
+	isLayout: boolean,
+): boolean {
+	if (PATTERNS.blockEnd.test(line) && state.inBlock) {
+		state.inBlock = false;
+		const blockContent = state.currentBlockContent.join('\n');
+
+		// Replace the block start line with the appropriate format
+		if (isLayout) {
+			processedLines[state.blockStartIndex] =
+				`${state.blockIndentation}<%= block('${state.currentBlockName}') || \`${blockContent}\` %>`;
+		} else {
+			processedLines[state.blockStartIndex] = `<% block('${state.currentBlockName}', \`${blockContent}\`) %>`;
+		}
+
+		// Reset state
+		state.currentBlockName = null;
+		state.currentBlockContent = [];
+		state.blockIndentation = '';
+		return true;
+	}
+	return false;
+}
+
+function processBlocks(content: string, isLayout: boolean = false): string {
+	let processedContent = content;
+
+	// Handle inline blocks first (only for non-layout content)
+	if (!isLayout) {
+		processedContent = processInlineBlocks(processedContent);
+	}
+
+	const lines = processedContent.split('\n');
+	const processedLines: string[] = [];
+	const state = createBlockProcessingState();
+
+	for (const line of lines) {
+		// Try to process block start
+		if (processBlockStart(line, state, processedLines, isLayout)) {
 			continue;
 		}
 
-		// Check for block end
-		if (PATTERNS.blockEnd.test(line) && inBlock) {
-			inBlock = false;
-			const blockContent = currentBlockContent.join('\n');
-
-			// Replace the block start line with the appropriate format
-			if (isLayout) {
-				processedLines[blockStartIndex] =
-					`${blockIndentation}<%= block('${currentBlockName}') || \`${blockContent}\` %>`;
-			} else {
-				processedLines[blockStartIndex] = `<% block('${currentBlockName}', \`${blockContent}\`) %>`;
-			}
-
-			// Reset state
-			currentBlockName = null;
-			currentBlockContent = [];
-			blockIndentation = '';
+		// Try to process block end
+		if (processBlockEnd(line, state, processedLines, isLayout)) {
 			continue;
 		}
 
 		// Collect block content or regular lines
-		if (inBlock) {
-			currentBlockContent.push(line);
+		if (state.inBlock) {
+			state.currentBlockContent.push(line);
 		} else {
 			processedLines.push(line);
 		}
@@ -154,6 +242,25 @@ function processBlocks(content: string, isLayout: boolean = false): string {
 
 // ===== RENDERING =====
 
+function createBlockFunction(
+	blocks: Record<string, Block>,
+	isLayout: boolean,
+): (name: string, html?: string) => Block | undefined {
+	if (isLayout) {
+		return (name: string): Block | undefined => blocks[name] || undefined;
+	}
+
+	return (name: string, html?: string): Block | undefined => {
+		if (!blocks[name]) {
+			blocks[name] = new Block();
+		}
+		if (html) {
+			blocks[name].append(html);
+		}
+		return blocks[name];
+	};
+}
+
 function createRenderingContext(
 	data: Record<string, any>,
 	blocks: Record<string, Block>,
@@ -162,17 +269,7 @@ function createRenderingContext(
 ): EjsRenderingContext {
 	const context: EjsRenderingContext = {
 		...data,
-		block: isLayout
-			? (name: string): Block | undefined => blocks[name] || undefined
-			: (name: string, html?: string): Block | undefined => {
-					if (!blocks[name]) {
-						blocks[name] = new Block();
-					}
-					if (html) {
-						blocks[name].append(html);
-					}
-					return blocks[name];
-				},
+		block: createBlockFunction(blocks, isLayout),
 		layout: (): void => {},
 		partial: (view: string): string => {
 			console.warn(`Partial '${view}' not found - partials not yet implemented`);
@@ -196,26 +293,7 @@ async function renderWithBlocks(
 	const renderContext = createRenderingContext(data, blocks);
 
 	const rawBody = await ejsEngine.render(content, renderContext, { async: true, ...ejsOptions });
-
-	// Clean up excessive blank lines
-	const body = rawBody
-		.split('\n')
-		.reduce((acc, line, index, lines) => {
-			const trimmedLine = line.trim();
-			if (acc.length === 0 && trimmedLine === '') return acc;
-
-			if (trimmedLine === '') {
-				const lastLine = acc[acc.length - 1];
-				if (lastLine && lastLine.trim() !== '') {
-					acc.push(line);
-				}
-			} else {
-				acc.push(line);
-			}
-			return acc;
-		}, [] as string[])
-		.join('\n')
-		.trim();
+	const body = cleanupBlankLines(rawBody);
 
 	return { body, blocks };
 }
@@ -231,38 +309,36 @@ async function renderLayout(
 	return await ejsEngine.render(layoutContent, layoutContext, { async: true, ...ejsOptions });
 }
 
+async function processWithoutLayout(content: string, data: Record<string, any>, ejsOptions: any = {}): Promise<string> {
+	const blocks: Record<string, Block> = {};
+	const renderContext = createRenderingContext(data, blocks);
+	return await ejsEngine.render(content, renderContext, { async: true, ...ejsOptions });
+}
+
 // ===== LAYOUT PROCESSING =====
+
+function findLayoutInDirectory(layoutDir: string, layoutPath: string): string | null {
+	const layoutInConfiguredDir = path.resolve(layoutDir, layoutPath);
+	return fileExistsWithExtensions(layoutInConfiguredDir);
+}
 
 async function findLayoutContent(context: FileHookContext, layoutPath: string): Promise<string> {
 	const resolvedLayoutPath = resolveLayoutPath(context.sourcePath, layoutPath);
 
 	// Try exact path first
-	if (fs.existsSync(resolvedLayoutPath)) {
-		return fs.readFileSync(resolvedLayoutPath, 'utf8');
-	}
-
-	// Try with extensions
-	for (const ext of LAYOUT_EXTENSIONS) {
-		const pathWithExt = resolvedLayoutPath + ext;
-		if (fs.existsSync(pathWithExt)) {
-			return fs.readFileSync(pathWithExt, 'utf8');
-		}
+	let foundPath = fileExistsWithExtensions(resolvedLayoutPath);
+	if (foundPath) {
+		const content = readFileIfExists(foundPath);
+		if (content !== null) return content;
 	}
 
 	// Try configured layout directories
 	const layoutDirectories = collectLayoutDirectories(context);
 	for (const layoutDir of layoutDirectories) {
-		const layoutInConfiguredDir = path.resolve(layoutDir, layoutPath);
-
-		if (fs.existsSync(layoutInConfiguredDir)) {
-			return fs.readFileSync(layoutInConfiguredDir, 'utf8');
-		}
-
-		for (const ext of LAYOUT_EXTENSIONS) {
-			const pathWithExt = layoutInConfiguredDir + ext;
-			if (fs.existsSync(pathWithExt)) {
-				return fs.readFileSync(pathWithExt, 'utf8');
-			}
+		foundPath = findLayoutInDirectory(layoutDir, layoutPath);
+		if (foundPath) {
+			const content = readFileIfExists(foundPath);
+			if (content !== null) return content;
 		}
 	}
 
@@ -273,18 +349,14 @@ async function findDynamicLayout(context: FileHookContext): Promise<string | nul
 	const layoutDirectories = collectLayoutDirectories(context);
 	if (layoutDirectories.length === 0) return null;
 
-	// Get just the filename from the source file
 	const currentFileName = path.basename(context.sourcePath);
 
-	// Only look for exact filename matches in configured layout directories
+	// Look for exact filename matches in configured layout directories
 	for (const layoutDir of layoutDirectories) {
 		const layoutPath = path.resolve(layoutDir, currentFileName);
-		if (fs.existsSync(layoutPath)) {
-			try {
-				return fs.readFileSync(layoutPath, 'utf8');
-			} catch (error) {
-				continue;
-			}
+		const content = readFileIfExists(layoutPath);
+		if (content !== null) {
+			return content;
 		}
 	}
 
@@ -308,15 +380,9 @@ async function processWithLayout(
 	return { content: renderedContent, id: context.id };
 }
 
-async function processWithoutLayout(content: string, data: Record<string, any>, ejsOptions: any = {}): Promise<string> {
-	const blocks: Record<string, Block> = {};
-	const renderContext = createRenderingContext(data, blocks);
-	return await ejsEngine.render(content, renderContext, { async: true, ...ejsOptions });
-}
-
 // ===== MAIN PLUGIN =====
 
-export function ejsMate(options: { patterns?: string[]; [key: string]: any } = {}): Plugin {
+export default function plugin(options: { patterns?: string[]; [key: string]: any } = {}): Plugin {
 	const defaultPatterns = ['*'];
 	const patterns = options.patterns || defaultPatterns;
 
@@ -331,6 +397,29 @@ export function ejsMate(options: { patterns?: string[]; [key: string]: any } = {
 		});
 	}
 
+	async function processTemplate(context: FileHookContext): Promise<LayoutResult> {
+		// Preprocess blocks
+		const preprocessedContent = processBlocks(context.content);
+
+		// Check for explicit layout
+		const layoutMatch = preprocessedContent.match(PATTERNS.explicitLayout);
+		if (layoutMatch) {
+			const contentWithoutLayout = preprocessedContent.replace(PATTERNS.explicitLayout, '');
+			const layoutContent = await findLayoutContent(context, layoutMatch[1]);
+			return await processWithLayout(context, layoutMatch[1], contentWithoutLayout, layoutContent, ejsOptions);
+		}
+
+		// Check for dynamic layout in configured directories
+		const dynamicLayoutContent = await findDynamicLayout(context);
+		if (dynamicLayoutContent) {
+			return await processWithLayout(context, 'dynamic', preprocessedContent, dynamicLayoutContent, ejsOptions);
+		}
+
+		// No layout, just render EJS
+		const renderedContent = await processWithoutLayout(preprocessedContent, context.data, ejsOptions);
+		return { content: renderedContent, id: context.id };
+	}
+
 	return {
 		compile: async (context: FileHookContext) => {
 			// Only compile files that match our patterns
@@ -343,43 +432,10 @@ export function ejsMate(options: { patterns?: string[]; [key: string]: any } = {
 					return { content: context.content, id: context.id };
 				}
 
-				// Preprocess blocks
-				const preprocessedContent = processBlocks(context.content);
-
-				// Check for explicit layout
-				const layoutMatch = preprocessedContent.match(PATTERNS.explicitLayout);
-				if (layoutMatch) {
-					const contentWithoutLayout = preprocessedContent.replace(PATTERNS.explicitLayout, '');
-					const layoutContent = await findLayoutContent(context, layoutMatch[1]);
-					return await processWithLayout(
-						context,
-						layoutMatch[1],
-						contentWithoutLayout,
-						layoutContent,
-						ejsOptions,
-					);
-				}
-
-				// Check for dynamic layout in configured directories
-				const dynamicLayoutContent = await findDynamicLayout(context);
-				if (dynamicLayoutContent) {
-					return await processWithLayout(
-						context,
-						'dynamic',
-						preprocessedContent,
-						dynamicLayoutContent,
-						ejsOptions,
-					);
-				}
-
-				// No layout, just render EJS
-				const renderedContent = await processWithoutLayout(preprocessedContent, context.data, ejsOptions);
-				return { content: renderedContent, id: context.id };
+				return await processTemplate(context);
 			} catch (error) {
 				throw new Error(`Error processing EJS-Mate template: ${error}`);
 			}
 		},
 	};
 }
-
-export default ejsMate;

@@ -3,10 +3,10 @@
 import { Command } from 'commander';
 import { Combino } from './index.js';
 import { TemplateOptions, MergeStrategy } from './types.js';
-import { ejs } from './plugins/ejs.js';
-import { ejsMate } from './plugins/ejs-mate.js';
-import { handlebars } from './plugins/handlebars.js';
-import { mustache } from './plugins/mustache.js';
+import ejs from './plugins/ejs.js';
+import ejsMate from './plugins/ejs-mate.js';
+import handlebars from './plugins/handlebars.js';
+import mustache from './plugins/mustache.js';
 import { Plugin } from './plugins/types.js';
 import * as fs from 'fs';
 import * as path from 'path';

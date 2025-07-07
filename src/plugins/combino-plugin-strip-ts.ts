@@ -39,7 +39,7 @@ class CombinoStripTSPlugin {
  * Combino Strip TS Plugin Factory Function
  * Creates a plugin that provides TypeScript stripping and file commenting functionality
  */
-export function stripTS(options: PluginOptions = {}): Plugin {
+export default function plugin(options: PluginOptions = {}): Plugin {
 	const assemble: FileHook = async (context: FileHookContext): Promise<FileHookResult> => {
 		const { content } = context;
 		const targetPath = context.id;
@@ -156,9 +156,3 @@ export function stripTS(options: PluginOptions = {}): Plugin {
 		assemble,
 	};
 }
-
-// Default export for convenience
-export default stripTS;
-
-// Export combinoCore for backward compatibility with tests
-export const combinoCore = stripTS;

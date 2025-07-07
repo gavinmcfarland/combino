@@ -25,7 +25,7 @@ function stripFrontMatter(content: string): string {
  * EJS Plugin Factory Function
  * Creates a plugin that processes EJS templates
  */
-export function ejs(options: any = {}): Plugin {
+export default function plugin(options: any = {}): Plugin {
 	return {
 		filePattern: options.patterns || [
 			'*.ejs',
@@ -70,6 +70,3 @@ export function ejs(options: any = {}): Plugin {
 		},
 	};
 }
-
-// Default export for convenience
-export default ejs;

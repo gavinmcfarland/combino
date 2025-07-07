@@ -62,7 +62,7 @@ async function handlebarsTransform(context: FileHookContext): Promise<FileHookRe
  * Handlebars Plugin Factory Function
  * This is the main export for the standalone Handlebars plugin
  */
-export function handlebars(options: any = {}): Plugin {
+export default function plugin(options: any = {}): Plugin {
 	return {
 		filePattern: options.patterns || ['*.hbs', '*.handlebars'],
 		compile: async (context: FileHookContext): Promise<FileHookResult> => {
@@ -77,6 +77,3 @@ export function handlebars(options: any = {}): Plugin {
 		},
 	};
 }
-
-// Default export for convenience
-export default handlebars;
