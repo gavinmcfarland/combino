@@ -1,0 +1,7 @@
+{
+	"data": {
+		"framework": "react"
+	},
+	"plugins": ["ejs"],
+	"description": "Test advanced key-based array merging with complex scenarios"
+}

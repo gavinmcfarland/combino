@@ -1,0 +1,7 @@
+{
+	"data": {
+		"framework": "react"
+	},
+	"plugins": ["ejs"],
+	"description": "Test handling of empty JSON configuration files"
+}

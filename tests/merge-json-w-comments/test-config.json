@@ -1,0 +1,7 @@
+{
+	"data": {
+		"framework": "svelte"
+	},
+	"plugins": ["ejs"],
+	"description": "Test JSON merging with comments preservation functionality"
+}

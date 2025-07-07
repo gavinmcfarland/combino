@@ -1,0 +1,7 @@
+{
+	"data": {
+		"framework": "svelte"
+	},
+	"plugins": ["ejs"],
+	"description": "Test reproducing Figma-specific template generation scenarios"
+}
