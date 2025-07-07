@@ -1,5 +1,11 @@
 # combino
 
+## 0.1.6
+
+### Patch Changes
+
+- Refactored to use plugins
+
 ## 0.1.2
 
 ### Patch Changes
