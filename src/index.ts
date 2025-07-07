@@ -54,11 +54,11 @@ export class Combino {
 		// Step 5: Merge files (without formatting)
 		const mergedFiles = await this.fileWriter.mergeFiles(compiledFiles);
 
-		// Step 6: Post-merge processing with plugins (postMerge hook)
-		const postMergedFiles = await this.fileProcessor.postMergeProcess(mergedFiles, globalData, this.pluginManager);
+		// Step 6: Assemble files with plugins (assemble hook)
+		const assembledFiles = await this.fileProcessor.assembleFiles(mergedFiles, globalData, this.pluginManager);
 
 		// Step 7: Format merged files with Prettier (centralized formatting)
-		const formattedFiles = await this.fileFormatter.formatFiles(postMergedFiles);
+		const formattedFiles = await this.fileFormatter.formatFiles(assembledFiles);
 
 		// Step 8: Write formatted files to output
 		await this.fileWriter.writeFiles(formattedFiles, options.outputDir);

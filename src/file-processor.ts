@@ -104,15 +104,15 @@ export class FileProcessor {
 		return compiledFiles;
 	}
 
-	async postMergeProcess(
+	async assembleFiles(
 		mergedFiles: ProcessedFile[],
 		data: Record<string, any>,
 		pluginManager: PluginManager,
 	): Promise<ProcessedFile[]> {
-		const postMergedFiles: ProcessedFile[] = [];
+		const assembledFiles: ProcessedFile[] = [];
 
 		for (const file of mergedFiles) {
-			// Process merged file content with plugins (postMerge hook)
+			// Process merged file content with plugins (assemble hook)
 			const context = {
 				sourcePath: file.sourcePath,
 				id: file.targetPath,
@@ -120,16 +120,16 @@ export class FileProcessor {
 				data,
 			};
 
-			const result = await pluginManager.postMerge(context);
+			const result = await pluginManager.assemble(context);
 
-			postMergedFiles.push({
+			assembledFiles.push({
 				...file,
 				targetPath: result.id || file.targetPath,
 				content: result.content,
 			});
 		}
 
-		return postMergedFiles;
+		return assembledFiles;
 	}
 
 	private applyConditionalLogic(path: string, data: Record<string, any>): string | null {

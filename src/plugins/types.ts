@@ -48,8 +48,8 @@ export interface Plugin {
 	filePattern?: string[];
 	/** Compile hook for full file processing with template context */
 	compile?: FileHook;
-	/** Post-merge hook for processing files after merging but before formatting */
-	postMerge?: FileHook;
+	/** Assemble hook for processing files after merging but before formatting */
+	assemble?: FileHook;
 }
 
 /**
@@ -168,10 +168,10 @@ export class PluginManager {
 		return this.compile(contextWithTemplates);
 	}
 
-	async postMerge(context: FileHookContext): Promise<FileHookResult> {
-		// Collect all plugins that should process this file after merging
+	async assemble(context: FileHookContext): Promise<FileHookResult> {
+		// Collect all plugins that should process this file during assembly
 		const matchingPlugins = this.plugins.filter((plugin) => {
-			if (!plugin.postMerge) return false;
+			if (!plugin.assemble) return false;
 
 			// If plugin has specific file patterns, only include if it matches
 			if (plugin.filePattern && plugin.filePattern.length > 0) {
@@ -193,7 +193,7 @@ export class PluginManager {
 
 		for (const plugin of matchingPlugins) {
 			try {
-				const hookResult = await Promise.resolve(plugin.postMerge!(currentContext));
+				const hookResult = await Promise.resolve(plugin.assemble!(currentContext));
 				result = {
 					content: hookResult.content,
 					id: typeof hookResult.id === 'string' ? hookResult.id : (currentContext.id ?? ''),
@@ -204,7 +204,7 @@ export class PluginManager {
 					id: result.id ?? '',
 				};
 			} catch (error) {
-				console.error(`Error in post-merge processing with plugin:`, error);
+				console.error(`Error in assembly processing with plugin:`, error);
 				// Continue with the previous result on error
 			}
 		}
