@@ -124,19 +124,10 @@ svelte.config.js          # Unique file copied from svelte template
 
     Compose temapltes with dynamic paths and target mapping. You can use either plain strings or objects with source/target properties.
 
-    **Example (Plain strings)**
-
-    ```json
-    {
-        "include": ["../base", "../components"]
-    }
-    ```
-
-    **Example (Objects with target mapping)**
-
     ```json
     {
         "include": [
+            "../base",
             {
                 "source": "../components",
                 "target": "src/ui"
@@ -226,21 +217,13 @@ export function plugin(options = {}): Plugin {
 
 Plugins can use two hooks to process files at different stages:
 
-#### `compile` Hook
+- **`compile`**
 
-Processes individual template files before merging.
+    Processes individual template files before merging. After template resolution, before file merging. Use for template rendering, syntax processing, content generation.
 
-- **When**: After template resolution, before file merging
-- **Use for**: Template rendering, syntax processing, content generation
-- **Context**: Individual file content and template data
+- **`assemble`**
 
-#### `assemble` Hook
-
-Processes files after merging but before formatting.
-
-- **When**: After file merging, before code formatting
-- **Use for**: Final transformations, cleanup, file conversion
-- **Context**: Merged file content and global data
+    Processes files after merging but before formatting. After file merging, before code formatting. Use for final transformations, cleanup, file conversion.
 
 ### Plugin Context
 
