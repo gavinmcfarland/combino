@@ -46,10 +46,10 @@ export type FileHook = (context: FileHookContext) => Promise<FileHookResult> | F
 export interface Plugin {
 	/** File patterns this plugin should handle (e.g., ["*.ejs", "*.hbs"]) */
 	filePattern?: string[];
-	/** Transform hook for file processing during template phase (with full template context) */
-	transform?: FileHook;
-	/** Process hook for file building phase (without template context, just file content) */
-	process?: FileHook;
+	/** Compile hook for full file processing with template context */
+	compile?: FileHook;
+	/** Post-merge hook for processing files after merging but before formatting */
+	postMerge?: FileHook;
 }
 
 /**
@@ -110,14 +110,14 @@ export class PluginManager {
 			data,
 		};
 
-		const result = await this.process(context);
+		const result = await this.compile(context);
 		return result.content;
 	}
 
-	async transform(context: FileHookContext): Promise<FileHookResult> {
-		// Collect all plugins that should process this file during template phase
+	async compile(context: FileHookContext): Promise<FileHookResult> {
+		// Collect all plugins that should compile this file
 		const matchingPlugins = this.plugins.filter((plugin) => {
-			if (!plugin.transform) return false;
+			if (!plugin.compile) return false;
 
 			// If plugin has specific file patterns, only include if it matches
 			if (plugin.filePattern && plugin.filePattern.length > 0) {
@@ -139,7 +139,7 @@ export class PluginManager {
 
 		for (const plugin of matchingPlugins) {
 			try {
-				const hookResult = await Promise.resolve(plugin.transform!(currentContext));
+				const hookResult = await Promise.resolve(plugin.compile!(currentContext));
 				result = {
 					content: hookResult.content,
 					id: typeof hookResult.id === 'string' ? hookResult.id : (currentContext.id ?? ''),
@@ -150,7 +150,7 @@ export class PluginManager {
 					id: result.id ?? '',
 				};
 			} catch (error) {
-				console.error(`Error transforming with plugin:`, error);
+				console.error(`Error compiling with plugin:`, error);
 				// Continue with the previous result on error
 			}
 		}
@@ -158,58 +158,58 @@ export class PluginManager {
 		return result;
 	}
 
-	async process(context: FileHookContext): Promise<FileHookResult> {
-		// Collect all plugins that should process this file during file building phase
-		const matchingPlugins = this.plugins.filter((plugin) => {
-			if (!plugin.process) return false;
-
-			// If plugin has specific file patterns, only include if it matches
-			if (plugin.filePattern && plugin.filePattern.length > 0) {
-				return plugin.filePattern.some((pattern) => this.matchesPattern(context.id, pattern));
-			}
-
-			// If plugin has no patterns, include it for all files
-			return true;
-		});
-
-		let result: FileHookResult = {
-			content: context.content,
-			id: context.id,
-		};
-		let currentContext = {
-			...context,
-			id: context.id ?? '',
-		};
-
-		for (const plugin of matchingPlugins) {
-			try {
-				const hookResult = await Promise.resolve(plugin.process!(currentContext));
-				result = {
-					content: hookResult.content,
-					id: typeof hookResult.id === 'string' ? hookResult.id : (currentContext.id ?? ''),
-				};
-				currentContext = {
-					...currentContext,
-					content: result.content,
-					id: result.id ?? '',
-				};
-			} catch (error) {
-				console.error(`Error processing with plugin:`, error);
-				// Continue with the previous result on error
-			}
-		}
-
-		return result;
-	}
-
-	async transformWithTemplates(context: FileHookContext, allTemplates: TemplateInfo[]): Promise<FileHookResult> {
+	async compileWithTemplates(context: FileHookContext, allTemplates: TemplateInfo[]): Promise<FileHookResult> {
 		// Add template information to the context
 		const contextWithTemplates: FileHookContext = {
 			...context,
 			allTemplates,
 		};
 
-		return this.transform(contextWithTemplates);
+		return this.compile(contextWithTemplates);
+	}
+
+	async postMerge(context: FileHookContext): Promise<FileHookResult> {
+		// Collect all plugins that should process this file after merging
+		const matchingPlugins = this.plugins.filter((plugin) => {
+			if (!plugin.postMerge) return false;
+
+			// If plugin has specific file patterns, only include if it matches
+			if (plugin.filePattern && plugin.filePattern.length > 0) {
+				return plugin.filePattern.some((pattern) => this.matchesPattern(context.id, pattern));
+			}
+
+			// If plugin has no patterns, include it for all files
+			return true;
+		});
+
+		let result: FileHookResult = {
+			content: context.content,
+			id: context.id,
+		};
+		let currentContext = {
+			...context,
+			id: context.id ?? '',
+		};
+
+		for (const plugin of matchingPlugins) {
+			try {
+				const hookResult = await Promise.resolve(plugin.postMerge!(currentContext));
+				result = {
+					content: hookResult.content,
+					id: typeof hookResult.id === 'string' ? hookResult.id : (currentContext.id ?? ''),
+				};
+				currentContext = {
+					...currentContext,
+					content: result.content,
+					id: result.id ?? '',
+				};
+			} catch (error) {
+				console.error(`Error in post-merge processing with plugin:`, error);
+				// Continue with the previous result on error
+			}
+		}
+
+		return result;
 	}
 
 	getPlugins(): Plugin[] {

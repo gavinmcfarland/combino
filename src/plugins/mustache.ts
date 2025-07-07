@@ -65,19 +65,14 @@ async function mustacheTransform(context: FileHookContext): Promise<FileHookResu
 export function mustache(options: any = {}): Plugin {
 	return {
 		filePattern: options.patterns || ['*.mustache'],
-		process: async (context: FileHookContext): Promise<FileHookResult> => {
+		compile: async (context: FileHookContext): Promise<FileHookResult> => {
 			try {
 				const content = Mustache.render(context.content, context.data, options.partials);
 				return { content };
 			} catch (error) {
-				console.error('Mustache processing error:', error);
+				console.error('Mustache compilation error:', error);
 				return { content: context.content };
 			}
-		},
-		transform: async (context: FileHookContext): Promise<FileHookResult> => {
-			// Transform hook can be used for additional processing
-			// For now, just return the content as-is
-			return { content: context.content };
 		},
 	};
 }

@@ -9,6 +9,7 @@ import { handlebars } from '../src/plugins/handlebars.js';
 import { mustache } from '../src/plugins/mustache.js';
 import { Plugin } from '../src/plugins/types.js';
 import { assertDirectoriesEqual } from '../utils/directory-compare.js';
+import { stripTS } from '../src/plugins/combino-plugin-strip-ts.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -30,13 +31,14 @@ const pluginMap: Record<string, (options?: any) => Plugin> = {
 	'ejs-mate': (options) => ejsMate(options),
 	handlebars: (options) => handlebars(options),
 	mustache: (options) => mustache(options),
+	stripTS: (options) => stripTS(options),
 	custom: (options) => {
 		// Custom plugin for plugin architecture tests
 		return {
-			process: async (context) => {
+			compile: async (context) => {
 				let content = context.content;
 
-				// Apply different transformations based on file type
+				// Apply all transformations in one place (combines old process and transform logic)
 				if (context.id.endsWith('.md')) {
 					content = content
 						.replace(
@@ -44,8 +46,12 @@ const pluginMap: Record<string, (options?: any) => Plugin> = {
 							'This content should be modified by the process hook. [PROCESSED]',
 						)
 						.replace(
+							'This content should be modified by the transform hook with template context.',
+							'This content should be modified by the transform hook with template context. [TRANSFORMED]',
+						)
+						.replace(
 							'This content should be processed by both hooks in sequence.',
-							'This content should be processed by both hooks in sequence. [PROCESSED]',
+							'This content should be processed by both hooks in sequence. [PROCESSED] [TRANSFORMED]',
 						);
 				} else if (context.id.endsWith('.json')) {
 					try {
@@ -57,33 +63,15 @@ const pluginMap: Record<string, (options?: any) => Plugin> = {
 					}
 				} else if (context.id.endsWith('.txt')) {
 					content =
-						content.replace(
-							'# Process hook should add a comment',
-							'# Process hook should add a comment [PROCESSED]',
-						) + '\n\n# Added by plugin process hook';
-				}
-
-				return { content, id: context.id };
-			},
-			transform: async (context) => {
-				let content = context.content;
-
-				// Apply transform-specific changes (executed AFTER process hook)
-				if (context.id.endsWith('.md')) {
-					content = content
-						.replace(
-							'This content should be modified by the transform hook with template context.',
-							'This content should be modified by the transform hook with template context. [TRANSFORMED]',
-						)
-						.replace(
-							'This content should be processed by both hooks in sequence. [PROCESSED]',
-							'This content should be processed by both hooks in sequence. [PROCESSED] [TRANSFORMED]',
-						);
-				} else if (context.id.endsWith('.txt')) {
-					content = content.replace(
-						'# Transform hook should modify content',
-						'# Transform hook should modify content [TRANSFORMED]',
-					);
+						content
+							.replace(
+								'# Process hook should add a comment',
+								'# Process hook should add a comment [PROCESSED]',
+							)
+							.replace(
+								'# Transform hook should modify content',
+								'# Transform hook should modify content [TRANSFORMED]',
+							) + '\n\n# Added by plugin compile hook';
 				}
 
 				return { content, id: context.id };

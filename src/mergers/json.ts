@@ -286,7 +286,7 @@ export async function mergeJson(
 				content,
 				data: templateData,
 			};
-			const result = await pluginManager.process(context);
+			const result = await pluginManager.compile(context);
 			return result.content;
 		} catch (error) {
 			console.error('Error processing template:', error);

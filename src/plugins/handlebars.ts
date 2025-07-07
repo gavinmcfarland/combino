@@ -65,20 +65,15 @@ async function handlebarsTransform(context: FileHookContext): Promise<FileHookRe
 export function handlebars(options: any = {}): Plugin {
 	return {
 		filePattern: options.patterns || ['*.hbs', '*.handlebars'],
-		process: async (context: FileHookContext): Promise<FileHookResult> => {
+		compile: async (context: FileHookContext): Promise<FileHookResult> => {
 			try {
 				const template = Handlebars.compile(context.content, options);
 				const content = template(context.data);
 				return { content };
 			} catch (error) {
-				console.error('Handlebars processing error:', error);
+				console.error('Handlebars compilation error:', error);
 				return { content: context.content };
 			}
-		},
-		transform: async (context: FileHookContext): Promise<FileHookResult> => {
-			// Transform hook can be used for additional processing
-			// For now, just return the content as-is
-			return { content: context.content };
 		},
 	};
 }

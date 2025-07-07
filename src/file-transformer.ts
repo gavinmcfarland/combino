@@ -32,7 +32,7 @@ export class FileTransformer {
 				allTemplates: templateInfos,
 			};
 
-			const result = await pluginManager.transformWithTemplates(context, templateInfos);
+			const result = await pluginManager.compileWithTemplates(context, templateInfos);
 
 			transformedFiles.push({
 				...file,

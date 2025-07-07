@@ -332,32 +332,8 @@ export function ejsMate(options: { patterns?: string[]; [key: string]: any } = {
 	}
 
 	return {
-		process: async (context) => {
-			// Only process files that match our patterns
-			if (!matchesPatterns(context.id)) {
-				return { content: context.content, id: context.id };
-			}
-
-			try {
-				const safeData = context.data || {};
-				const renderedContent = await ejsEngine.render(context.content, safeData, {
-					async: true,
-					...ejsOptions,
-				});
-				return {
-					content: renderedContent,
-					id: context.id,
-				};
-			} catch (error) {
-				return {
-					content: context.content,
-					id: context.id,
-				};
-			}
-		},
-
-		transform: async (context: FileHookContext) => {
-			// Only transform files that match our patterns
+		compile: async (context: FileHookContext) => {
+			// Only compile files that match our patterns
 			if (!matchesPatterns(context.id)) {
 				return { content: context.content, id: context.id };
 			}

@@ -1,0 +1,7 @@
+{
+	"data": {
+		"framework": "react"
+	},
+	"plugins": ["stripTS"],
+	"description": "Removes TypeScript syntax from the input file"
+}

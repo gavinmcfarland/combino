@@ -43,9 +43,8 @@ export function ejs(options: any = {}): Plugin {
 			'*.yml',
 			'*.xml',
 		],
-		// Process hook: Operates on template files BEFORE merging/copying/output
-		// This processes the raw template content before any file operations
-		process: async (context: FileHookContext): Promise<FileHookResult> => {
+		// Compile hook: Full EJS template processing
+		compile: async (context: FileHookContext): Promise<FileHookResult> => {
 			// Strip front matter from content before processing
 			const contentWithoutFrontMatter = stripFrontMatter(context.content);
 
@@ -65,16 +64,9 @@ export function ejs(options: any = {}): Plugin {
 				});
 				return { content };
 			} catch (error) {
-				console.error('EJS processing error:', error);
+				console.error('EJS compilation error:', error);
 				return { content: contentWithoutFrontMatter };
 			}
-		},
-		// Transform hook: Operates on output files AFTER merging/copying but BEFORE formatting
-		// This processes the final output content before prettier formatting
-		transform: async (context: FileHookContext): Promise<FileHookResult> => {
-			// Transform hook can be used for additional processing
-			// For now, just return the content as-is
-			return { content: context.content };
 		},
 	};
 }

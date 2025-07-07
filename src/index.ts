@@ -48,22 +48,17 @@ export class Combino {
 		// Step 3: Collect all data from config files
 		const globalData = await this.dataCollector.collectData(resolvedTemplates, options.data || {});
 
-		// Step 4: Process all files with plugins (process hook)
-		const processedFiles = await this.fileProcessor.processFiles(resolvedTemplates, globalData, this.pluginManager);
+		// Step 4: Compile all files with plugins (single compile hook)
+		const compiledFiles = await this.fileProcessor.compileFiles(resolvedTemplates, globalData, this.pluginManager);
 
-		// Step 5: Transform files with plugins (transform hook)
-		const transformedFiles = await this.fileTransformer.transformFiles(
-			processedFiles,
-			resolvedTemplates,
-			globalData,
-			this.pluginManager,
-		);
+		// Step 5: Merge files (without formatting)
+		const mergedFiles = await this.fileWriter.mergeFiles(compiledFiles);
 
-		// Step 6: Merge files (without formatting)
-		const mergedFiles = await this.fileWriter.mergeFiles(transformedFiles);
+		// Step 6: Post-merge processing with plugins (postMerge hook)
+		const postMergedFiles = await this.fileProcessor.postMergeProcess(mergedFiles, globalData, this.pluginManager);
 
 		// Step 7: Format merged files with Prettier (centralized formatting)
-		const formattedFiles = await this.fileFormatter.formatFiles(mergedFiles);
+		const formattedFiles = await this.fileFormatter.formatFiles(postMergedFiles);
 
 		// Step 8: Write formatted files to output
 		await this.fileWriter.writeFiles(formattedFiles, options.outputDir);
@@ -71,5 +66,5 @@ export class Combino {
 }
 
 export { PluginManager } from './plugins/types.js';
-export type { Plugin, FileHookContext, FileHookResult } from './plugins/types.js';
-export type { TemplateOptions, CombinoConfig, MergeStrategy, FileHook } from './types.js';
+export type { Plugin, FileHookContext, FileHookResult, FileHook } from './plugins/types.js';
+export type { TemplateOptions, CombinoConfig, MergeStrategy } from './types.js';

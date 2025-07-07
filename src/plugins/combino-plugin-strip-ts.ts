@@ -40,7 +40,7 @@ class CombinoStripTSPlugin {
  * Creates a plugin that provides TypeScript stripping and file commenting functionality
  */
 export function stripTS(options: PluginOptions = {}): Plugin {
-	const transform: FileHook = async (context: FileHookContext): Promise<FileHookResult> => {
+	const postMerge: FileHook = async (context: FileHookContext): Promise<FileHookResult> => {
 		const { content } = context;
 		const targetPath = context.id;
 		const ext = path.extname(targetPath);
@@ -153,7 +153,7 @@ export function stripTS(options: PluginOptions = {}): Plugin {
 
 	return {
 		filePattern: ['*'],
-		transform,
+		postMerge,
 	};
 }
 

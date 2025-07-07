@@ -2,7 +2,7 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { glob } from 'glob';
 import { Parser } from 'expr-eval';
-import { ResolvedTemplate, ResolvedFile, ProcessedFile, CombinoConfig, MergeStrategy } from './types.js';
+import { ResolvedTemplate, ResolvedFile, ProcessedFile, CombinoConfig, MergeStrategy, TemplateInfo } from './types.js';
 import { PluginManager } from './plugins/types.js';
 
 export class FileProcessor {
@@ -46,12 +46,24 @@ export class FileProcessor {
 		return files;
 	}
 
-	async processFiles(
+	async compileFiles(
 		templates: ResolvedTemplate[],
 		data: Record<string, any>,
 		pluginManager: PluginManager,
 	): Promise<ProcessedFile[]> {
-		const processedFiles: ProcessedFile[] = [];
+		const compiledFiles: ProcessedFile[] = [];
+
+		// Convert templates to TemplateInfo format for plugin context
+		const templateInfos: TemplateInfo[] = templates.map((template) => ({
+			path: template.path,
+			targetDir: template.targetDir,
+			config: template.config,
+			files: template.files.map((file) => ({
+				sourcePath: file.sourcePath,
+				targetPath: file.targetPath,
+				content: file.content,
+			})),
+		}));
 
 		for (const template of templates) {
 			for (const file of template.files) {
@@ -66,20 +78,21 @@ export class FileProcessor {
 				const targetPath = this.applyConditionalLogic(file.targetPath, data);
 				if (!targetPath) continue; // File excluded by conditional logic
 
-				// Process file content with plugins (process hook)
+				// Compile file content with plugins (single compile hook with full context)
 				const context = {
 					sourcePath: file.sourcePath,
 					id: targetPath,
 					content: file.content,
 					data,
+					allTemplates: templateInfos,
 				};
 
-				const result = await pluginManager.process(context);
+				const result = await pluginManager.compileWithTemplates(context, templateInfos);
 
 				// Determine merge strategy
 				const mergeStrategy = this.getMergeStrategy(file, template.config);
 
-				processedFiles.push({
+				compiledFiles.push({
 					sourcePath: file.sourcePath,
 					targetPath: result.id || targetPath,
 					content: result.content,
@@ -88,7 +101,35 @@ export class FileProcessor {
 			}
 		}
 
-		return processedFiles;
+		return compiledFiles;
+	}
+
+	async postMergeProcess(
+		mergedFiles: ProcessedFile[],
+		data: Record<string, any>,
+		pluginManager: PluginManager,
+	): Promise<ProcessedFile[]> {
+		const postMergedFiles: ProcessedFile[] = [];
+
+		for (const file of mergedFiles) {
+			// Process merged file content with plugins (postMerge hook)
+			const context = {
+				sourcePath: file.sourcePath,
+				id: file.targetPath,
+				content: file.content,
+				data,
+			};
+
+			const result = await pluginManager.postMerge(context);
+
+			postMergedFiles.push({
+				...file,
+				targetPath: result.id || file.targetPath,
+				content: result.content,
+			});
+		}
+
+		return postMergedFiles;
 	}
 
 	private applyConditionalLogic(path: string, data: Record<string, any>): string | null {

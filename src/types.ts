@@ -44,33 +44,13 @@ export interface FileContent {
 
 export type ConfigFile = string;
 
-export interface FileHookContext {
-	/** The source file path from the template */
-	sourcePath: string;
-	/** The target file path where the file will be written */
-	id: string;
-	/** The file content after template processing but before formatting */
-	content: string;
-	/** The data used for template processing */
-	data: Record<string, any>;
-	/** Information about all templates being processed (for layout detection) */
-	allTemplates?: TemplateInfo[];
-}
-
-export interface FileHookResult {
-	/** The transformed file content */
-	content: string;
-	/** The new target file path (optional - if not provided, original path is used) */
-	id?: string;
-}
-
-export type FileHook = (context: FileHookContext) => Promise<FileHookResult> | FileHookResult;
-
 export interface TemplateInfo {
 	/** The template path */
 	path: string;
 	/** The target directory (if specified) */
 	targetDir?: string;
+	/** The template configuration */
+	config?: CombinoConfig;
 	/** All files in this template */
 	files: Array<{
 		sourcePath: string;
