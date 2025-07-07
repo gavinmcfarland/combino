@@ -282,7 +282,7 @@ export async function mergeJson(
 		try {
 			const context = {
 				sourcePath: filePath || '',
-				targetPath: filePath || '',
+				id: filePath || '',
 				content,
 				data: templateData,
 			};

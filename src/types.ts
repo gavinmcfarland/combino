@@ -48,7 +48,7 @@ export interface FileHookContext {
 	/** The source file path from the template */
 	sourcePath: string;
 	/** The target file path where the file will be written */
-	targetPath: string;
+	id: string;
 	/** The file content after template processing but before formatting */
 	content: string;
 	/** The data used for template processing */
@@ -61,7 +61,7 @@ export interface FileHookResult {
 	/** The transformed file content */
 	content: string;
 	/** The new target file path (optional - if not provided, original path is used) */
-	targetPath?: string;
+	id?: string;
 }
 
 export type FileHook = (context: FileHookContext) => Promise<FileHookResult> | FileHookResult;

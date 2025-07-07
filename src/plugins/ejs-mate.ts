@@ -37,7 +37,7 @@ interface EjsRenderingContext {
 
 interface LayoutResult {
 	content: string;
-	targetPath: string;
+	id: string;
 }
 
 // ===== CONSTANTS =====
@@ -190,11 +190,12 @@ function createRenderingContext(
 async function renderWithBlocks(
 	content: string,
 	data: Record<string, any>,
+	ejsOptions: any = {},
 ): Promise<{ body: string; blocks: Record<string, Block> }> {
 	const blocks: Record<string, Block> = {};
 	const renderContext = createRenderingContext(data, blocks);
 
-	const rawBody = await ejsEngine.render(content, renderContext, { async: true });
+	const rawBody = await ejsEngine.render(content, renderContext, { async: true, ...ejsOptions });
 
 	// Clean up excessive blank lines
 	const body = rawBody
@@ -224,9 +225,10 @@ async function renderLayout(
 	data: Record<string, any>,
 	body: string,
 	blocks: Record<string, Block>,
+	ejsOptions: any = {},
 ): Promise<string> {
 	const layoutContext = createRenderingContext(data, blocks, true, body);
-	return await ejsEngine.render(layoutContent, layoutContext, { async: true });
+	return await ejsEngine.render(layoutContent, layoutContext, { async: true, ...ejsOptions });
 }
 
 // ===== LAYOUT PROCESSING =====
@@ -294,49 +296,75 @@ async function processWithLayout(
 	layoutPath: string,
 	contentToRender: string,
 	layoutContent: string,
+	ejsOptions: any = {},
 ): Promise<LayoutResult> {
 	// Render content with blocks
-	const { body, blocks } = await renderWithBlocks(contentToRender, context.data);
+	const { body, blocks } = await renderWithBlocks(contentToRender, context.data, ejsOptions);
 
 	// Process and render layout
 	const processedLayoutContent = processBlocks(layoutContent, true);
-	const renderedContent = await renderLayout(processedLayoutContent, context.data, body, blocks);
+	const renderedContent = await renderLayout(processedLayoutContent, context.data, body, blocks, ejsOptions);
 
-	return { content: renderedContent, targetPath: context.targetPath };
+	return { content: renderedContent, id: context.id };
 }
 
-async function processWithoutLayout(content: string, data: Record<string, any>): Promise<string> {
+async function processWithoutLayout(content: string, data: Record<string, any>, ejsOptions: any = {}): Promise<string> {
 	const blocks: Record<string, Block> = {};
 	const renderContext = createRenderingContext(data, blocks);
-	return await ejsEngine.render(content, renderContext, { async: true });
+	return await ejsEngine.render(content, renderContext, { async: true, ...ejsOptions });
 }
 
 // ===== MAIN PLUGIN =====
 
-export function ejsMate(filePattern?: string[]): Plugin {
-	return {
-		filePattern: filePattern,
+export function ejsMate(options: { patterns?: string[]; [key: string]: any } = {}): Plugin {
+	const defaultPatterns = ['*'];
+	const patterns = options.patterns || defaultPatterns;
 
+	// Extract EJS options (everything except patterns)
+	const { patterns: _, ...ejsOptions } = options;
+
+	// Helper function to check if file matches patterns
+	function matchesPatterns(filePath: string): boolean {
+		return patterns.some((pattern) => {
+			const regex = new RegExp(pattern.replace(/\./g, '\\.').replace(/\*/g, '.*').replace(/\?/g, '.'));
+			return regex.test(filePath);
+		});
+	}
+
+	return {
 		process: async (context) => {
+			// Only process files that match our patterns
+			if (!matchesPatterns(context.id)) {
+				return { content: context.content, id: context.id };
+			}
+
 			try {
 				const safeData = context.data || {};
-				const renderedContent = await ejsEngine.render(context.content, safeData, { async: true });
+				const renderedContent = await ejsEngine.render(context.content, safeData, {
+					async: true,
+					...ejsOptions,
+				});
 				return {
 					content: renderedContent,
-					targetPath: context.targetPath,
+					id: context.id,
 				};
 			} catch (error) {
 				return {
 					content: context.content,
-					targetPath: context.targetPath,
+					id: context.id,
 				};
 			}
 		},
 
 		transform: async (context: FileHookContext) => {
+			// Only transform files that match our patterns
+			if (!matchesPatterns(context.id)) {
+				return { content: context.content, id: context.id };
+			}
+
 			try {
 				if (shouldSkipProcessing(context)) {
-					return { content: context.content, targetPath: context.targetPath };
+					return { content: context.content, id: context.id };
 				}
 
 				// Preprocess blocks
@@ -347,18 +375,30 @@ export function ejsMate(filePattern?: string[]): Plugin {
 				if (layoutMatch) {
 					const contentWithoutLayout = preprocessedContent.replace(PATTERNS.explicitLayout, '');
 					const layoutContent = await findLayoutContent(context, layoutMatch[1]);
-					return await processWithLayout(context, layoutMatch[1], contentWithoutLayout, layoutContent);
+					return await processWithLayout(
+						context,
+						layoutMatch[1],
+						contentWithoutLayout,
+						layoutContent,
+						ejsOptions,
+					);
 				}
 
 				// Check for dynamic layout in configured directories
 				const dynamicLayoutContent = await findDynamicLayout(context);
 				if (dynamicLayoutContent) {
-					return await processWithLayout(context, 'dynamic', preprocessedContent, dynamicLayoutContent);
+					return await processWithLayout(
+						context,
+						'dynamic',
+						preprocessedContent,
+						dynamicLayoutContent,
+						ejsOptions,
+					);
 				}
 
 				// No layout, just render EJS
-				const renderedContent = await processWithoutLayout(preprocessedContent, context.data);
-				return { content: renderedContent, targetPath: context.targetPath };
+				const renderedContent = await processWithoutLayout(preprocessedContent, context.data, ejsOptions);
+				return { content: renderedContent, id: context.id };
 			} catch (error) {
 				throw new Error(`Error processing EJS-Mate template: ${error}`);
 			}

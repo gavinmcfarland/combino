@@ -26,7 +26,7 @@ export class FileTransformer {
 			// Transform file content with plugins (transform hook)
 			const context = {
 				sourcePath: file.sourcePath,
-				targetPath: file.targetPath,
+				id: file.targetPath,
 				content: file.content,
 				data,
 				allTemplates: templateInfos,
@@ -36,7 +36,7 @@ export class FileTransformer {
 
 			transformedFiles.push({
 				...file,
-				targetPath: result.targetPath || file.targetPath,
+				targetPath: result.id || file.targetPath,
 				content: result.content,
 			});
 		}

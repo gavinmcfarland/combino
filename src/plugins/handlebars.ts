@@ -54,7 +54,7 @@ async function handlebarsTransform(context: FileHookContext): Promise<FileHookRe
 	const renderedContent = await engine.render(context.content, context.data);
 	return {
 		content: renderedContent,
-		targetPath: context.targetPath,
+		id: context.id,
 	};
 }
 

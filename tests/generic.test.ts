@@ -37,7 +37,7 @@ const pluginMap: Record<string, (options?: any) => Plugin> = {
 				let content = context.content;
 
 				// Apply different transformations based on file type
-				if (context.targetPath.endsWith('.md')) {
+				if (context.id.endsWith('.md')) {
 					content = content
 						.replace(
 							'This content should be modified by the process hook.',
@@ -47,7 +47,7 @@ const pluginMap: Record<string, (options?: any) => Plugin> = {
 							'This content should be processed by both hooks in sequence.',
 							'This content should be processed by both hooks in sequence. [PROCESSED]',
 						);
-				} else if (context.targetPath.endsWith('.json')) {
+				} else if (context.id.endsWith('.json')) {
 					try {
 						const jsonData = JSON.parse(content);
 						jsonData.pluginProcessed = true;
@@ -55,7 +55,7 @@ const pluginMap: Record<string, (options?: any) => Plugin> = {
 					} catch {
 						// Keep original content if JSON parsing fails
 					}
-				} else if (context.targetPath.endsWith('.txt')) {
+				} else if (context.id.endsWith('.txt')) {
 					content =
 						content.replace(
 							'# Process hook should add a comment',
@@ -63,13 +63,13 @@ const pluginMap: Record<string, (options?: any) => Plugin> = {
 						) + '\n\n# Added by plugin process hook';
 				}
 
-				return { content, targetPath: context.targetPath };
+				return { content, id: context.id };
 			},
 			transform: async (context) => {
 				let content = context.content;
 
 				// Apply transform-specific changes (executed AFTER process hook)
-				if (context.targetPath.endsWith('.md')) {
+				if (context.id.endsWith('.md')) {
 					content = content
 						.replace(
 							'This content should be modified by the transform hook with template context.',
@@ -79,14 +79,14 @@ const pluginMap: Record<string, (options?: any) => Plugin> = {
 							'This content should be processed by both hooks in sequence. [PROCESSED]',
 							'This content should be processed by both hooks in sequence. [PROCESSED] [TRANSFORMED]',
 						);
-				} else if (context.targetPath.endsWith('.txt')) {
+				} else if (context.id.endsWith('.txt')) {
 					content = content.replace(
 						'# Transform hook should modify content',
 						'# Transform hook should modify content [TRANSFORMED]',
 					);
 				}
 
-				return { content, targetPath: context.targetPath };
+				return { content, id: context.id };
 			},
 		};
 	},

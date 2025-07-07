@@ -69,7 +69,7 @@ export class FileProcessor {
 				// Process file content with plugins (process hook)
 				const context = {
 					sourcePath: file.sourcePath,
-					targetPath,
+					id: targetPath,
 					content: file.content,
 					data,
 				};
@@ -81,7 +81,7 @@ export class FileProcessor {
 
 				processedFiles.push({
 					sourcePath: file.sourcePath,
-					targetPath: result.targetPath || targetPath,
+					targetPath: result.id || targetPath,
 					content: result.content,
 					mergeStrategy,
 				});
