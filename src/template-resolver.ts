@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import { join, resolve } from 'path';
-import { ResolvedTemplate, CombinoConfig } from './types.js';
+import { ResolvedTemplate, CombinoConfig, IncludeConfig, IncludeItem } from './types.js';
 import { ConfigParser } from './config-parser.js';
 import { FileProcessor } from './file-processor.js';
 
@@ -11,6 +11,23 @@ export class TemplateResolver {
 	constructor() {
 		this.configParser = new ConfigParser();
 		this.fileProcessor = new FileProcessor();
+	}
+
+	/**
+	 * Normalize include items to the object format
+	 */
+	private normalizeIncludeItem(item: IncludeItem): IncludeConfig {
+		if (typeof item === 'string') {
+			return { source: item };
+		}
+		return item;
+	}
+
+	/**
+	 * Normalize include array to object format
+	 */
+	private normalizeIncludeArray(include: IncludeItem[]): IncludeConfig[] {
+		return include.map((item) => this.normalizeIncludeItem(item));
 	}
 
 	async resolveTemplates(
@@ -28,7 +45,8 @@ export class TemplateResolver {
 				const configPath = join(resolvedPath, 'combino.json');
 				const config = await this.configParser.parseConfigFile(configPath);
 				if (config.include) {
-					for (const include of config.include) {
+					const normalizedIncludes = this.normalizeIncludeArray(config.include);
+					for (const include of normalizedIncludes) {
 						const includeSourcePath = resolve(resolvedPath, include.source);
 						includeSourcePaths.add(includeSourcePath);
 					}
@@ -43,7 +61,8 @@ export class TemplateResolver {
 			const configObj = typeof config === 'string' ? await this.configParser.parseConfigFile(config) : config;
 
 			if (configObj.include) {
-				for (const include of configObj.include) {
+				const normalizedIncludes = this.normalizeIncludeArray(configObj.include);
+				for (const include of normalizedIncludes) {
 					const resolvedPath = resolve(include.source);
 					includeSourcePaths.add(resolvedPath);
 				}
@@ -68,7 +87,8 @@ export class TemplateResolver {
 			const configObj = typeof config === 'string' ? await this.configParser.parseConfigFile(config) : config;
 
 			if (configObj.include) {
-				for (const include of configObj.include) {
+				const normalizedIncludes = this.normalizeIncludeArray(configObj.include);
+				for (const include of normalizedIncludes) {
 					const resolvedPath = resolve(include.source);
 					const template = await this.resolveTemplate(resolvedPath, include.target, globalExclude);
 					templates.push(template);
@@ -110,7 +130,8 @@ export class TemplateResolver {
 
 		// Handle includes from the template's config
 		if (config?.include) {
-			for (const include of config.include) {
+			const normalizedIncludes = this.normalizeIncludeArray(config.include);
+			for (const include of normalizedIncludes) {
 				const includeSourcePath = resolve(templatePath, include.source);
 
 				// Load the configuration from the included directory

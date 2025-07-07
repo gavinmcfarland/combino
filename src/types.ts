@@ -14,9 +14,12 @@ export interface IncludeConfig {
 	target?: string;
 }
 
+// Support both string and object formats for include configuration
+export type IncludeItem = string | IncludeConfig;
+
 export interface CombinoConfig {
 	/** Template composition - specify additional templates to include */
-	include?: IncludeConfig[];
+	include?: IncludeItem[];
 	/** Files or folders to exclude from processing */
 	exclude?: string[];
 	/** Data to pass to templates for conditional logic and templating */
