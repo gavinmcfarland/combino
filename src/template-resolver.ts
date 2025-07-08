@@ -32,23 +32,10 @@ export class TemplateResolver {
 		return include.map((item) => this.normalizeIncludeItem(item));
 	}
 
-	/**
-	 * Process template variables in include path
-	 */
-	private processIncludePath(path: string, data: Record<string, any>): string {
-		// Simple template variable replacement for include paths
-		// This handles <%= variable %> and <%- variable %> syntax
-		return path.replace(/<%[-=]\s*([^%\s]+)\s*%>/g, (match, varName) => {
-			const value = data[varName.trim()];
-			return value !== undefined ? String(value) : match;
-		});
-	}
-
 	async resolveTemplates(
 		includePaths: string[],
 		config?: CombinoConfig | string,
 		globalExclude?: string[],
-		initialData?: Record<string, any>,
 	): Promise<ResolvedTemplate[]> {
 		const templates: ResolvedTemplate[] = [];
 		const includeSourcePaths = new Set<string>();
@@ -93,7 +80,7 @@ export class TemplateResolver {
 				continue;
 			}
 
-			const template = await this.resolveTemplate(resolvedPath, undefined, globalExclude, initialData);
+			const template = await this.resolveTemplate(resolvedPath, undefined, globalExclude);
 			templates.push(template);
 		}
 
@@ -105,12 +92,7 @@ export class TemplateResolver {
 				const normalizedIncludes = this.normalizeIncludeArray(configObj.include);
 				for (const include of normalizedIncludes) {
 					const resolvedPath = resolve(include.source);
-					const template = await this.resolveTemplate(
-						resolvedPath,
-						include.target,
-						globalExclude,
-						initialData,
-					);
+					const template = await this.resolveTemplate(resolvedPath, include.target, globalExclude);
 					templates.push(template);
 				}
 			}
@@ -123,7 +105,6 @@ export class TemplateResolver {
 		templatePath: string,
 		targetDir?: string,
 		globalExclude?: string[],
-		initialData?: Record<string, any>,
 	): Promise<ResolvedTemplate> {
 		// Check if template exists
 		try {
@@ -155,11 +136,7 @@ export class TemplateResolver {
 			const includedFiles: ResolvedFile[] = [];
 
 			for (const include of normalizedIncludes) {
-				// Process template variables in include path using initial data
-				const processedIncludePath = initialData
-					? this.processIncludePath(include.source, initialData)
-					: include.source;
-				const includeSourcePath = resolve(templatePath, processedIncludePath);
+				const includeSourcePath = resolve(templatePath, include.source);
 
 				// Load the configuration from the included directory
 				const includeConfigPath = join(includeSourcePath, this.configFileName);

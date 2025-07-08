@@ -1,8 +1,0 @@
-{
-	"id": "com.test-plugin",
-	"name": "test-plugin",
-	"version": "1.0.0",
-	"main": "src/main/main.js",
-	"ui": "src/ui/ui.js",
-	"type": "plugin"
-}
