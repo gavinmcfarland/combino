@@ -1,8 +1,10 @@
+# Project Name
+
 ## Description
 
-This is a base project template.
+This is a typescript project template react.
 
-# Project Name
+This is the mainDir src/main
 
 ## Installation
 

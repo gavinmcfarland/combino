@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import { join, resolve } from 'path';
-import { ResolvedTemplate, CombinoConfig, IncludeConfig, IncludeItem } from './types.js';
+import { ResolvedTemplate, ResolvedFile, CombinoConfig, IncludeConfig, IncludeItem } from './types.js';
 import { ConfigParser } from './config-parser.js';
 import { FileProcessor } from './file-processor.js';
 
@@ -133,6 +133,8 @@ export class TemplateResolver {
 		// Handle includes from the template's config
 		if (config?.include) {
 			const normalizedIncludes = this.normalizeIncludeArray(config.include);
+			const includedFiles: ResolvedFile[] = [];
+
 			for (const include of normalizedIncludes) {
 				const includeSourcePath = resolve(templatePath, include.source);
 
@@ -143,6 +145,17 @@ export class TemplateResolver {
 					includeConfig = await this.configParser.parseConfigFile(includeConfigPath);
 				} catch {
 					// Include config file doesn't exist or is invalid, continue without it
+				}
+
+				// Merge the include config's merge strategies into the main template config
+				if (includeConfig?.merge) {
+					config = {
+						...config,
+						merge: {
+							...config.merge,
+							...includeConfig.merge,
+						},
+					};
 				}
 
 				// Merge the include config with the main config for file processing
@@ -168,8 +181,12 @@ export class TemplateResolver {
 					includeConfig: includeConfig,
 				}));
 
-				files.push(...mappedFiles);
+				includedFiles.push(...mappedFiles);
 			}
+
+			// Put included files first, then main template files
+			// This ensures that included files are the target and main template files are the source
+			files.splice(0, 0, ...includedFiles);
 		}
 
 		const template: ResolvedTemplate = {
