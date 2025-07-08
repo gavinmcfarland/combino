@@ -1,5 +1,11 @@
 # combino
 
+## 0.1.9
+
+### Patch Changes
+
+- Added support for custom config filename
+
 ## 0.1.8
 
 ### Patch Changes
