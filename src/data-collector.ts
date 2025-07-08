@@ -21,6 +21,13 @@ export class DataCollector {
 
 			// Collect data from companion files (*.json files)
 			for (const file of template.files) {
+				// Collect data from included template configs
+				if (file.includeConfig?.data) {
+					// Handle dot notation in included config data
+					const includeConfigData = this.configParser.expandDotNotation(file.includeConfig.data);
+					globalData = { ...globalData, ...includeConfigData };
+				}
+
 				// Check if this is a companion file (e.g., package.json.json)
 				// Companion files have the pattern: filename.json.json
 				const isCompanionFile = file.targetPath.match(/\.json\.json$/);
