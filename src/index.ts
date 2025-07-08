@@ -49,6 +49,7 @@ export class Combino {
 			options.include,
 			options.config,
 			options.exclude,
+			options.data,
 		);
 
 		// Step 4: Collect all data from config files

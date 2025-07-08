@@ -1,0 +1,8 @@
+{
+	"id": "com.<%- name %>",
+	"name": "<%- name %>",
+	"version": "<%- version %>",
+	"main": "<%- mainDir %>/main.js",
+	"ui": "<%- uiDir %>/ui.js",
+	"type": "<%- type %>"
+}
