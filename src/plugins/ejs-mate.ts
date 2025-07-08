@@ -1,5 +1,5 @@
 import ejsEngine from 'ejs';
-import { Plugin, FileHookContext, TemplateInfo } from './types.js';
+import { Plugin, FileHookContext, TemplateInfo } from '../types.js';
 import * as fs from 'fs';
 import * as path from 'path';
 

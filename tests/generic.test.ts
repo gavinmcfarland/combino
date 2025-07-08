@@ -7,7 +7,7 @@ import ejs from '../src/plugins/ejs.js';
 import ejsMate from '../src/plugins/ejs-mate.js';
 import handlebars from '../src/plugins/handlebars.js';
 import mustache from '../src/plugins/mustache.js';
-import { Plugin } from '../src/plugins/types.js';
+import { Plugin } from '../src/types.js';
 import { assertDirectoriesEqual } from '../utils/directory-compare.js';
 import stripTS from '../src/plugins/combino-plugin-strip-ts.js';
 

@@ -1,5 +1,5 @@
 import Handlebars from 'handlebars';
-import { Plugin, PluginOptions, FileHook, FileHookContext, FileHookResult } from './types.js';
+import { Plugin, PluginOptions, FileHook, FileHookContext, FileHookResult } from '../types.js';
 
 /**
  * Handlebars Template Engine

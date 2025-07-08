@@ -1,5 +1,5 @@
 import ejsEngine from 'ejs';
-import { Plugin, FileHookContext, FileHookResult } from './types.js';
+import { Plugin, FileHookContext, FileHookResult } from '../types.js';
 
 /**
  * Strip YAML front matter from content

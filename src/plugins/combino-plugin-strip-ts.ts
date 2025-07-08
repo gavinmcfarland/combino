@@ -1,4 +1,4 @@
-import { PluginOptions, FileHook, Plugin, FileHookContext, FileHookResult } from './types.js';
+import { PluginOptions, FileHook, Plugin, FileHookContext, FileHookResult } from '../types.js';
 import path from 'path';
 import chalk from 'chalk';
 

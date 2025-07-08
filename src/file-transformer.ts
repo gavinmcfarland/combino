@@ -1,5 +1,5 @@
 import { ProcessedFile, ResolvedTemplate, TemplateInfo } from './types.js';
-import { PluginManager } from './plugins/types.js';
+import { PluginManager } from './types.js';
 
 export class FileTransformer {
 	async transformFiles(

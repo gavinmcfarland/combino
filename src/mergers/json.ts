@@ -3,7 +3,7 @@ import deepmerge from 'deepmerge';
 import { MergeStrategy } from '../types.js';
 import ejs from 'ejs';
 import * as jsonc from 'jsonc-parser';
-import { PluginManager } from '../plugins/types.js';
+import { PluginManager } from '../types.js';
 
 // Custom array merge function that handles key-based merging for objects
 const arrayMerge = (targetArray: any[], sourceArray: any[]) => {

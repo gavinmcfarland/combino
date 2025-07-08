@@ -1,4 +1,4 @@
-import { Plugin, PluginOptions, FileHook, FileHookContext, FileHookResult } from './types.js';
+import { Plugin, PluginOptions, FileHook, FileHookContext, FileHookResult } from '../types.js';
 import Mustache from 'mustache';
 
 /**

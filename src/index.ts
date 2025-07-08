@@ -1,4 +1,4 @@
-import { PluginManager } from './plugins/types.js';
+import { PluginManager } from './types.js';
 import { TemplateOptions } from './types.js';
 import { ConfigParser } from './config-parser.js';
 import { FileProcessor } from './file-processor.js';
@@ -65,8 +65,8 @@ export class Combino {
 	}
 }
 
-export { PluginManager } from './plugins/types.js';
-export type { Plugin, FileHookContext, FileHookResult, FileHook } from './plugins/types.js';
+export { PluginManager } from './types.js';
+export type { Plugin, PluginOptions, FileHookContext, FileHookResult, FileHook } from './types.js';
 export type {
 	TemplateOptions,
 	CombinoConfig,

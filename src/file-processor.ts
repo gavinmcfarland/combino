@@ -3,7 +3,7 @@ import { join } from 'path';
 import { glob } from 'glob';
 import { Parser } from 'expr-eval';
 import { ResolvedTemplate, ResolvedFile, ProcessedFile, CombinoConfig, MergeStrategy, TemplateInfo } from './types.js';
-import { PluginManager } from './plugins/types.js';
+import { PluginManager } from './types.js';
 
 export class FileProcessor {
 	// This class is a placeholder for future file processing functionality
