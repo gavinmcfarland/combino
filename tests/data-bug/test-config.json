@@ -2,7 +2,7 @@
 	"data": {
 		"framework": "react"
 	},
-	"plugins": ["ejs"],
-	"inputDirs": ["input/typescript"],
+	"plugins": ["ejs-mate"],
+	"inputDirs": ["input/example", "input/typescript"],
 	"description": "Test data availability from included template configs"
 }

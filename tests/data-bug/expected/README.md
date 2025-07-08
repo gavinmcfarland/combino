@@ -2,9 +2,7 @@
 
 ## Description
 
-This is a typescript project template react.
-
-This is the mainDir src/main
+Override
 
 ## Installation
 
