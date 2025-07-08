@@ -1,5 +1,11 @@
 # combino
 
+## 0.1.10
+
+### Patch Changes
+
+- Fixed a big with data not being available from includes
+
 ## 0.1.9
 
 ### Patch Changes
