@@ -1,5 +1,11 @@
 # combino
 
+## 0.1.11
+
+### Patch Changes
+
+- fix for variables in config files
+
 ## 0.1.10
 
 ### Patch Changes
