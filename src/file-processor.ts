@@ -6,8 +6,11 @@ import { ResolvedTemplate, ResolvedFile, ProcessedFile, CombinoConfig, MergeStra
 import { PluginManager } from './types.js';
 
 export class FileProcessor {
-	// This class is a placeholder for future file processing functionality
-	// Currently, file processing is handled directly in the main Combino class
+	private configFileName: string;
+
+	constructor(configFileName: string = 'combino.json') {
+		this.configFileName = configFileName;
+	}
 
 	async getTemplateFiles(templatePath: string, config?: CombinoConfig): Promise<ResolvedFile[]> {
 		const files: ResolvedFile[] = [];
@@ -18,7 +21,7 @@ export class FileProcessor {
 			cwd: templatePath,
 			dot: true,
 			nodir: true,
-			ignore: [...excludePatterns, '**/combino.json', '**/config.json', '**/*.combino'],
+			ignore: [...excludePatterns, `**/${this.configFileName}`, '**/config.json', '**/*.combino'],
 		});
 
 		for (const file of allFiles) {
@@ -26,7 +29,7 @@ export class FileProcessor {
 			const content = await fs.readFile(sourcePath, 'utf-8');
 
 			// Parse file-specific config if it exists
-			const fileConfigPath = join(sourcePath, 'combino.json');
+			const fileConfigPath = join(sourcePath, this.configFileName);
 			let fileConfig;
 			try {
 				const configContent = await fs.readFile(fileConfigPath, 'utf-8');

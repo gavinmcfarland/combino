@@ -67,6 +67,8 @@ export interface TemplateOptions {
 	data?: Record<string, any>;
 	/** Plugins to use for processing templates (new plugin architecture) */
 	plugins?: Plugin[];
+	/** Custom filename for config files in template directories (default: 'combino.json') */
+	configFileName?: string;
 }
 
 export interface ResolvedTemplate {

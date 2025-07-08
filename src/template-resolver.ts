@@ -7,10 +7,12 @@ import { FileProcessor } from './file-processor.js';
 export class TemplateResolver {
 	private configParser: ConfigParser;
 	private fileProcessor: FileProcessor;
+	private configFileName: string;
 
-	constructor() {
+	constructor(configFileName: string = 'combino.json') {
 		this.configParser = new ConfigParser();
-		this.fileProcessor = new FileProcessor();
+		this.fileProcessor = new FileProcessor(configFileName);
+		this.configFileName = configFileName;
 	}
 
 	/**
@@ -42,7 +44,7 @@ export class TemplateResolver {
 		for (const includePath of includePaths) {
 			const resolvedPath = resolve(includePath);
 			try {
-				const configPath = join(resolvedPath, 'combino.json');
+				const configPath = join(resolvedPath, this.configFileName);
 				const config = await this.configParser.parseConfigFile(configPath);
 				if (config.include) {
 					const normalizedIncludes = this.normalizeIncludeArray(config.include);
@@ -111,8 +113,8 @@ export class TemplateResolver {
 			throw new Error(`Template not found: ${templatePath}`);
 		}
 
-		// Parse combino.json config if it exists
-		const configPath = join(templatePath, 'combino.json');
+		// Parse config file if it exists
+		const configPath = join(templatePath, this.configFileName);
 		let config: CombinoConfig | undefined;
 		try {
 			config = await this.configParser.parseConfigFile(configPath);
@@ -135,7 +137,7 @@ export class TemplateResolver {
 				const includeSourcePath = resolve(templatePath, include.source);
 
 				// Load the configuration from the included directory
-				const includeConfigPath = join(includeSourcePath, 'combino.json');
+				const includeConfigPath = join(includeSourcePath, this.configFileName);
 				let includeConfig: CombinoConfig | undefined;
 				try {
 					includeConfig = await this.configParser.parseConfigFile(includeConfigPath);

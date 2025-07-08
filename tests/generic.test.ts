@@ -23,6 +23,7 @@ interface TestConfig {
 	plugins?: string[]; // Array of plugin names like ["ejs", "handlebars"]
 	pluginConfigs?: Record<string, any>;
 	exclude?: string[];
+	configFileName?: string; // Custom config filename
 }
 
 // Plugin mapping
@@ -191,6 +192,7 @@ describe('Combino Integration Test Suite', () => {
 				plugins: plugins,
 				exclude: testConfig.exclude,
 				...(configFile ? { config: configFile } : {}),
+				...(testConfig.configFileName ? { configFileName: testConfig.configFileName } : {}),
 			});
 			assertDirectoriesEqual(outputDir, expectedDir, {
 				ignoreWhitespace: true,
