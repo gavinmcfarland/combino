@@ -27,24 +27,8 @@ function stripFrontMatter(content: string): string {
  */
 export default function plugin(options: any = {}): Plugin {
 	return {
-		filePattern: options.patterns || [
-			'*.ejs',
-			'*.md',
-			'*.txt',
-			'*.json',
-			'*.js',
-			'*.ts',
-			'*.jsx',
-			'*.tsx',
-			'*.html',
-			'*.css',
-			'*.scss',
-			'*.yaml',
-			'*.yml',
-			'*.xml',
-		],
 		// Compile hook: Full EJS template processing
-		compile: async (context: FileHookContext): Promise<FileHookResult> => {
+		compile: async (context: FileHookContext): Promise<FileHookResult | void> => {
 			// Strip front matter from content before processing
 			const contentWithoutFrontMatter = stripFrontMatter(context.content);
 
@@ -54,7 +38,7 @@ export default function plugin(options: any = {}): Plugin {
 				!context.content.includes('<%=') &&
 				!context.content.includes('<%-')
 			) {
-				return { content: contentWithoutFrontMatter };
+				return;
 			}
 
 			try {

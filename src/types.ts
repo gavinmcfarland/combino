@@ -133,12 +133,10 @@ export interface DiscoverResult {
 	content: string;
 }
 
-export type FileHook = (context: FileHookContext) => Promise<FileHookResult> | FileHookResult;
-export type DiscoverHook = (context: DiscoverContext) => Promise<DiscoverResult> | DiscoverResult;
+export type FileHook = (context: FileHookContext) => Promise<FileHookResult | void> | FileHookResult | void;
+export type DiscoverHook = (context: DiscoverContext) => Promise<DiscoverResult | void> | DiscoverResult | void;
 
 export interface Plugin {
-	/** File patterns this plugin should handle (e.g., ["*.ejs", "*.hbs"]) */
-	filePattern?: string[];
 	/** Discover hook for processing files before template resolution */
 	discover?: DiscoverHook;
 	/** Compile hook for full file processing with template context */
@@ -176,25 +174,15 @@ export class PluginManager {
 	}
 
 	findPlugin(filePath?: string, content?: string): Plugin | null {
-		// Pattern matching
-		if (filePath) {
-			for (const plugin of this.plugins) {
-				if (plugin.filePattern) {
-					for (const pattern of plugin.filePattern) {
-						if (this.matchesPattern(filePath, pattern)) {
-							return plugin;
-						}
-					}
-				}
+		// Return the first plugin that has a compile hook
+		// Plugins should handle their own file filtering internally
+		for (const plugin of this.plugins) {
+			if (plugin.compile) {
+				return plugin;
 			}
 		}
 
 		return this.defaultPlugin;
-	}
-
-	private matchesPattern(filePath: string, pattern: string): boolean {
-		const regex = new RegExp(pattern.replace(/\./g, '\\.').replace(/\*/g, '.*').replace(/\?/g, '.'));
-		return regex.test(filePath);
 	}
 
 	async render(content: string, data: Record<string, any>, filePath?: string): Promise<string> {
@@ -210,18 +198,9 @@ export class PluginManager {
 	}
 
 	async compile(context: FileHookContext): Promise<FileHookResult> {
-		// Collect all plugins that should compile this file
-		const matchingPlugins = this.plugins.filter((plugin) => {
-			if (!plugin.compile) return false;
-
-			// If plugin has specific file patterns, only include if it matches
-			if (plugin.filePattern && plugin.filePattern.length > 0) {
-				return plugin.filePattern.some((pattern) => this.matchesPattern(context.id, pattern));
-			}
-
-			// If plugin has no patterns, include it for all files
-			return true;
-		});
+		// Collect all plugins that have compile hooks
+		// Plugins should handle their own file filtering internally
+		const matchingPlugins = this.plugins.filter((plugin) => plugin.compile);
 
 		let result: FileHookResult = {
 			content: context.content,
@@ -235,6 +214,9 @@ export class PluginManager {
 		for (const plugin of matchingPlugins) {
 			try {
 				const hookResult = await Promise.resolve(plugin.compile!(currentContext));
+				// If hook returns void, skip this plugin
+				if (!hookResult) continue;
+
 				result = {
 					content: hookResult.content,
 					id: typeof hookResult.id === 'string' ? hookResult.id : (currentContext.id ?? ''),
@@ -264,18 +246,9 @@ export class PluginManager {
 	}
 
 	async assemble(context: FileHookContext): Promise<FileHookResult> {
-		// Collect all plugins that should process this file during assembly
-		const matchingPlugins = this.plugins.filter((plugin) => {
-			if (!plugin.assemble) return false;
-
-			// If plugin has specific file patterns, only include if it matches
-			if (plugin.filePattern && plugin.filePattern.length > 0) {
-				return plugin.filePattern.some((pattern) => this.matchesPattern(context.id, pattern));
-			}
-
-			// If plugin has no patterns, include it for all files
-			return true;
-		});
+		// Collect all plugins that have assemble hooks
+		// Plugins should handle their own file filtering internally
+		const matchingPlugins = this.plugins.filter((plugin) => plugin.assemble);
 
 		let result: FileHookResult = {
 			content: context.content,
@@ -289,6 +262,9 @@ export class PluginManager {
 		for (const plugin of matchingPlugins) {
 			try {
 				const hookResult = await Promise.resolve(plugin.assemble!(currentContext));
+				// If hook returns void, skip this plugin
+				if (!hookResult) continue;
+
 				result = {
 					content: hookResult.content,
 					id: typeof hookResult.id === 'string' ? hookResult.id : (currentContext.id ?? ''),
@@ -308,18 +284,9 @@ export class PluginManager {
 	}
 
 	async discover(context: DiscoverContext): Promise<DiscoverResult> {
-		// Collect all plugins that should discover/preprocess files
-		const matchingPlugins = this.plugins.filter((plugin) => {
-			if (!plugin.discover) return false;
-
-			// If plugin has specific file patterns, only include if it matches
-			if (plugin.filePattern && plugin.filePattern.length > 0) {
-				return plugin.filePattern.some((pattern) => this.matchesPattern(context.sourcePath, pattern));
-			}
-
-			// If plugin has no patterns, include it for all files
-			return true;
-		});
+		// Collect all plugins that have discover hooks
+		// Plugins should handle their own file filtering internally
+		const matchingPlugins = this.plugins.filter((plugin) => plugin.discover);
 
 		let result: DiscoverResult = {
 			content: context.content,
@@ -331,6 +298,9 @@ export class PluginManager {
 		for (const plugin of matchingPlugins) {
 			try {
 				const hookResult = await Promise.resolve(plugin.discover!(currentContext));
+				// If hook returns void, skip this plugin
+				if (!hookResult) continue;
+
 				result = {
 					content: hookResult.content,
 				};

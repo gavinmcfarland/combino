@@ -64,8 +64,7 @@ async function mustacheTransform(context: FileHookContext): Promise<FileHookResu
  */
 export default function plugin(options: any = {}): Plugin {
 	return {
-		filePattern: options.patterns || ['*.mustache'],
-		compile: async (context: FileHookContext): Promise<FileHookResult> => {
+		compile: async (context: FileHookContext): Promise<FileHookResult | void> => {
 			try {
 				const content = Mustache.render(context.content, context.data, options.partials);
 				return { content };

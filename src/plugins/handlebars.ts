@@ -64,8 +64,7 @@ async function handlebarsTransform(context: FileHookContext): Promise<FileHookRe
  */
 export default function plugin(options: any = {}): Plugin {
 	return {
-		filePattern: options.patterns || ['*.hbs', '*.handlebars'],
-		compile: async (context: FileHookContext): Promise<FileHookResult> => {
+		compile: async (context: FileHookContext): Promise<FileHookResult | void> => {
 			try {
 				const template = Handlebars.compile(context.content, options);
 				const content = template(context.data);
