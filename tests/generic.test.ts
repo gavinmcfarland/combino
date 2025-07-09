@@ -170,15 +170,19 @@ describe('Combino Integration Test Suite', () => {
 
 		const testConfig = getTestConfig(testCaseDir);
 
-		// Skip tests that don't have expected directories or are marked to skip
-		if (!existsSync(expectedDir) || testConfig.skip) {
-			it.skip(`${testName} - skipped - ${!existsSync(expectedDir) ? 'no expected directory' : testConfig.reason || 'marked to skip'}`, () => {
+		// Skip tests that are explicitly marked to skip
+		if (testConfig.skip) {
+			it.skip(`${testName} - skipped - ${testConfig.reason || 'marked to skip'}`, () => {
 				// Test skipped
 			});
 			return;
 		}
 
-		it(`${testName}: ${testConfig.description || 'should match expected output'}`, async () => {
+		const hasExpectedDir = existsSync(expectedDir);
+		const testDescription =
+			testConfig.description || (hasExpectedDir ? 'should match expected output' : 'should run without errors');
+
+		it(`${testName}: ${testDescription}`, async () => {
 			try {
 				rmSync(outputDir, { recursive: true, force: true });
 			} catch {}
@@ -194,10 +198,14 @@ describe('Combino Integration Test Suite', () => {
 				...(configFile ? { config: configFile } : {}),
 				...(testConfig.configFileName ? { configFileName: testConfig.configFileName } : {}),
 			});
-			assertDirectoriesEqual(outputDir, expectedDir, {
-				ignoreWhitespace: true,
-				parseJson: true,
-			});
+
+			// Only compare with expected directory if it exists
+			if (hasExpectedDir) {
+				assertDirectoriesEqual(outputDir, expectedDir, {
+					ignoreWhitespace: true,
+					parseJson: true,
+				});
+			}
 		});
 	});
 });
