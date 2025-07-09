@@ -7,9 +7,35 @@ import { PluginManager } from './types.js';
 
 export class FileProcessor {
 	private configFileName: string;
+	private combinedMergeConfig: Record<string, Record<string, any>> = {};
 
 	constructor(configFileName: string = 'combino.json') {
 		this.configFileName = configFileName;
+	}
+
+	/**
+	 * Combines merge configurations from all templates in topological order
+	 * First global config, then local configs in the order of resolvedTemplates
+	 */
+	private combineMergeConfigs(
+		templates: ResolvedTemplate[],
+		globalConfig?: CombinoConfig,
+	): Record<string, Record<string, any>> {
+		const combinedConfig: Record<string, Record<string, any>> = {};
+
+		// 1. Start with global config if provided
+		if (globalConfig?.merge) {
+			Object.assign(combinedConfig, globalConfig.merge);
+		}
+
+		// 2. Add local configs in the order of resolvedTemplates
+		for (const template of templates) {
+			if (template.config?.merge) {
+				Object.assign(combinedConfig, template.config.merge);
+			}
+		}
+
+		return combinedConfig;
 	}
 
 	async getTemplateFiles(templatePath: string, config?: CombinoConfig): Promise<ResolvedFile[]> {
@@ -53,8 +79,12 @@ export class FileProcessor {
 		templates: ResolvedTemplate[],
 		data: Record<string, any>,
 		pluginManager: PluginManager,
+		globalConfig?: CombinoConfig,
 	): Promise<ProcessedFile[]> {
 		const compiledFiles: ProcessedFile[] = [];
+
+		// Combine merge configurations in topological order
+		this.combinedMergeConfig = this.combineMergeConfigs(templates, globalConfig);
 
 		// Convert templates to TemplateInfo format for plugin context
 		const templateInfos: TemplateInfo[] = templates.map((template) => ({
@@ -92,8 +122,8 @@ export class FileProcessor {
 
 				const result = await pluginManager.compileWithTemplates(context, templateInfos);
 
-				// Determine merge strategy
-				const mergeStrategy = this.getMergeStrategy(file, template.config);
+				// Determine merge strategy using combined configuration
+				const mergeStrategy = this.getMergeStrategy(file, this.combinedMergeConfig);
 
 				compiledFiles.push({
 					sourcePath: file.sourcePath,
@@ -302,7 +332,7 @@ export class FileProcessor {
 		}
 	}
 
-	private getMergeStrategy(file: ResolvedFile, templateConfig?: CombinoConfig): MergeStrategy {
+	private getMergeStrategy(file: ResolvedFile, config: Record<string, Record<string, any>>): MergeStrategy {
 		// Check file-specific config first
 		if (file.config?.merge) {
 			for (const [pattern, config] of Object.entries(file.config.merge)) {
@@ -322,10 +352,10 @@ export class FileProcessor {
 		}
 
 		// Check template config
-		if (templateConfig?.merge) {
-			for (const [pattern, config] of Object.entries(templateConfig.merge)) {
+		if (config) {
+			for (const [pattern, mergeConfig] of Object.entries(config)) {
 				if (this.matchesPattern(file.targetPath, pattern)) {
-					return config.strategy || 'replace';
+					return mergeConfig.strategy || 'replace';
 				}
 			}
 		}

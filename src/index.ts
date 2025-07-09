@@ -44,29 +44,43 @@ export class Combino {
 			this.templateResolver = new TemplateResolver(options.configFileName);
 		}
 
-		// Step 3: Resolve all templates and collect data
+		// Step 3: Parse global config if provided
+		let globalConfig;
+		if (options.config) {
+			globalConfig =
+				typeof options.config === 'string'
+					? await this.configParser.parseConfigFile(options.config)
+					: options.config;
+		}
+
+		// Step 4: Resolve all templates and collect data
 		const resolvedTemplates = await this.templateResolver.resolveTemplates(
 			options.include,
 			options.config,
 			options.exclude,
 		);
 
-		// Step 4: Collect all data from config files
+		// Step 5: Collect all data from config files
 		const globalData = await this.dataCollector.collectData(resolvedTemplates, options.data || {});
 
-		// Step 5: Compile all files with plugins (single compile hook)
-		const compiledFiles = await this.fileProcessor.compileFiles(resolvedTemplates, globalData, this.pluginManager);
+		// Step 6: Compile all files with plugins (single compile hook)
+		const compiledFiles = await this.fileProcessor.compileFiles(
+			resolvedTemplates,
+			globalData,
+			this.pluginManager,
+			globalConfig,
+		);
 
-		// Step 6: Merge files (without formatting)
+		// Step 7: Merge files (without formatting)
 		const mergedFiles = await this.fileWriter.mergeFiles(compiledFiles);
 
-		// Step 7: Assemble files with plugins (assemble hook)
+		// Step 8: Assemble files with plugins (assemble hook)
 		const assembledFiles = await this.fileProcessor.assembleFiles(mergedFiles, globalData, this.pluginManager);
 
-		// Step 8: Format merged files with Prettier (centralized formatting)
+		// Step 9: Format merged files with Prettier (centralized formatting)
 		const formattedFiles = await this.fileFormatter.formatFiles(assembledFiles);
 
-		// Step 9: Write formatted files to output
+		// Step 10: Write formatted files to output
 		await this.fileWriter.writeFiles(formattedFiles, options.outputDir);
 	}
 }
