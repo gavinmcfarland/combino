@@ -1,5 +1,5 @@
+import { resolve, join } from 'path';
 import { promises as fs } from 'fs';
-import { join, resolve } from 'path';
 import { ResolvedTemplate, ResolvedFile, CombinoConfig, IncludeConfig, IncludeItem } from './types.js';
 import { ConfigParser } from './config-parser.js';
 import { FileProcessor } from './file-processor.js';
@@ -38,9 +38,10 @@ export class TemplateResolver {
 		globalExclude?: string[],
 	): Promise<ResolvedTemplate[]> {
 		const templates: ResolvedTemplate[] = [];
-		const includeSourcePaths = new Set<string>();
+		// Track specific paths that are being included with targets - these need to be excluded from their source templates
+		const targetedIncludes = new Map<string, Set<string>>(); // sourcePath -> set of relative paths to exclude
 
-		// First pass: collect all include source paths from template configs
+		// First pass: collect all include source paths with targets from template configs
 		for (const includePath of includePaths) {
 			const resolvedPath = resolve(includePath);
 			try {
@@ -50,7 +51,29 @@ export class TemplateResolver {
 					const normalizedIncludes = this.normalizeIncludeArray(config.include);
 					for (const include of normalizedIncludes) {
 						const includeSourcePath = resolve(resolvedPath, include.source);
-						includeSourcePaths.add(includeSourcePath);
+
+						// Only track includes that have targets - these need to be excluded from their source
+						if (include.target) {
+							// Find the parent template directory that contains this include source
+							let parentTemplatePath = includeSourcePath;
+							let relativePath = '';
+
+							// Walk up the directory tree to find which input directory contains this source
+							for (const checkPath of includePaths) {
+								const checkResolvedPath = resolve(checkPath);
+								if (includeSourcePath.startsWith(checkResolvedPath)) {
+									parentTemplatePath = checkResolvedPath;
+									relativePath = includeSourcePath.substring(checkResolvedPath.length + 1);
+									break;
+								}
+							}
+
+							if (!targetedIncludes.has(parentTemplatePath)) {
+								targetedIncludes.set(parentTemplatePath, new Set());
+							}
+
+							targetedIncludes.get(parentTemplatePath)!.add(relativePath);
+						}
 					}
 				}
 			} catch {
@@ -66,21 +89,28 @@ export class TemplateResolver {
 				const normalizedIncludes = this.normalizeIncludeArray(configObj.include);
 				for (const include of normalizedIncludes) {
 					const resolvedPath = resolve(include.source);
-					includeSourcePaths.add(resolvedPath);
+
+					// Only track includes that have targets
+					if (include.target) {
+						if (!targetedIncludes.has(resolvedPath)) {
+							targetedIncludes.set(resolvedPath, new Set());
+						}
+
+						// Extract the relative path from the include source
+						const relativePath = include.source.split('/').pop() || '';
+						targetedIncludes.get(resolvedPath)!.add(relativePath);
+					}
 				}
 			}
 		}
 
-		// Second pass: process templates, excluding those that are include sources
+		// Second pass: process templates, filtering out targeted includes
 		for (const includePath of includePaths) {
 			const resolvedPath = resolve(includePath);
 
-			// Skip processing this directory as a standalone template if it's being used as an include source
-			if (includeSourcePaths.has(resolvedPath)) {
-				continue;
-			}
-
-			const template = await this.resolveTemplate(resolvedPath, undefined, globalExclude);
+			// Get the specific paths to exclude for this template
+			const pathsToExclude = targetedIncludes.get(resolvedPath);
+			const template = await this.resolveTemplate(resolvedPath, undefined, globalExclude, pathsToExclude);
 			templates.push(template);
 		}
 
@@ -105,6 +135,7 @@ export class TemplateResolver {
 		templatePath: string,
 		targetDir?: string,
 		globalExclude?: string[],
+		pathsToExclude?: Set<string>,
 	): Promise<ResolvedTemplate> {
 		// Check if template exists
 		try {
@@ -124,11 +155,21 @@ export class TemplateResolver {
 
 		// Get all files in the template
 		// Merge global exclude patterns with template-specific ones
+		const excludePatterns = [...(globalExclude || []), ...(config?.exclude || [])];
+
+		// Add specific paths to exclude from targeted includes
+		if (pathsToExclude) {
+			for (const pathToExclude of pathsToExclude) {
+				excludePatterns.push(`${pathToExclude}/**`);
+				excludePatterns.push(pathToExclude);
+			}
+		}
+
 		const mergedConfig = {
 			...config,
-			exclude: [...(globalExclude || []), ...(config?.exclude || [])],
+			exclude: excludePatterns,
 		};
-		const files = await this.fileProcessor.getTemplateFiles(templatePath, mergedConfig);
+		let files = await this.fileProcessor.getTemplateFiles(templatePath, mergedConfig);
 
 		// Handle includes from the template's config
 		if (config?.include) {

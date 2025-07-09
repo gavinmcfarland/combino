@@ -7,6 +7,9 @@
 		"name": "hello-world",
 		"framework": "react",
 		"typescript": true,
-		"type": "plugin"
+		"type": "plugin",
+		"versions": {
+			"plugma": "1.0.0"
+		}
 	}
 }
