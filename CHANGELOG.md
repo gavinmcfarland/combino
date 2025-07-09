@@ -1,5 +1,11 @@
 # combino
 
+## 0.1.13
+
+### Patch Changes
+
+- Updated merge strategies to work with globs
+
 ## 0.1.12
 
 ### Patch Changes
