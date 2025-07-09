@@ -1,5 +1,5 @@
 {
-	"plugins": ["ejs-process-config", "ejs-mate"],
+	"plugins": ["ejs-mate"],
 	"inputDirs": ["input/hello-world", "input/frameworks/react", "input/typescript"],
 	"description": "Test data availability from included template configs",
 	"configFileName": "template.json",

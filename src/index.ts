@@ -8,6 +8,7 @@ import { TemplateResolver } from './template-resolver.js';
 import { FileTransformer } from './file-transformer.js';
 import { FileFormatter } from './file-formatter.js';
 import { FileWriter } from './file-writer.js';
+import ejsProcessConfig from './plugins/ejs-process-config.js';
 
 export class Combino {
 	private pluginManager: PluginManager;
@@ -22,6 +23,10 @@ export class Combino {
 
 	constructor(configFileName?: string) {
 		this.pluginManager = new PluginManager();
+
+		// Add default plugins that are always available
+		this.pluginManager.addPlugin(ejsProcessConfig());
+
 		this.configParser = new ConfigParser();
 		this.fileProcessor = new FileProcessor(configFileName);
 		this.fileMerger = new FileMerger();

@@ -2,34 +2,31 @@ import { Plugin, DiscoverContext, DiscoverResult } from '../types.js';
 import * as ejs from 'ejs';
 
 /**
- * EJS Discovery/Preprocessor Plugin
+ * EJS Discovery/Preprocessor Plugin (Default Plugin)
  * This plugin processes EJS templates in files before they are parsed during discovery
  * This allows dynamic config files with templating like <%= framework %> in include paths
+ *
+ * This plugin is automatically included in all Combino instances, so users don't need to
+ * explicitly specify it in their plugin list.
  *
  * The plugin automatically targets the config file name being used (e.g., 'combino.json', 'template.json')
  * based on the configFileName provided in the context.
  *
  * Example usage:
  * ```javascript
- * export default function ejsDiscoverPlugin() {
- *   return {
- *     discover(context) {
- *       // Target specific config file name if provided
- *       if (context.configFileName) {
- *         if (!context.sourcePath.endsWith(context.configFileName)) return;
- *       } else {
- *         // Fallback to JSON files
- *         if (!context.sourcePath.endsWith('.json')) return;
- *       }
+ * // No need to explicitly include this plugin - it's automatic!
+ * const combino = new Combino();
+ * await combino.combine({
+ *   outputDir: './output',
+ *   include: ['./templates'],
+ *   data: { framework: 'react' }
+ * });
  *
- *       // Early return if no EJS syntax
- *       if (!context.content.includes('<%')) return;
- *
- *       // Process the file
- *       return { content: processedContent };
- *     }
- *   };
- * }
+ * // Config files with EJS syntax are automatically processed:
+ * // combino.json:
+ * // {
+ * //   "include": ["frameworks/<%= framework %>"]
+ * // }
  * ```
  */
 export default function plugin(options: any = {}): Plugin {
