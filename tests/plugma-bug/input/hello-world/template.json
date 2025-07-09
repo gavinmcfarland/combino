@@ -8,11 +8,11 @@
 	"include": [
 		"../base",
 		{
-			"source": "../react/components",
+			"source": "../frameworks/react/components",
 			"target": "src/ui/components"
 		},
 		{
-			"source": "../react/assets",
+			"source": "../frameworks/react/assets",
 			"target": "src/ui/assets"
 		}
 	]
