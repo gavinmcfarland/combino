@@ -6,13 +6,13 @@
 		"uiFrameworks": ["svelte", "vue", "react", "vanilla"]
 	},
 	"include": [
-		"../../base",
+		"../base",
 		{
-			"source": "../../frameworks/<%= framework %>/components",
+			"source": "../react/components",
 			"target": "src/ui/components"
 		},
 		{
-			"source": "../../frameworks/<%= framework %>/assets",
+			"source": "../react/assets",
 			"target": "src/ui/assets"
 		}
 	]

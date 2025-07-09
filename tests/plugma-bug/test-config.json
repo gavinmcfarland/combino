@@ -1,0 +1,13 @@
+{
+	"data": {
+		"framework": "react"
+	},
+	"plugins": ["ejs-mate"],
+	"inputDirs": ["input/react", "input/hello-world", "input/typescript"],
+	"description": "Test data availability from included template configs",
+	"configFileName": "template.json",
+	"data": {
+		"framework": "react",
+		"typescript": true
+	}
+}
