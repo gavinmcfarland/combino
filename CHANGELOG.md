@@ -1,5 +1,11 @@
 # combino
 
+## 0.1.14
+
+### Patch Changes
+
+- Added new hook that happens before templates are resolved
+
 ## 0.1.13
 
 ### Patch Changes
