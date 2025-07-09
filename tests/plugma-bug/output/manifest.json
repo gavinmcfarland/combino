@@ -1,10 +1,10 @@
 {
-	"id": "com.<%- name %>",
-	"name": "<%- name %>",
-	"main": "src/main/main.<%- typescript ? 'ts' : 'js' %>",
-	"ui": "src/ui/ui.<%- framework === 'react' ? (typescript ? 'tsx' : 'jsx') : (typescript ? 'ts' : 'js') %>",
+	"id": "com.hello-world",
+	"name": "hello-world",
+	"main": "src/main/main.ts",
+	"ui": "src/ui/ui.tsx",
 	"editorType": ["figma", "figjam"],
-	"test": "<%- mainDir %>",
+	"test": "src/main",
 	"networkAccess": {
 		"allowedDomains": ["none"]
 	}

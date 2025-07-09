@@ -6,6 +6,7 @@
 	"data": {
 		"name": "hello-world",
 		"framework": "react",
-		"typescript": true
+		"typescript": true,
+		"type": "plugin"
 	}
 }
