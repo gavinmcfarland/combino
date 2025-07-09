@@ -7,6 +7,7 @@ export class ConfigParser {
 		configPath: string,
 		pluginManager?: PluginManager,
 		data?: Record<string, any>,
+		configFileName?: string,
 	): Promise<CombinoConfig> {
 		let content = await fs.readFile(configPath, 'utf-8');
 
@@ -16,6 +17,7 @@ export class ConfigParser {
 				sourcePath: configPath,
 				content,
 				data,
+				configFileName,
 			};
 
 			const result = await pluginManager.discover(discoverContext);

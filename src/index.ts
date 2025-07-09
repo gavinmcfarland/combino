@@ -49,7 +49,12 @@ export class Combino {
 		if (options.config) {
 			globalConfig =
 				typeof options.config === 'string'
-					? await this.configParser.parseConfigFile(options.config, this.pluginManager, options.data || {})
+					? await this.configParser.parseConfigFile(
+							options.config,
+							this.pluginManager,
+							options.data || {},
+							options.configFileName,
+						)
 					: options.config;
 		}
 

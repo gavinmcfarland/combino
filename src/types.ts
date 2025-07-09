@@ -119,6 +119,8 @@ export interface DiscoverContext {
 	content: string;
 	/** The data used for template processing */
 	data: Record<string, any>;
+	/** The config file name being used (e.g., 'combino.json', 'template.json') */
+	configFileName?: string;
 }
 
 export interface FileHookResult {

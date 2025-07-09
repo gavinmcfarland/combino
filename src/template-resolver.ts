@@ -48,7 +48,12 @@ export class TemplateResolver {
 			const resolvedPath = resolve(includePath);
 			try {
 				const configPath = join(resolvedPath, this.configFileName);
-				const config = await this.configParser.parseConfigFile(configPath, pluginManager, data);
+				const config = await this.configParser.parseConfigFile(
+					configPath,
+					pluginManager,
+					data,
+					this.configFileName,
+				);
 				if (config.include) {
 					const normalizedIncludes = this.normalizeIncludeArray(config.include);
 					for (const include of normalizedIncludes) {
@@ -87,7 +92,7 @@ export class TemplateResolver {
 		if (config) {
 			const configObj =
 				typeof config === 'string'
-					? await this.configParser.parseConfigFile(config, pluginManager, data)
+					? await this.configParser.parseConfigFile(config, pluginManager, data, this.configFileName)
 					: config;
 
 			if (configObj.include) {
@@ -130,7 +135,7 @@ export class TemplateResolver {
 		if (config) {
 			const configObj =
 				typeof config === 'string'
-					? await this.configParser.parseConfigFile(config, pluginManager, data)
+					? await this.configParser.parseConfigFile(config, pluginManager, data, this.configFileName)
 					: config;
 
 			if (configObj.include) {
@@ -172,7 +177,7 @@ export class TemplateResolver {
 		const configPath = join(templatePath, this.configFileName);
 		let config: CombinoConfig | undefined;
 		try {
-			config = await this.configParser.parseConfigFile(configPath, pluginManager, data);
+			config = await this.configParser.parseConfigFile(configPath, pluginManager, data, this.configFileName);
 		} catch {
 			// Config file doesn't exist or is invalid, continue without it
 		}
@@ -207,7 +212,12 @@ export class TemplateResolver {
 				const includeConfigPath = join(includeSourcePath, this.configFileName);
 				let includeConfig: CombinoConfig | undefined;
 				try {
-					includeConfig = await this.configParser.parseConfigFile(includeConfigPath, pluginManager, data);
+					includeConfig = await this.configParser.parseConfigFile(
+						includeConfigPath,
+						pluginManager,
+						data,
+						this.configFileName,
+					);
 				} catch {
 					// Include config file doesn't exist or is invalid, continue without it
 				}
