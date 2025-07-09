@@ -180,8 +180,9 @@ export function plugin(options = {}): Plugin {
 
 ### Hooks
 
-Plugins can use two hooks to process files at different stages:
+Plugins can use three hooks to process files at different stages:
 
+- **`discover`**: Processes files before template resolution.
 - **`compile`**: Processes individual template files before merging.
 - **`assemble`**: Processes files after merging but before formatting.
 
