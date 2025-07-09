@@ -207,6 +207,9 @@ export class FileProcessor {
 			return evaluated || '';
 		});
 
+		// Normalize the path to remove leading slashes that might result from conditional removal
+		result = result.replace(/^\/+/, '');
+
 		return result;
 	}
 
