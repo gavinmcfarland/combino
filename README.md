@@ -14,6 +14,8 @@ npm install combino
 
 ## Quickstart
 
+At its core, Combino merges files from multiple template directories. Combino has several features that help you decide how files should be merged and processed. From using expressions in folder names and files, to creating plugins to hook into specific lifecycling events of the merging process. Use a `combino.json` file to be more declarative about how you want your templates to be processed.
+
 ```js
 import { Combino } from 'combino';
 
@@ -51,43 +53,6 @@ interface CombinoConfig {
 
 </details>
 
-## How it works
-
-At its core, Combino copies files from both template directories.
-
-For example, the following templates combined:
-
-```bash
-templates/
-    base/
-        package.json
-        README.md
-        src/
-            main/
-                main.[framework=="react"?"js":"jsx"]
-            ui/
-                [framework=="react"]App.jsx
-                [framework=="svelte"]App.svelte
-                styles.css
-    svelte/
-        svelte.config.js
-```
-
-This generates:
-
-```bash
-output/
-    package.json          # Copied from base
-    README.md             # Copied from base
-src/
-    main/
-        main.js           # Conditional extension based on framework
-    ui/
-        App.svelte        # Framework-specific file (only for svelte)
-        styles.css        # Copied from base
-svelte.config.js          # Unique file copied from svelte template
-```
-
 ## Features
 
 - ### Dynamic Naming
@@ -122,7 +87,7 @@ svelte.config.js          # Unique file copied from svelte template
 
 - ### Template Inclusion
 
-    Compose temapltes with dynamic paths and target mapping. You can use either plain strings or objects with source/target properties.
+    Compose templates with dynamic paths and target mapping. You can use either plain strings or objects with source/target properties.
 
     ```json
     {
@@ -226,13 +191,13 @@ Combino will load `combino.json` files that exist within each template.
 
 ```json
 {
-    "include": ["../base"],
-    "exclude": ["node_modules/**", "*.log"],
     "merge": {
         "*.json": {
             "strategy": "deep"
         }
     },
+    "include": ["../base"],
+    "exclude": ["node_modules/**", "*.log"],
     "data": {
         "project": {
             "name": "My Project",
