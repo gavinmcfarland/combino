@@ -4,8 +4,6 @@
 
 This <%- type %> was created with [Plugma](https://github.com/gavinmcfarland/plugma) using the [<%- framework.charAt(0).toUpperCase() + framework.slice(1) %>](https://svelte.dev/) framework.
 
-<% block('description') %>
-
 ### Requirements
 
 - [Node.js](https://nodejs.org/en)
