@@ -1,6 +1,6 @@
 {
 	"plugins": ["ejs-mate"],
-	"inputDirs": ["input/react", "input/hello-world", "input/typescript"],
+	"inputDirs": ["input/hello-world", "input/react", "input/typescript"],
 	"description": "Test data availability from included template configs",
 	"configFileName": "template.json",
 	"data": {
