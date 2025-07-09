@@ -1,5 +1,11 @@
 # combino
 
+## 0.1.12
+
+### Patch Changes
+
+- Implemented fixes for merge strategy not working globally
+
 ## 0.1.11
 
 ### Patch Changes
