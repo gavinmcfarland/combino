@@ -5,7 +5,7 @@
 		"project.version": "1.0.0"
 	},
 	"merge": {
-		".json": {
+		"*.json": {
 			"strategy": "deep"
 		}
 	}

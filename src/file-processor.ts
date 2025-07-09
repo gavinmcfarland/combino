@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { glob } from 'glob';
+import { minimatch } from 'minimatch';
 import { Parser } from 'expr-eval';
 import { ResolvedTemplate, ResolvedFile, ProcessedFile, CombinoConfig, MergeStrategy, TemplateInfo } from './types.js';
 import { PluginManager } from './types.js';
@@ -367,7 +368,7 @@ export class FileProcessor {
 	}
 
 	private matchesPattern(filePath: string, pattern: string): boolean {
-		const regex = new RegExp(pattern.replace(/\./g, '\\.').replace(/\*/g, '.*').replace(/\?/g, '.'));
-		return regex.test(filePath);
+		// Use minimatch for proper glob pattern matching
+		return minimatch(filePath, pattern);
 	}
 }

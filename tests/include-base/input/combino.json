@@ -3,10 +3,10 @@
 		"framework": "react"
 	},
 	"merge": {
-		".json": {
+		"*.json": {
 			"strategy": "deep"
 		},
-		".md": {
+		"*.md": {
 			"strategy": "shallow"
 		}
 	}

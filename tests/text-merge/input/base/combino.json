@@ -1,6 +1,6 @@
 {
 	"merge": {
-		".txt": {
+		"*.txt": {
 			"strategy": "append"
 		}
 	}

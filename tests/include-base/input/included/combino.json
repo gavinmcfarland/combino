@@ -10,10 +10,10 @@
 		"project.description": "An extended project"
 	},
 	"merge": {
-		".json": {
+		"*.json": {
 			"strategy": "deep"
 		},
-		".md": {
+		"*.md": {
 			"strategy": "shallow"
 		}
 	}

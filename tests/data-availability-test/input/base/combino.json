@@ -6,7 +6,7 @@
 		"dependencies": ["react", "react-dom"]
 	},
 	"merge": {
-		".json": {
+		"*.json": {
 			"strategy": "deep"
 		}
 	}
