@@ -35,15 +35,32 @@ class CombinoStripTSPlugin {
 	}
 }
 
+interface StripTSOptions {
+	skip?: boolean;
+}
+
 /**
  * Combino Strip TS Plugin Factory Function
  * Creates a plugin that provides TypeScript stripping and file commenting functionality
  */
-export default function plugin(options: PluginOptions = {}): Plugin {
+export default function plugin(options: StripTSOptions = {}): Plugin {
+	const { skip = false } = options;
+
 	const assemble: FileHook = async (context: FileHookContext): Promise<FileHookResult | void> => {
+		// If skip is true, don't strip TypeScript
+		if (skip) {
+			return;
+		}
+
 		const { content } = context;
 		const targetPath = context.id;
 		const ext = path.extname(targetPath);
+		const filename = path.basename(targetPath);
+
+		// Skip vite-env.d.ts files
+		if (filename === 'vite-env.d.ts') {
+			return;
+		}
 
 		// Only process TypeScript files
 		if (ext === '.ts' || ext === '.tsx' || ext === '.vue' || ext === '.svelte') {
@@ -123,7 +140,7 @@ export default function plugin(options: PluginOptions = {}): Plugin {
 							newTargetPath = targetPath.replace('.tsx', '.jsx');
 						}
 
-						console.log(chalk.gray(`     🔄 Stripped TypeScript from ${path.basename(targetPath)}`));
+						// console.log(chalk.gray(`     🔄 Stripped TypeScript from ${path.basename(targetPath)}`));
 
 						return {
 							content: processedContent,

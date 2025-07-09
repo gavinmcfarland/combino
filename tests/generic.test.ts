@@ -10,7 +10,7 @@ import mustache from '../src/plugins/mustache.js';
 import ejsProcessConfig from '../src/plugins/ejs-process-config.js';
 import { Plugin } from '../src/types.js';
 import { assertDirectoriesEqual } from '../utils/directory-compare.js';
-import stripTS from '../src/plugins/combino-plugin-strip-ts.js';
+import stripTS from '../src/plugins/strip-ts.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

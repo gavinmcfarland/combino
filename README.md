@@ -185,6 +185,17 @@ Plugins can use two hooks to process files at different stages:
 - **`compile`**: Processes individual template files before merging.
 - **`assemble`**: Processes files after merging but before formatting.
 
+### Built-in Plugins
+
+Combino comes with several built-in plugins that you can import and use:
+
+#### Available Plugins
+
+- **`strip-ts`**: Strips TypeScript syntax from `.ts`, `.tsx`, `.vue`, and `.svelte` files, converting them to JavaScript
+- **`ejs`**: EJS template engine for dynamic content generation
+- **`ejs-mate`**: Enhanced EJS engine with layout support
+- **`ejs-process-config`**: Processes configuration files with EJS templating
+
 ## Configure
 
 Combino will load `combino.json` files that exist within each template.
