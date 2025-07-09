@@ -1,5 +1,11 @@
 # combino
 
+## 0.1.15
+
+### Patch Changes
+
+- Added built-in plugins
+
 ## 0.1.14
 
 ### Patch Changes
