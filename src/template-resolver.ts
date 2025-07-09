@@ -1,6 +1,6 @@
 import { resolve, join } from 'path';
 import { promises as fs } from 'fs';
-import { ResolvedTemplate, ResolvedFile, CombinoConfig, IncludeConfig, IncludeItem } from './types.js';
+import { ResolvedTemplate, ResolvedFile, CombinoConfig, IncludeConfig, IncludeItem, PluginManager } from './types.js';
 import { ConfigParser } from './config-parser.js';
 import { FileProcessor } from './file-processor.js';
 
@@ -36,6 +36,8 @@ export class TemplateResolver {
 		includePaths: string[],
 		config?: CombinoConfig | string,
 		globalExclude?: string[],
+		pluginManager?: PluginManager,
+		data?: Record<string, any>,
 	): Promise<ResolvedTemplate[]> {
 		const templates: ResolvedTemplate[] = [];
 		// Track specific paths that are being included with targets - these need to be excluded from their source templates
@@ -46,7 +48,7 @@ export class TemplateResolver {
 			const resolvedPath = resolve(includePath);
 			try {
 				const configPath = join(resolvedPath, this.configFileName);
-				const config = await this.configParser.parseConfigFile(configPath);
+				const config = await this.configParser.parseConfigFile(configPath, pluginManager, data);
 				if (config.include) {
 					const normalizedIncludes = this.normalizeIncludeArray(config.include);
 					for (const include of normalizedIncludes) {
@@ -83,7 +85,10 @@ export class TemplateResolver {
 
 		// Handle additional includes from global config
 		if (config) {
-			const configObj = typeof config === 'string' ? await this.configParser.parseConfigFile(config) : config;
+			const configObj =
+				typeof config === 'string'
+					? await this.configParser.parseConfigFile(config, pluginManager, data)
+					: config;
 
 			if (configObj.include) {
 				const normalizedIncludes = this.normalizeIncludeArray(configObj.include);
@@ -110,19 +115,36 @@ export class TemplateResolver {
 
 			// Get the specific paths to exclude for this template
 			const pathsToExclude = targetedIncludes.get(resolvedPath);
-			const template = await this.resolveTemplate(resolvedPath, undefined, globalExclude, pathsToExclude);
+			const template = await this.resolveTemplate(
+				resolvedPath,
+				undefined,
+				globalExclude,
+				pathsToExclude,
+				pluginManager,
+				data,
+			);
 			templates.push(template);
 		}
 
 		// Handle additional includes from config files
 		if (config) {
-			const configObj = typeof config === 'string' ? await this.configParser.parseConfigFile(config) : config;
+			const configObj =
+				typeof config === 'string'
+					? await this.configParser.parseConfigFile(config, pluginManager, data)
+					: config;
 
 			if (configObj.include) {
 				const normalizedIncludes = this.normalizeIncludeArray(configObj.include);
 				for (const include of normalizedIncludes) {
 					const resolvedPath = resolve(include.source);
-					const template = await this.resolveTemplate(resolvedPath, include.target, globalExclude);
+					const template = await this.resolveTemplate(
+						resolvedPath,
+						include.target,
+						globalExclude,
+						undefined,
+						pluginManager,
+						data,
+					);
 					templates.push(template);
 				}
 			}
@@ -136,6 +158,8 @@ export class TemplateResolver {
 		targetDir?: string,
 		globalExclude?: string[],
 		pathsToExclude?: Set<string>,
+		pluginManager?: PluginManager,
+		data?: Record<string, any>,
 	): Promise<ResolvedTemplate> {
 		// Check if template exists
 		try {
@@ -148,7 +172,7 @@ export class TemplateResolver {
 		const configPath = join(templatePath, this.configFileName);
 		let config: CombinoConfig | undefined;
 		try {
-			config = await this.configParser.parseConfigFile(configPath);
+			config = await this.configParser.parseConfigFile(configPath, pluginManager, data);
 		} catch {
 			// Config file doesn't exist or is invalid, continue without it
 		}
@@ -183,7 +207,7 @@ export class TemplateResolver {
 				const includeConfigPath = join(includeSourcePath, this.configFileName);
 				let includeConfig: CombinoConfig | undefined;
 				try {
-					includeConfig = await this.configParser.parseConfigFile(includeConfigPath);
+					includeConfig = await this.configParser.parseConfigFile(includeConfigPath, pluginManager, data);
 				} catch {
 					// Include config file doesn't exist or is invalid, continue without it
 				}

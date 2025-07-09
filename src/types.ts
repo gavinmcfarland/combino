@@ -112,6 +112,15 @@ export interface FileHookContext {
 	allTemplates?: TemplateInfo[];
 }
 
+export interface DiscoverContext {
+	/** The source file path */
+	sourcePath: string;
+	/** The file content */
+	content: string;
+	/** The data used for template processing */
+	data: Record<string, any>;
+}
+
 export interface FileHookResult {
 	/** The transformed file content */
 	content: string;
@@ -119,11 +128,19 @@ export interface FileHookResult {
 	id?: string;
 }
 
+export interface DiscoverResult {
+	/** The transformed file content */
+	content: string;
+}
+
 export type FileHook = (context: FileHookContext) => Promise<FileHookResult> | FileHookResult;
+export type DiscoverHook = (context: DiscoverContext) => Promise<DiscoverResult> | DiscoverResult;
 
 export interface Plugin {
 	/** File patterns this plugin should handle (e.g., ["*.ejs", "*.hbs"]) */
 	filePattern?: string[];
+	/** Discover hook for processing files before template resolution */
+	discover?: DiscoverHook;
 	/** Compile hook for full file processing with template context */
 	compile?: FileHook;
 	/** Assemble hook for processing files after merging but before formatting */
@@ -283,6 +300,46 @@ export class PluginManager {
 				};
 			} catch (error) {
 				console.error(`Error in assembly processing with plugin:`, error);
+				// Continue with the previous result on error
+			}
+		}
+
+		return result;
+	}
+
+	async discover(context: DiscoverContext): Promise<DiscoverResult> {
+		// Collect all plugins that should discover/preprocess files
+		const matchingPlugins = this.plugins.filter((plugin) => {
+			if (!plugin.discover) return false;
+
+			// If plugin has specific file patterns, only include if it matches
+			if (plugin.filePattern && plugin.filePattern.length > 0) {
+				return plugin.filePattern.some((pattern) => this.matchesPattern(context.sourcePath, pattern));
+			}
+
+			// If plugin has no patterns, include it for all files
+			return true;
+		});
+
+		let result: DiscoverResult = {
+			content: context.content,
+		};
+		let currentContext = {
+			...context,
+		};
+
+		for (const plugin of matchingPlugins) {
+			try {
+				const hookResult = await Promise.resolve(plugin.discover!(currentContext));
+				result = {
+					content: hookResult.content,
+				};
+				currentContext = {
+					...currentContext,
+					content: result.content,
+				};
+			} catch (error) {
+				console.error(`Error during discovery with plugin:`, error);
 				// Continue with the previous result on error
 			}
 		}

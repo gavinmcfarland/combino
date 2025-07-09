@@ -49,18 +49,20 @@ export class Combino {
 		if (options.config) {
 			globalConfig =
 				typeof options.config === 'string'
-					? await this.configParser.parseConfigFile(options.config)
+					? await this.configParser.parseConfigFile(options.config, this.pluginManager, options.data || {})
 					: options.config;
 		}
 
-		// Step 4: Resolve all templates and collect data
+		// Step 4: Resolve all templates with plugin manager and initial data
 		const resolvedTemplates = await this.templateResolver.resolveTemplates(
 			options.include,
 			options.config,
 			options.exclude,
+			this.pluginManager,
+			options.data || {},
 		);
 
-		// Step 5: Collect all data from config files
+		// Step 5: Collect all data from config files (now with preprocessed configs)
 		const globalData = await this.dataCollector.collectData(resolvedTemplates, options.data || {});
 
 		// Step 6: Compile all files with plugins (single compile hook)
@@ -86,7 +88,16 @@ export class Combino {
 }
 
 export { PluginManager } from './types.js';
-export type { Plugin, PluginOptions, FileHookContext, FileHookResult, FileHook } from './types.js';
+export type {
+	Plugin,
+	PluginOptions,
+	FileHookContext,
+	FileHookResult,
+	FileHook,
+	DiscoverContext,
+	DiscoverResult,
+	DiscoverHook,
+} from './types.js';
 export type {
 	TemplateOptions,
 	CombinoConfig,

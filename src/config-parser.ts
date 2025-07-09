@@ -1,10 +1,27 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { CombinoConfig } from './types.js';
+import { CombinoConfig, PluginManager } from './types.js';
 
 export class ConfigParser {
-	async parseConfigFile(configPath: string): Promise<CombinoConfig> {
-		const content = await fs.readFile(configPath, 'utf-8');
+	async parseConfigFile(
+		configPath: string,
+		pluginManager?: PluginManager,
+		data?: Record<string, any>,
+	): Promise<CombinoConfig> {
+		let content = await fs.readFile(configPath, 'utf-8');
+
+		// If plugin manager and data are provided, discover/preprocess the config file
+		if (pluginManager && data) {
+			const discoverContext = {
+				sourcePath: configPath,
+				content,
+				data,
+			};
+
+			const result = await pluginManager.discover(discoverContext);
+			content = result.content;
+		}
+
 		return JSON.parse(content);
 	}
 

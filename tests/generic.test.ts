@@ -7,6 +7,7 @@ import ejs from '../src/plugins/ejs.js';
 import ejsMate from '../src/plugins/ejs-mate.js';
 import handlebars from '../src/plugins/handlebars.js';
 import mustache from '../src/plugins/mustache.js';
+import ejsDiscover from '../src/plugins/ejs-discover.js';
 import { Plugin } from '../src/types.js';
 import { assertDirectoriesEqual } from '../utils/directory-compare.js';
 import stripTS from '../src/plugins/combino-plugin-strip-ts.js';
@@ -30,6 +31,7 @@ interface TestConfig {
 const pluginMap: Record<string, (options?: any) => Plugin> = {
 	ejs: (options) => ejs(options),
 	'ejs-mate': (options) => ejsMate(options),
+	'ejs-discover': (options) => ejsDiscover(options),
 	handlebars: (options) => handlebars(options),
 	mustache: (options) => mustache(options),
 	stripTS: (options) => stripTS(options),
