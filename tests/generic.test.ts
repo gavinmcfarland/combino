@@ -8,6 +8,7 @@ import ejsMate from '../src/plugins/ejs-mate.js';
 import handlebars from '../src/plugins/handlebars.js';
 import mustache from '../src/plugins/mustache.js';
 import ejsProcessConfig from '../src/plugins/ejs-process-config.js';
+import edge from '../src/plugins/edge.js';
 import eta from '../src/plugins/eta.js';
 import { Plugin } from '../src/types.js';
 import { assertDirectoriesEqual } from '../utils/directory-compare.js';
@@ -33,6 +34,7 @@ const pluginMap: Record<string, (options?: any) => Plugin> = {
 	ejs: (options) => ejs(options),
 	'ejs-mate': (options) => ejsMate(options),
 	'ejs-process-config': (options) => ejsProcessConfig(options),
+	edge: (options) => edge(options),
 	eta: (options) => eta(options),
 	handlebars: (options) => handlebars(options),
 	mustache: (options) => mustache(options),

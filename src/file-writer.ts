@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import { join, dirname } from 'path';
-import { ProcessedFile } from './types.js';
+import { ProcessedFile, PluginManager, FileHookContext } from './types.js';
 import { FileMerger } from './file-merger.js';
 
 export class FileWriter {
@@ -43,15 +43,37 @@ export class FileWriter {
 		return mergedFiles;
 	}
 
-	async writeFiles(files: ProcessedFile[], outputDir: string): Promise<void> {
+	async writeFiles(
+		files: ProcessedFile[],
+		outputDir: string,
+		pluginManager?: PluginManager,
+		data?: Record<string, any>,
+	): Promise<void> {
 		for (const file of files) {
-			await this.writeFile(join(outputDir, file.targetPath), file.content);
+			const filePath = join(outputDir, file.targetPath);
+			await this.writeFile(filePath, file.content);
+
+			// Call output hook after file is written
+			if (pluginManager) {
+				const context: FileHookContext = {
+					sourcePath: file.sourcePath,
+					id: file.targetPath,
+					content: file.content,
+					data: data || {},
+				};
+				await pluginManager.output(context);
+			}
 		}
 	}
 
-	async mergeAndWriteFiles(files: ProcessedFile[], outputDir: string): Promise<void> {
+	async mergeAndWriteFiles(
+		files: ProcessedFile[],
+		outputDir: string,
+		pluginManager?: PluginManager,
+		data?: Record<string, any>,
+	): Promise<void> {
 		const mergedFiles = await this.mergeFiles(files);
-		await this.writeFiles(mergedFiles, outputDir);
+		await this.writeFiles(mergedFiles, outputDir, pluginManager, data);
 	}
 
 	private async writeFile(filePath: string, content: string): Promise<void> {

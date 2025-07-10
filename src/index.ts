@@ -93,7 +93,7 @@ export class Combino {
 		const formattedFiles = await this.fileFormatter.formatFiles(assembledFiles);
 
 		// Step 10: Write formatted files to output
-		await this.fileWriter.writeFiles(formattedFiles, options.outputDir);
+		await this.fileWriter.writeFiles(formattedFiles, options.outputDir, this.pluginManager, globalData);
 	}
 }
 

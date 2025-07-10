@@ -2,6 +2,7 @@
 export { default as ejs } from './ejs.js';
 export { default as ejsMate } from './ejs-mate.js';
 export { default as ejsProcessConfig } from './ejs-process-config.js';
+export { default as edge } from './edge.js';
 export { default as eta } from './eta.js';
 export { default as handlebars } from './handlebars.js';
 export { default as mustache } from './mustache.js';

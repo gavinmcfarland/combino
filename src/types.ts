@@ -137,6 +137,7 @@ export interface DiscoverResult {
 
 export type FileHook = (context: FileHookContext) => Promise<FileHookResult | void> | FileHookResult | void;
 export type DiscoverHook = (context: DiscoverContext) => Promise<DiscoverResult | void> | DiscoverResult | void;
+export type OutputHook = (context: FileHookContext) => Promise<void> | void;
 
 export interface Plugin {
 	/** Discover hook for processing files before template resolution */
@@ -145,6 +146,8 @@ export interface Plugin {
 	compile?: FileHook;
 	/** Assemble hook for processing files after merging but before formatting */
 	assemble?: FileHook;
+	/** Output hook for processing files after they have been written to disk */
+	output?: OutputHook;
 }
 
 /**
@@ -283,6 +286,21 @@ export class PluginManager {
 		}
 
 		return result;
+	}
+
+	async output(context: FileHookContext): Promise<void> {
+		// Collect all plugins that have output hooks
+		// Plugins should handle their own file filtering internally
+		const matchingPlugins = this.plugins.filter((plugin) => plugin.output);
+
+		for (const plugin of matchingPlugins) {
+			try {
+				await Promise.resolve(plugin.output!(context));
+			} catch (error) {
+				console.error(`Error in output processing with plugin:`, error);
+				// Continue with other plugins on error
+			}
+		}
 	}
 
 	async discover(context: DiscoverContext): Promise<DiscoverResult> {
