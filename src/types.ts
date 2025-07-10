@@ -76,6 +76,7 @@ export interface ResolvedTemplate {
 	targetDir?: string;
 	config?: CombinoConfig;
 	files: ResolvedFile[];
+	contextOnly?: boolean;
 }
 
 export interface ResolvedFile {

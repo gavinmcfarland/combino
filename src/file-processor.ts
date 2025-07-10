@@ -87,7 +87,7 @@ export class FileProcessor {
 		// Combine merge configurations in topological order
 		this.combinedMergeConfig = this.combineMergeConfigs(templates, globalConfig);
 
-		// Convert templates to TemplateInfo format for plugin context
+		// Convert templates to TemplateInfo format for plugin context (all templates)
 		const templateInfos: TemplateInfo[] = templates.map((template) => ({
 			path: template.path,
 			targetDir: template.targetDir,
@@ -99,11 +99,13 @@ export class FileProcessor {
 			})),
 		}));
 
+		// Only generate output for templates that are not contextOnly
 		for (const template of templates) {
+			if (template.contextOnly) continue;
+
 			for (const file of template.files) {
 				// Skip companion files (they're only used for data)
 				const isCompanionFile = file.targetPath.match(/\.json\.json$/);
-
 				if (isCompanionFile) {
 					continue;
 				}

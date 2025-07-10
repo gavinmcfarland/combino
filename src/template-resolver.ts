@@ -42,6 +42,12 @@ export class TemplateResolver {
 		const templates: ResolvedTemplate[] = [];
 		// Track specific paths that are being included with targets - these need to be excluded from their source templates
 		const targetedIncludes = new Map<string, Set<string>>(); // sourcePath -> set of relative paths to exclude
+		// Track locally included templates that should be represented as separate templates
+		const localIncludes = new Set<string>(); // Set of template paths that are included locally
+		// Track which templates have their files actually used in output
+		const templatesWithOutputFiles = new Set<string>(); // Set of template paths that have files used in output
+		// Track templates that are included locally with targets (these should NOT be added as separate templates)
+		const locallyIncludedWithTargets = new Set<string>(); // Set of template paths that are included locally with targets
 
 		// First pass: collect all include source paths with targets from template configs
 		for (const includePath of includePaths) {
@@ -58,6 +64,15 @@ export class TemplateResolver {
 					const normalizedIncludes = this.normalizeIncludeArray(config.include);
 					for (const include of normalizedIncludes) {
 						const includeSourcePath = resolve(resolvedPath, include.source);
+
+						// Track locally included templates
+						localIncludes.add(includeSourcePath);
+
+						// If this include has a target, it means files from this template will be output
+						if (include.target) {
+							templatesWithOutputFiles.add(includeSourcePath);
+							locallyIncludedWithTargets.add(includeSourcePath);
+						}
 
 						// Only track includes that have targets - these need to be excluded from their source
 						if (include.target) {
@@ -128,6 +143,7 @@ export class TemplateResolver {
 				pluginManager,
 				data,
 			);
+			// contextOnly: false (default)
 			templates.push(template);
 		}
 
@@ -150,7 +166,65 @@ export class TemplateResolver {
 						pluginManager,
 						data,
 					);
+					// contextOnly: false (default)
 					templates.push(template);
+				}
+			}
+		}
+
+		// Third pass: ensure all locally included templates with data are added as contextOnly for data collection
+		// Insert them at the beginning to maintain proper data precedence (base templates first, overrides last)
+		for (const localIncludePath of localIncludes) {
+			const alreadyIncluded = templates.some((template) => template.path === localIncludePath);
+			if (!alreadyIncluded) {
+				try {
+					const template = await this.resolveTemplate(
+						localIncludePath,
+						undefined,
+						globalExclude,
+						undefined,
+						pluginManager,
+						data,
+					);
+					// Mark as contextOnly if this template has data (for data collection)
+					if (template.config?.data) {
+						template.contextOnly = true;
+						templates.unshift(template); // Insert at beginning for proper data precedence
+					}
+					// Otherwise, only add as contextOnly if it doesn't have output files
+					else if (!templatesWithOutputFiles.has(localIncludePath)) {
+						template.contextOnly = true;
+						templates.unshift(template); // Insert at beginning for proper data precedence
+					}
+				} catch (error) {
+					console.warn(`Warning: Could not resolve locally included template: ${localIncludePath}`);
+				}
+			}
+		}
+
+		// Fourth pass: ensure templates with data are included for data collection
+		// This handles cases where templates are included locally but have data that needs to be collected
+		for (const localIncludePath of localIncludes) {
+			const alreadyIncluded = templates.some((template) => template.path === localIncludePath);
+			if (!alreadyIncluded && locallyIncludedWithTargets.has(localIncludePath)) {
+				try {
+					const template = await this.resolveTemplate(
+						localIncludePath,
+						undefined,
+						globalExclude,
+						undefined,
+						pluginManager,
+						data,
+					);
+					// If this template has data, add it as contextOnly for data collection
+					if (template.config?.data) {
+						template.contextOnly = true;
+						templates.push(template);
+					}
+				} catch (error) {
+					console.warn(
+						`Warning: Could not resolve locally included template for data collection: ${localIncludePath}`,
+					);
 				}
 			}
 		}
