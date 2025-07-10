@@ -24,7 +24,7 @@ npm install my-awesome-project
 Create a simple template with Edge syntax.
 
 ```javascript
-const template = &#x27;Hello @{{ name }}!&#x27;;
+const template = 'Hello @{{ name }}!';
 ```
 
 #### Advanced Usage

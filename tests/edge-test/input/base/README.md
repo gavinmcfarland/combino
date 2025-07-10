@@ -27,7 +27,7 @@ npm install {{ project.name }}
 {{ example.description }}
 
 ```javascript
-{{ example.code }}
+{{ html.safe(example.code) }}
 ```
 
 @end
