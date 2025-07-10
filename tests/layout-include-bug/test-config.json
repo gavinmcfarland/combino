@@ -1,10 +1,10 @@
 {
-    "data": {
-        "framework": "react",
-        "language": "ts"
-    },
-    "plugins": ["ejs-mate"],
-    "inputDirs": ["input/example"],
-    "description": "Test that layouts from locally included templates are properly discovered by plugins",
-    "skip": false
+	"data": {
+		"framework": "react",
+		"language": "ts"
+	},
+	"plugins": ["ejs-mate"],
+	"inputDirs": ["input/example"],
+	"description": "Test that layouts from locally included templates are properly discovered by plugins",
+	"skip": false
 }
