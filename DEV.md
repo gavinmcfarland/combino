@@ -81,3 +81,17 @@ This single command handles everything: testing, building, versioning, and publi
 - The `version` script updates package.json version numbers and creates git tags
 - The `release` script publishes to npm and pushes git tags
 - The `publish` script runs tests, builds, versions, and publishes in one command
+
+## Future Ideas 
+
+Apply a `!` in front of any file name or folder name to make it override any other files merged with it.
+
+```bash
+!package.json
+```
+
+Exclude file or folder from being merged unless explicitly included.
+
+```bash
+^components
+```
