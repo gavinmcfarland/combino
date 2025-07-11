@@ -67,7 +67,7 @@
 		"ejs": "^3.1.10",
 		"ejs-mate": "^4.0.0",
 		"eslint": "^8.0.0",
-		"strip-ts": "^0.0.0-alpha.4",
+		"strip-ts": "^0.0.0-alpha.6",
 		"ts-node": "^10.9.2",
 		"typescript": "^5.0.0",
 		"vitest": "^1.0.0"
