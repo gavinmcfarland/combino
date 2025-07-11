@@ -5,12 +5,8 @@ import Input from './components/Input';
 import Button from './components/Button';
 
 const App = () => {
-	const [rectCount, setRectCount] = useState & lt;
-	number & gt;
-	5;
-	const [nodeCount, setNodeCount] = useState & lt;
-	number & gt;
-	0;
+	const [rectCount, setRectCount] = useState(5);
+	const [nodeCount, setNodeCount] = useState(0);
 
 	const styles = {
 		container: {
@@ -76,13 +72,16 @@ const App = () => {
 			</div>
 
 			<div style={styles.field}>
-				<Input
-					type="number"
-					value={rectCount}
-					onChange={(e) => setRectCount(Number(e.target.value))}
+				<Input type="number" value={rectCount.toString()} onChange={(value) => setRectCount(Number(value))} />
+
+				<Button
+					onClick={() => createRectangles(rectCount)}
+					href={undefined}
+					target={undefined}
 					style={styles.createRectanglesInput}
-				/>
-				<Button onClick={() => createRectangles(rectCount)}>Create Rectangles</Button>
+				>
+					Create Rectangles
+				</Button>
 			</div>
 			<div style={styles.nodeCount}>
 				<span>{nodeCount} nodes selected</span>

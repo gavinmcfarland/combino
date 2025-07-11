@@ -1,11 +1,4 @@
-import React from 'react';
-
-interface IconProps {
-	size?: number;
-	svg: 'plugma' | 'plus';
-}
-
-const Icon: React.FC<IconProps> = ({ size = 16, svg }) => {
+const Icon = ({ size = 16, svg }) => {
 	if (svg === 'plugma') {
 		return (
 			<svg width={`${size}px`} height={`${size}px`} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -39,6 +32,7 @@ const Icon: React.FC<IconProps> = ({ size = 16, svg }) => {
 						strokeLinecap="round"
 						strokeLinejoin="round"
 					/>
+
 					<path d="M19 12H5Z" fill="white" />
 					<path
 						d="M19 12H5"

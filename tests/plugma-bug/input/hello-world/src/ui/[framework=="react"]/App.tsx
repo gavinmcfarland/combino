@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import Icon from './components/Icon'
-import Input from './components/Input'
-import Button from './components/Button'
+import React, { useState, useEffect } from 'react';
+import reactLogo from './assets/react.svg';
+import Icon from './components/Icon';
+import Input from './components/Input';
+import Button from './components/Button';
 
-const App = () => {
-	const [rectCount, setRectCount] = useState<%= typescript ? "<number>" : "" %>(5)
-	const [nodeCount, setNodeCount] = useState<%= typescript ? "<number>" : "" %>(0)
+const App: React.FC = () => {
+	const [rectCount, setRectCount] = useState<number>(5);
+	const [nodeCount, setNodeCount] = useState<number>(0);
 
 	const styles = {
 		container: {
@@ -15,7 +15,7 @@ const App = () => {
 			justifyContent: 'center',
 			height: '100%',
 			width: '100%',
-			flexDirection: 'column',
+			flexDirection: 'column' as const,
 		},
 		banner: {
 			display: 'flex',
@@ -35,9 +35,9 @@ const App = () => {
 		createRectanglesInput: {
 			width: '40px',
 		},
-	}
+	};
 
-	const createRectangles = (count) => {
+	const createRectangles = (count: number) => {
 		window.parent.postMessage(
 			{
 				pluginMessage: {
@@ -46,22 +46,22 @@ const App = () => {
 				},
 			},
 			'*',
-		)
-	}
+		);
+	};
 
 	useEffect(() => {
-		const handleMessage = (event) => {
-			const message = event.data.pluginMessage
+		const handleMessage = (event: MessageEvent) => {
+			const message = event.data.pluginMessage;
 			if (message?.type === 'POST_NODE_COUNT') {
-				setNodeCount(message.count)
+				setNodeCount(message.count);
 			}
-		}
+		};
 
-		window.addEventListener('message', handleMessage)
+		window.addEventListener('message', handleMessage);
 		return () => {
-			window.removeEventListener('message', handleMessage)
-		}
-	}, [])
+			window.removeEventListener('message', handleMessage);
+		};
+	}, []);
 
 	return (
 		<div style={styles.container}>
@@ -74,17 +74,23 @@ const App = () => {
 			<div style={styles.field}>
 				<Input
 					type="number"
-					value={rectCount}
-					onChange={(e) => setRectCount(Number(e.target.value))}
-					style={styles.createRectanglesInput}
+					value={rectCount.toString()}
+					onChange={(value: string) => setRectCount(Number(value))}
 				/>
-				<Button onClick={() => createRectangles(rectCount)}>Create Rectangles</Button>
+				<Button
+					onClick={() => createRectangles(rectCount)}
+					href={undefined}
+					target={undefined}
+					style={styles.createRectanglesInput}
+				>
+					Create Rectangles
+				</Button>
 			</div>
 			<div style={styles.nodeCount}>
 				<span>{nodeCount} nodes selected</span>
 			</div>
 		</div>
-	)
-}
+	);
+};
 
-export default App
+export default App;
