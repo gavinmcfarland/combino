@@ -1,5 +1,11 @@
 # combino
 
+## 0.1.16
+
+### Patch Changes
+
+- Updated strip-ts plugin and improved formatting
+
 ## 0.1.15
 
 ### Patch Changes
