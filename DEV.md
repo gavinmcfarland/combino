@@ -87,11 +87,20 @@ This single command handles everything: testing, building, versioning, and publi
 Apply a `!` in front of any file name or folder name to make it override any other files merged with it.
 
 ```bash
-!package.json
+template/
+    !package.json
 ```
 
 Exclude file or folder from being merged using the `_` prefix unless explicitly included.
 
 ```bash
-_components
+template/
+    _components/
+```
+
+Disable files until process.
+
+```
+templates/
+    ~.gitignore
 ```
