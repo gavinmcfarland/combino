@@ -90,8 +90,8 @@ Apply a `!` in front of any file name or folder name to make it override any oth
 !package.json
 ```
 
-Exclude file or folder from being merged unless explicitly included.
+Exclude file or folder from being merged using the `_` prefix unless explicitly included.
 
 ```bash
-^components
+_components
 ```
