@@ -73,39 +73,39 @@ export class FileFormatter {
 				return content; // Return original content if not a formattable file type
 			}
 
-			// Determine parser based on file extension and content
-			let parser: string;
-			switch (ext) {
-				case '.js':
-				case '.jsx':
-					parser = 'babel';
-					break;
-				case '.ts':
-				case '.tsx':
-					parser = 'typescript';
-					break;
-				case '.json':
-					parser = 'json';
-					break;
-				case '.md':
-					parser = 'markdown';
-					break;
-				case '.css':
-				case '.scss':
-					parser = 'css';
-					break;
-				case '.html':
-					parser = 'html';
-					break;
-				case '.vue':
-					parser = 'vue';
-					break;
-				case '.svelte':
-					parser = 'svelte';
-					break;
-				default:
-					parser = 'babel';
-			}
+			// // Determine parser based on file extension and content
+			// let parser: string;
+			// switch (ext) {
+			// 	case '.js':
+			// 	case '.jsx':
+			// 		parser = 'babel';
+			// 		break;
+			// 	case '.ts':
+			// 	case '.tsx':
+			// 		parser = 'typescript';
+			// 		break;
+			// 	case '.json':
+			// 		parser = 'json';
+			// 		break;
+			// 	case '.md':
+			// 		parser = 'markdown';
+			// 		break;
+			// 	case '.css':
+			// 	case '.scss':
+			// 		parser = 'css';
+			// 		break;
+			// 	case '.html':
+			// 		parser = 'html';
+			// 		break;
+			// 	case '.vue':
+			// 		parser = 'vue';
+			// 		break;
+			// 	case '.svelte':
+			// 		parser = 'svelte';
+			// 		break;
+			// 	default:
+			// 		parser = 'babel';
+			// }
 
 			// Try to find a Prettier config file in the project
 			let prettierConfig: any = {
@@ -138,12 +138,13 @@ export class FileFormatter {
 				useTabs: true,
 				singleQuote: true,
 				printWidth: 120,
-				parser,
+				// parser,
 				// Only include Svelte plugin for Svelte files
 				plugins:
 					ext === '.svelte'
 						? [prettierPluginSvelte, ...(prettierConfig.plugins || [])]
 						: prettierConfig.plugins || [],
+				filepath: filePath,
 			};
 
 			const formatted = await prettier.format(content, finalConfig);

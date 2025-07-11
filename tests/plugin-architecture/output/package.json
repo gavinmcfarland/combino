@@ -6,6 +6,10 @@
 	"scripts": {
 		"test": "echo \"Test script\""
 	},
-	"keywords": ["test", "plugin", "architecture"],
+	"keywords": [
+		"test",
+		"plugin",
+		"architecture"
+	],
 	"pluginProcessed": true
 }
