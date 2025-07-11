@@ -84,21 +84,21 @@ This single command handles everything: testing, building, versioning, and publi
 
 ## Future Ideas 
 
-Apply a `!` in front of any file name or folder name to make it override any other files merged with it.
+Take priority over other any other file or folder merged with them.
 
 ```bash
 template/
     !package.json
 ```
 
-Exclude file or folder from being merged using the `_` prefix unless explicitly included.
+Exclude file or folder from being merged unless explicitly included.
 
 ```bash
 template/
     _components/
 ```
 
-Disable files until process.
+Disable file until processed.
 
 ```
 templates/
