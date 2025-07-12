@@ -18,7 +18,8 @@
 	},
 	"packageManager": "pnpm@8.15.0",
 	"scripts": {
-		"build": "pnpm --recursive run build",
+		"build": "pnpm --recursive run build && pnpm run build:scripts",
+		"build:scripts": "tsc -p tsconfig.scripts.json",
 		"build:watch": "pnpm --recursive run build:watch",
 		"test": "pnpm --filter=combino run test",
 		"test:watch": "pnpm --filter=combino run test:watch",
@@ -33,7 +34,7 @@
 		"release": "changeset publish",
 		"prepublish": "pnpm run test && pnpm run build",
 		"publish": "pnpm run prepublish && pnpm run version && pnpm run release",
-		"test:plugins": "node scripts/test-plugins.js"
+		"test:plugins": "node dist/scripts/test-plugins.js"
 	},
 	"keywords": [
 		"scaffolding",
