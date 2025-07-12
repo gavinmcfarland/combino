@@ -11,21 +11,15 @@
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js",
 			"require": "./dist/index.js"
-		},
-		"./plugins": {
-			"types": "./dist/plugins/index.d.ts",
-			"import": "./dist/plugins/index.js",
-			"require": "./dist/plugins/index.js"
-		},
-		"./plugins/*": {
-			"types": "./dist/plugins/*.d.ts",
-			"import": "./dist/plugins/*.js",
-			"require": "./dist/plugins/*.js"
 		}
 	},
 	"bin": {
 		"combino": "./dist/cli.js"
 	},
+	"workspaces": [
+		"packages/combino",
+		"packages/plugins/*"
+	],
 	"scripts": {
 		"build": "tsc",
 		"build:watch": "tsc --watch",
@@ -64,27 +58,21 @@
 		"@typescript-eslint/eslint-plugin": "^5.0.0",
 		"@typescript-eslint/parser": "^5.0.0",
 		"@vitest/ui": "^1.0.0",
-		"ejs": "^3.1.10",
-		"ejs-mate": "^4.0.0",
 		"eslint": "^8.0.0",
-		"strip-ts": "^0.0.0-alpha.6",
 		"ts-node": "^10.9.2",
 		"typescript": "^5.0.0",
 		"vitest": "^1.0.0"
 	},
 	"dependencies": {
+		"ejs": "^3.1.10",
 		"chalk": "^5.4.1",
 		"commander": "^11.1.0",
 		"deepmerge": "^4.3.0",
-		"edge.js": "^6.2.1",
-		"eta": "^3.5.0",
 		"expr-eval": "^2.0.2",
 		"glob": "^10.0.0",
 		"gray-matter": "^4.0.3",
-		"handlebars": "^4.7.8",
 		"jsonc-parser": "^3.3.1",
 		"minimatch": "^10.0.3",
-		"mustache": "^4.2.0",
 		"prettier": "^3.5.3",
 		"prettier-plugin-svelte": "^3.4.0"
 	}

@@ -1,7 +1,0 @@
-{
-	"data": {
-		"typescript": true,
-		"framework": "react"
-	},
-	"description": "Bug if conditional is true, then folder is outputted with true instead of not including the folder"
-}

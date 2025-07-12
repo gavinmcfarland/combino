@@ -1,9 +1,0 @@
-{
-    "name": "<%- projectName -%>",
-    "version": "<%- version -%>",
-    "framework": "<%- framework -%>",
-    "globalVar": "<%- globalVar -%>",
-    "templateVar": "<%- templateVar -%>",
-    "overrideVar": "<%- overrideVar -%>",
-    "dependencies": <%- JSON.stringify(dependencies) -%>
-}

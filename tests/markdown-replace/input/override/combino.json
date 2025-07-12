@@ -1,7 +1,0 @@
-{
-	"merge": {
-		"*.md": {
-			"strategy": "replace"
-		}
-	}
-}

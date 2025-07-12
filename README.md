@@ -1,236 +1,114 @@
-# Combino
+# Combino Monorepo
 
-![npm](https://img.shields.io/npm/v/combino)
+A monorepo containing Combino and its official plugins.
 
-Combino is a composable scaffolding engine that lets you build fully customised project structures by combining modular template folders with strategic merging, dynamic conditions, and reusable logic.
+## Packages
 
-## Install
+### Core Package
 
-Add the npm package to your project.
+- **`packages/combino`** - The main Combino scaffolding tool
+
+### Plugins
+
+- **`packages/plugins/ejs`** - [@combino/plugin-ejs](./packages/plugins/ejs/README.md) - EJS template engine plugin
+- **`packages/plugins/eta`** - [@combino/plugin-eta](./packages/plugins/eta/README.md) - ETA template engine plugin
+- **`packages/plugins/edge`** - [@combino/plugin-edge](./packages/plugins/edge/README.md) - Edge.js template engine plugin
+- **`packages/plugins/ejs-mate`** - [@combino/plugin-ejs-mate](./packages/plugins/ejs-mate/README.md) - EJS-Mate template engine plugin with layout support
+- **`packages/plugins/strip-ts`** - [@combino/plugin-strip-ts](./packages/plugins/strip-ts/README.md) - TypeScript stripping plugin
+
+## Development
+
+### Prerequisites
+
+- Node.js 18+
+- npm 10+
+
+### Setup
 
 ```bash
-npm install combino
+# Install dependencies
+npm install
+
+# Build all packages
+npm run build
+
+# Run tests
+npm run test
+
+# Watch mode for development
+npm run build:watch
 ```
 
-## Quickstart
+### Workspace Scripts
 
-At its core, Combino merges files from multiple template directories. Combino has several features that help you decide how files should be merged and processed. From using expressions in folder names and files, to creating plugins to hook into specific lifecycling events of the merging process. Use a `combino.json` file to be more declarative about how you want your templates to be processed.
+- `npm run build` - Build all packages
+- `npm run test` - Run tests for all packages
+- `npm run lint` - Lint all packages
+- `npm run format` - Format all packages
+- `npm run clean` - Clean build artifacts
 
-```js
-import { Combino } from 'combino';
+## Plugin Development
 
-await combino.combine({
-    outputDir: './output',
-    include: ['./templates/base', './template/svelte'],
-    data: {
-        framework: 'svelte',
-    },
-});
+Each plugin follows a standard structure:
+
+```
+packages/plugins/[plugin-name]/
+├── src/
+│   └── index.ts          # Main plugin code
+├── dist/                 # Built files (auto-generated)
+├── package.json          # Plugin package configuration
+├── tsconfig.json         # TypeScript configuration
+└── README.md            # Plugin documentation
 ```
 
-<details>
+### Creating a New Plugin
 
-<summary>Type Signature</summary>
+1. Create a new directory in `packages/plugins/`
+2. Copy the structure from an existing plugin
+3. Update `package.json` with your plugin details
+4. Implement the plugin interface in `src/index.ts`
+5. Add tests and documentation
 
-```ts
-interface TemplateOptions {
-    outputDir: string;
-    include: string[];
-    exclude?: string[];
-    config?: CombinoConfig | string;
-    data?: Record<string, any>;
-    plugins?: Plugin[];
-}
+### Plugin Interface
 
-interface CombinoConfig {
-    include?: Array<string | { source: string; target?: string }>;
-    exclude?: string[];
-    data?: Record<string, any>;
-    merge?: Record<string, Record<string, any>>;
-    layout?: string[];
-}
-```
+All plugins must implement the Combino plugin interface:
 
-</details>
-
-## Features
-
-- ### Dynamic Naming
-
-    Use `[key]` placeholders in filenames to rename them dynamically.
-
-    **Example**
-
-    ```bash
-    templates/
-      base/
-        [name]/
-          index.[extension]
-    ```
-
-- ### Conditional Inclusion
-
-    Files and folders can be conditionally included using JavaScript expressions.
-
-    **Example**
-
-    ```bash
-    templates/
-      base/
-        tests[testing]/           # Only if testing=true
-          example.test.ts
-        [framework=="svelte"]     # Only if framework=svelte
-          App.svelte
-        [framework=="react"]      # Only outputted if framework=react
-          App.tsx
-    ```
-
-- ### Template Inclusion
-
-    Compose templates with dynamic paths and target mapping. You can use either plain strings or objects with source/target properties.
-
-    ```json
-    {
-        "include": [
-            "../base",
-            {
-                "source": "../components",
-                "target": "src/ui"
-            }
-        ]
-    }
-    ```
-
-- ### Template Exclusion
-
-    Exclude files and folders from being processed using glob patterns.
-
-    **Example**
-
-    ```json
-    {
-        "exclude": ["package.json"]
-    }
-    ```
-
-- ### Merging Strategies
-
-    The default merge strategy is `replace` but you can configure any file to use the following merge strategies.
-
-    - `replace`: Replace existing files completely
-    - `deep`: Deep merge objects and arrays
-    - `shallow`: Shallow merge objects
-    - `append`: Append content to existing files
-    - `prepend`: Prepend content to existing files
-
-    **Example**
-
-    ```json
-    {
-        "merge": {
-            "*.json": {
-                "strategy": "deep"
-            }
-        }
-    }
-    ```
-
-## Plugins
-
-Combino uses a powerful plugin system to process templates and transform files. Plugins can handle template rendering, syntax transformations, and file modifications.
-
-### Using Plugins
-
-Add plugins to your Combino configuration:
-
-```js
-import { Combino } from 'combino';
-import myPlugin from './my-plugin';
-
-const combino = new Combino();
-
-await combino.combine({
-    outputDir: './output',
-    include: ['./templates/base', './templates/react'],
-    plugins: [myPlugin()],
-    data: {
-        framework: 'react',
-        language: 'typescript',
-    },
-});
-```
-
-### Creating Plugins
-
-Create your own plugins by implementing the Plugin interface:
-
-```js
-// Example plugin that converts extensions
-export function plugin(options = {}): Plugin {
-    const { from, to } = options;
-
-    return {
-        assemble: async (context) => {
-            const newId = context.id.replace(`.${from}`, `.${to}`);
-            return { content: context.content, id: newId };
-        },
-    };
+```typescript
+export interface Plugin {
+    discover?: (context: any) => Promise<any> | any;
+    compile?: (context: any) => Promise<any> | any;
+    assemble?: (context: any) => Promise<any> | any;
+    output?: (context: any) => Promise<void> | void;
 }
 ```
 
-### Hooks
+## Publishing
 
-Plugins can use three hooks to process files at different stages:
+### Publishing Plugins
 
-- **`discover`**: Processes files before template resolution.
-- **`compile`**: Processes individual template files before merging.
-- **`assemble`**: Processes files after merging but before formatting.
+```bash
+# Publish all plugins
+npm run publish:plugins
 
-### Built-in Plugins
-
-Combino comes with several built-in plugins that you can import and use:
-
-#### Available Plugins
-
-- **`strip-ts`**: Strips TypeScript syntax from `.ts`, `.tsx`, `.vue`, and `.svelte` files, converting them to JavaScript
-- **`ejs`**: EJS template engine for dynamic content generation
-- **`ejs-mate`**: Enhanced EJS engine with layout support
-- **`ejs-process-config`**: Processes configuration files with EJS templating
-
-## Configure
-
-Combino will load `combino.json` files that exist within each template.
-
-```json
-{
-    "merge": {
-        "*.json": {
-            "strategy": "deep"
-        }
-    },
-    "include": ["../base"],
-    "exclude": ["node_modules/**", "*.log"],
-    "data": {
-        "project": {
-            "name": "My Project",
-            "version": "1.0.0"
-        }
-    }
-}
+# Or publish individual plugins
+npm publish --workspace=@combino/plugin-ejs
 ```
 
-## CLI
+### Version Management
 
-`combino [include...] [options]`
+This monorepo uses [Changesets](https://github.com/changesets/changesets) for version management:
 
-### Arguments
+```bash
+# Create a changeset
+npm run changeset
 
-- **`include...`** One or more paths to template folders to include (first has lowest priority, last wins)
+# Version packages
+npm run version
 
-### Options
+# Publish packages
+npm run release
+```
 
-- **`-o, --output <dir>`**: Output directory (default: ./output)
-- **`-c, --config <path>`**: Path to combino.json config file
-- **`--data <key=value>`** Inline key-value data
-- **`--template-engine <engine>`** Template engine to use (ejs, handlebars, mustache) - requires installing the corresponding dependency
-- **`--merge <pattern=strategy>`** Merge strategy for file patterns (e.g., _.json=deep, _.md=replace)
+## License
+
+MIT

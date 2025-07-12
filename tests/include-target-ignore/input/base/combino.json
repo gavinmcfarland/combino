@@ -1,8 +1,0 @@
-{
-	"include": [
-		{
-			"source": "../components",
-			"target": "src/ui/components"
-		}
-	]
-}

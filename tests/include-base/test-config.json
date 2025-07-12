@@ -1,8 +1,0 @@
-{
-	"data": {
-		"framework": "react"
-	},
-	"inputDirs": ["input/base", "input/included"],
-	"plugins": ["ejs"],
-	"description": "Include test with base configuration"
-}
