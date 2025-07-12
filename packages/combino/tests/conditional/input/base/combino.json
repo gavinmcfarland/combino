@@ -1,0 +1,7 @@
+{
+	"data": {
+		"project.name": "Test Project",
+		"project.version": "1.0.0",
+		"project.description": "A test project for conditional folder testing"
+	}
+}

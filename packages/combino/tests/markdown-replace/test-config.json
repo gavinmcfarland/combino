@@ -1,0 +1,8 @@
+{
+	"data": {
+		"framework": "react",
+		"project": "test-project"
+	},
+	"plugins": ["ejs"],
+	"description": "Markdown replace test with project data"
+}

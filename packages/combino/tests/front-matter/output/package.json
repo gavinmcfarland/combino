@@ -1,0 +1,9 @@
+{
+	"name": "override-app",
+	"version": "2.0.0",
+	"dependencies": [
+		"react",
+		"react-dom",
+		"typescript"
+	]
+}

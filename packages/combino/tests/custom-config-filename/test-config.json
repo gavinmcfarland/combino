@@ -1,0 +1,10 @@
+{
+	"data": {
+		"projectName": "Custom Config Test",
+		"framework": "react"
+	},
+	"plugins": ["ejs"],
+	"description": "Test custom config filename functionality",
+	"skip": false,
+	"configFileName": "my-custom-config.json"
+}
