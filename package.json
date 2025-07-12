@@ -16,26 +16,24 @@
 	"bin": {
 		"combino": "./dist/cli.js"
 	},
-	"workspaces": [
-		"packages/combino",
-		"packages/plugins/*"
-	],
+	"packageManager": "pnpm@8.15.0",
 	"scripts": {
-		"build": "tsc",
-		"build:watch": "tsc --watch",
-		"test:watch": "vitest",
-		"test": "vitest run",
-		"test:ui": "vitest --ui",
-		"lint": "eslint src/**/*.ts",
-		"format": "prettier --write .",
-		"format:check": "prettier --check .",
-		"start": "node dist/cli.js",
-		"dev": "ts-node src/cli.ts",
+		"build": "pnpm --recursive run build",
+		"build:watch": "pnpm --recursive run build:watch",
+		"test": "pnpm --filter=combino run test",
+		"test:watch": "pnpm --filter=combino run test:watch",
+		"test:ui": "pnpm --filter=combino run test:ui",
+		"lint": "pnpm --recursive run lint",
+		"format": "pnpm --recursive run format",
+		"format:check": "pnpm --recursive run format:check",
+		"start": "pnpm --filter=combino run start",
+		"dev": "pnpm --filter=combino run dev",
 		"changeset": "changeset",
 		"version": "changeset version",
 		"release": "changeset publish",
-		"prepublish": "npm run test && npm run build",
-		"publish": "npm run prepublish && npm run version && npm run release"
+		"prepublish": "pnpm run test && pnpm run build",
+		"publish": "pnpm run prepublish && pnpm run version && pnpm run release",
+		"test:plugins": "node scripts/test-plugins.js"
 	},
 	"keywords": [
 		"scaffolding",
