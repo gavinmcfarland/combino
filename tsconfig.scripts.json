@@ -1,0 +1,15 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "dist/scripts",
+		"rootDir": "scripts",
+		"module": "NodeNext",
+		"target": "ES2020",
+		"esModuleInterop": true,
+		"moduleResolution": "NodeNext",
+		"resolveJsonModule": true,
+		"declaration": false,
+		"allowSyntheticDefaultImports": true
+	},
+	"include": ["scripts/**/*.ts"]
+}
