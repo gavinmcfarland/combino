@@ -1,7 +1,0 @@
-{
-	"merge": {
-		"*.json": {
-			"strategy": "deep"
-		}
-	}
-}

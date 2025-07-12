@@ -1,8 +1,0 @@
-{
-	"data": {
-		"framework": "react"
-	},
-	"plugins": ["ejs"],
-	"exclude": ["package.json"],
-	"description": "Test that excludes package.json files from processing"
-}

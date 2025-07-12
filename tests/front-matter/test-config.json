@@ -1,7 +1,0 @@
-{
-	"data": {
-		"framework": "react"
-	},
-	"plugins": ["ejs"],
-	"description": "Test front-matter parsing and processing in template files"
-}

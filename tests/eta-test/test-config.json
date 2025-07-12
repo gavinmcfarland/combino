@@ -1,9 +1,0 @@
-{
-	"data": {
-		"framework": "react",
-		"language": "ts",
-		"name": "MyApp"
-	},
-	"plugins": ["eta"],
-	"description": "Basic Eta template rendering test"
-}
