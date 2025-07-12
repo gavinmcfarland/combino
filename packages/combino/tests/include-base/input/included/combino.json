@@ -1,0 +1,20 @@
+{
+	"include": [
+		{
+			"source": "../react/components",
+			"target": "src/components"
+		}
+	],
+	"data": {
+		"project.name": "extended-project",
+		"project.description": "An extended project"
+	},
+	"merge": {
+		"*.json": {
+			"strategy": "deep"
+		},
+		"*.md": {
+			"strategy": "shallow"
+		}
+	}
+}

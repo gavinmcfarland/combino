@@ -1,0 +1,8 @@
+{
+	"data": {
+		"framework": "react"
+	},
+	"plugins": ["ejs-mate"],
+	"inputDirs": ["input/example", "input/typescript"],
+	"description": "Test data availability from included template configs"
+}

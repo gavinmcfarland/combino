@@ -1,0 +1,51 @@
+{
+	"name": "@combino/plugin-strip-ts",
+	"version": "0.1.0",
+	"type": "module",
+	"description": "TypeScript stripping plugin for Combino",
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc",
+		"build:watch": "tsc --watch",
+		"lint": "eslint src/**/*.ts",
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
+		"prepublishOnly": "npm run build"
+	},
+	"keywords": [
+		"combino",
+		"plugin",
+		"typescript",
+		"strip",
+		"scaffolding"
+	],
+	"author": "",
+	"license": "MIT",
+	"peerDependencies": {
+		"combino": "^0.1.0"
+	},
+	"dependencies": {
+		"chalk": "^5.4.1",
+		"strip-ts": "^0.0.0-alpha.6"
+	},
+	"devDependencies": {
+		"@types/node": "^20.17.55",
+		"@typescript-eslint/eslint-plugin": "^5.0.0",
+		"@typescript-eslint/parser": "^5.0.0",
+		"eslint": "^8.0.0",
+		"prettier": "^3.5.3",
+		"typescript": "^5.0.0"
+	}
+}

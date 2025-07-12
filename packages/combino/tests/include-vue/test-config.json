@@ -1,0 +1,8 @@
+{
+	"data": {
+		"framework": "vue"
+	},
+	"inputDirs": ["input/base", "input/included"],
+	"plugins": ["ejs"],
+	"description": "Include test with Vue configuration"
+}

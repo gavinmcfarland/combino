@@ -1,0 +1,7 @@
+{
+	"data": {
+		"framework": "react"
+	},
+	"plugins": ["ejs"],
+	"description": "Basic merge test with default configuration"
+}

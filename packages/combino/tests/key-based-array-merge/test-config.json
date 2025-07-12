@@ -1,0 +1,7 @@
+{
+	"data": {
+		"framework": "react"
+	},
+	"plugins": ["ejs"],
+	"description": "Test key-based array merging functionality in JSON files"
+}
