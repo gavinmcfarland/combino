@@ -40,8 +40,8 @@
 		"changeset": "changeset",
 		"version": "changeset version",
 		"release": "changeset publish",
-		"prepublish": "npm run test && npm run build",
-		"publish": "npm run prepublish && npm run version && npm run release"
+		"prepublish": "pnpm run test && pnpm run build",
+		"publish": "pnpm run prepublish && pnpm run version && pnpm run release"
 	},
 	"keywords": [
 		"scaffolding",

@@ -116,7 +116,10 @@ function sectionsToMarkdown(sections: MarkdownSection[]): string {
 			.map((section) => {
 				const header = '#'.repeat(section.level) + ' ' + section.header;
 				// Normalize bullet point formatting to use single space after dash
-				const normalizedContent = section.content.replace(/^-\s+/gm, '- ');
+				// but preserve blank lines between numbered lists and sub-bullets
+				const normalizedContent = section.content
+					.replace(/^-\s+/gm, '- ')
+					.replace(/(\d+\.\s+[^\n]+)\n([^\n]*\n)*\s*-/g, '$1\n\n   -');
 				// Ensure there's a newline after the header and preserve content newlines
 				const sectionContent = `${header}\n\n${normalizedContent}`;
 
