@@ -34,7 +34,8 @@
 		"release": "changeset publish",
 		"prepublish": "pnpm run test && pnpm run build",
 		"publish": "pnpm run prepublish && pnpm run version && pnpm run release",
-		"test:plugins": "node dist/scripts/test-plugins.js"
+		"test:plugins": "node dist/scripts/test-plugins.js",
+		"publish:plugins": "node dist/scripts/publish-plugins.js"
 	},
 	"keywords": [
 		"scaffolding",
