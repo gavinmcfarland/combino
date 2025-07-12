@@ -105,9 +105,6 @@ jspm_packages/
 tmp/
 temp/
 
-# Changeset files
-.changeset/
-
 # Test outputs
 test-results/
 playwright-report/
