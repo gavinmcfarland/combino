@@ -191,7 +191,7 @@ describe('Combino Integration Test Suite', () => {
 			const inputDirs = getInputDirsForTest(testConfig, testCaseDir);
 			const plugins = getPluginsFromConfig(testConfig);
 			const combino = new Combino();
-			await combino.combine({
+			await combino.build({
 				outputDir,
 				include: inputDirs,
 				data: testConfig.data || { framework: 'react' },

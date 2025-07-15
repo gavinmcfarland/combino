@@ -1,5 +1,5 @@
 import { PluginManager } from './types.js';
-import { TemplateOptions } from './types.js';
+import { Options } from './types.js';
 import { ConfigParser } from './config-parser.js';
 import { FileProcessor } from './file-processor.js';
 import { FileMerger } from './file-merger.js';
@@ -37,7 +37,7 @@ export class Combino {
 		this.fileWriter = new FileWriter();
 	}
 
-	async combine(options: TemplateOptions): Promise<void> {
+	async build(options: Options): Promise<void> {
 		// Step 1: Add plugins to the manager
 		if (options.plugins) {
 			this.pluginManager.addPlugins(options.plugins);
@@ -109,7 +109,7 @@ export type {
 	DiscoverHook,
 } from './types.js';
 export type {
-	TemplateOptions,
+	Options,
 	CombinoConfig,
 	MergeStrategy,
 	MergeConfig,

@@ -16,7 +16,7 @@ import * as ejs from 'ejs';
  * ```javascript
  * // No need to explicitly include this plugin - it's automatic!
  * const combino = new Combino();
- * await combino.combine({
+ * await combino.build({
  *   outputDir: './output',
  *   include: ['./templates'],
  *   data: { framework: 'react' }

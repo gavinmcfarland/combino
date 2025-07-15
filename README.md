@@ -19,7 +19,7 @@ At its core, Combino merges files from multiple template directories. Combino ha
 ```js
 import { Combino } from 'combino';
 
-await combino.combine({
+await combino.build({
     outputDir: './output',
     include: ['./templates/base', './template/svelte'],
     data: {
@@ -33,7 +33,7 @@ await combino.combine({
 <summary>Type Signature</summary>
 
 ```ts
-interface Opts {
+interface Options {
     outputDir: string;
     include: string[];
     exclude?: string[];
@@ -43,7 +43,7 @@ interface Opts {
     configFileName?: string;
 }
 
-interface Config {
+interface CombinoConfig {
     include?: Array<string | { source: string; target?: string }>;
     exclude?: string[];
     data?: Record<string, any>;
@@ -168,7 +168,7 @@ import stripTS from '@combino/plugin-strip-ts';
 
 const combino = new Combino();
 
-await combino.combine({
+await combino.build({
     outputDir: './output',
     include: ['./templates/base', './templates/react'],
     plugins: [stripTS()],
