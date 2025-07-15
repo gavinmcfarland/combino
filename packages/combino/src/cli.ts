@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import { Combino } from './index.js';
-import { TemplateOptions, MergeStrategy } from './types.js';
+import { Options, MergeStrategy } from './types.js';
 // Plugins are now available as separate packages in the monorepo
 // Users can install and import them individually as needed
 import { Plugin } from './types.js';
@@ -89,7 +89,7 @@ program
 				});
 			}
 
-			const templateOptions: TemplateOptions = {
+			const templateOptions: Options = {
 				outputDir: options.output,
 				include: include,
 				config: options.config || (Object.keys(mergeConfig).length > 0 ? { merge: mergeConfig } : undefined),
@@ -97,7 +97,7 @@ program
 				plugins: plugins.length > 0 ? plugins : undefined,
 			};
 
-			await combino.combine(templateOptions);
+			await combino.build(templateOptions);
 
 			console.log(`Successfully generated output in ${options.output}`);
 		} catch (error: unknown) {

@@ -57,7 +57,7 @@ export interface TemplateInfo {
 	}>;
 }
 
-export interface TemplateOptions {
+export interface Options {
 	outputDir: string;
 	include: string[];
 	/** Files or folders to exclude from processing */
