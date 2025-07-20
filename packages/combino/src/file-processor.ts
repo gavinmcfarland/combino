@@ -52,6 +52,11 @@ export class FileProcessor {
 		});
 
 		for (const file of allFiles) {
+			// Check for underscore exclusion: files/folders starting with _ should be excluded unless explicitly included
+			if (this.shouldExcludeUnderscoreFile(file, config)) {
+				continue;
+			}
+
 			const sourcePath = join(templatePath, file);
 			const content = await fs.readFile(sourcePath, 'utf-8');
 
@@ -74,6 +79,75 @@ export class FileProcessor {
 		}
 
 		return files;
+	}
+
+	/**
+	 * Check if a file should be excluded due to underscore prefix
+	 * Files and folders starting with _ are excluded unless explicitly included via local config
+	 */
+	private shouldExcludeUnderscoreFile(filePath: string, config?: CombinoConfig): boolean {
+		// Check if any part of the path starts with _
+		const pathParts = filePath.split('/');
+		const hasUnderscorePrefix = pathParts.some((part) => part.startsWith('_'));
+
+		if (!hasUnderscorePrefix) {
+			return false; // No underscore prefix, don't exclude
+		}
+
+		// If there's no config or no include array, exclude underscore files
+		if (!config?.include) {
+			return true;
+		}
+
+		// Check if this file/folder is explicitly included in the config
+		const normalizedIncludes = this.normalizeIncludeArray(config.include);
+
+		for (const include of normalizedIncludes) {
+			// Check if the include source matches this file path
+			if (this.pathMatchesInclude(filePath, include.source)) {
+				return false; // Explicitly included, don't exclude
+			}
+		}
+
+		return true; // Has underscore prefix but not explicitly included, exclude
+	}
+
+	/**
+	 * Check if a file path matches an include source pattern
+	 */
+	private pathMatchesInclude(filePath: string, includeSource: string): boolean {
+		// Handle exact matches
+		if (filePath === includeSource) {
+			return true;
+		}
+
+		// Handle directory includes (if includeSource is a directory, check if filePath is within it)
+		if (filePath.startsWith(includeSource + '/')) {
+			return true;
+		}
+
+		// Handle glob patterns (basic implementation)
+		if (includeSource.includes('*')) {
+			const pattern = includeSource.replace(/\*/g, '.*');
+			const regex = new RegExp(`^${pattern}$`);
+			return regex.test(filePath);
+		}
+
+		return false;
+	}
+
+	/**
+	 * Normalize include array to handle both string and object formats
+	 */
+	private normalizeIncludeArray(
+		include: Array<string | { source: string; target?: string }>,
+	): Array<{ source: string; target?: string }> {
+		return include.map((item) => {
+			if (typeof item === 'string') {
+				return { source: item };
+			}
+			return item;
+		});
 	}
 
 	async compileFiles(

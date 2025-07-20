@@ -1,0 +1,7 @@
+{
+	"data": {
+		"framework": "react"
+	},
+	"plugins": ["ejs"],
+	"description": "Comprehensive test that files and folders starting with _ are excluded unless explicitly included via local config"
+}

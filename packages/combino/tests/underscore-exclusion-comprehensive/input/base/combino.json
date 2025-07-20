@@ -1,0 +1,12 @@
+{
+	"include": [
+		{
+			"source": "_components",
+			"target": "_components"
+		},
+		{
+			"source": "_public",
+			"target": "public"
+		}
+	]
+}

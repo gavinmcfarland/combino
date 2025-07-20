@@ -1,0 +1,8 @@
+{
+	"include": [
+		{
+			"source": "_components",
+			"target": "components"
+		}
+	]
+}
