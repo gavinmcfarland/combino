@@ -1,0 +1,3 @@
+{
+	"include": ["_package.json", "_config.js"]
+}

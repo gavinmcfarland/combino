@@ -1,0 +1,7 @@
+{
+	"data": {
+		"framework": "react"
+	},
+	"plugins": ["ejs"],
+	"description": "Test that underscore files can be included and renamed via target mapping"
+}

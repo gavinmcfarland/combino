@@ -53,7 +53,8 @@ export class FileProcessor {
 
 		for (const file of allFiles) {
 			// Check for underscore exclusion: files/folders starting with _ should be excluded unless explicitly included
-			if (this.shouldExcludeUnderscoreFile(file, config)) {
+			const underscoreResult = this.shouldExcludeUnderscoreFile(file, config);
+			if (underscoreResult.exclude) {
 				continue;
 			}
 
@@ -70,9 +71,12 @@ export class FileProcessor {
 				// No file-specific config
 			}
 
+			// Use the target path from underscore result if available, otherwise use the original file path
+			const targetPath = underscoreResult.targetPath || file;
+
 			files.push({
 				sourcePath,
-				targetPath: file,
+				targetPath,
 				content,
 				config: fileConfig,
 			});
@@ -85,18 +89,21 @@ export class FileProcessor {
 	 * Check if a file should be excluded due to underscore prefix
 	 * Files and folders starting with _ are excluded unless explicitly included via local config
 	 */
-	private shouldExcludeUnderscoreFile(filePath: string, config?: CombinoConfig): boolean {
+	private shouldExcludeUnderscoreFile(
+		filePath: string,
+		config?: CombinoConfig,
+	): { exclude: boolean; targetPath?: string } {
 		// Check if any part of the path starts with _
 		const pathParts = filePath.split('/');
 		const hasUnderscorePrefix = pathParts.some((part) => part.startsWith('_'));
 
 		if (!hasUnderscorePrefix) {
-			return false; // No underscore prefix, don't exclude
+			return { exclude: false }; // No underscore prefix, don't exclude
 		}
 
 		// If there's no config or no include array, exclude underscore files
 		if (!config?.include) {
-			return true;
+			return { exclude: true };
 		}
 
 		// Check if this file/folder is explicitly included in the config
@@ -105,11 +112,18 @@ export class FileProcessor {
 		for (const include of normalizedIncludes) {
 			// Check if the include source matches this file path
 			if (this.pathMatchesInclude(filePath, include.source)) {
-				return false; // Explicitly included, don't exclude
+				// If there's a target specified, use it for renaming
+				if (include.target) {
+					// For individual files, the target should be the new filename
+					return { exclude: false, targetPath: include.target };
+				}
+				// If explicitly included without a target, remove the underscore prefix
+				const targetPath = this.removeUnderscorePrefix(filePath);
+				return { exclude: false, targetPath };
 			}
 		}
 
-		return true; // Has underscore prefix but not explicitly included, exclude
+		return { exclude: true }; // Has underscore prefix but not explicitly included, exclude
 	}
 
 	/**
@@ -148,6 +162,21 @@ export class FileProcessor {
 			}
 			return item;
 		});
+	}
+
+	/**
+	 * Remove underscore prefix from file path
+	 * Converts _package.json to package.json, _components/Button.tsx to components/Button.tsx, etc.
+	 */
+	private removeUnderscorePrefix(filePath: string): string {
+		const pathParts = filePath.split('/');
+		const processedParts = pathParts.map((part) => {
+			if (part.startsWith('_')) {
+				return part.substring(1); // Remove the underscore
+			}
+			return part;
+		});
+		return processedParts.join('/');
 	}
 
 	async compileFiles(
