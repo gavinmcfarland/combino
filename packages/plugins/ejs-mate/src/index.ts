@@ -323,10 +323,106 @@ async function renderWithBlocks(
 	const blocks: Record<string, Block> = {};
 	const renderContext = createRenderingContext(data, blocks);
 
-	const rawBody = await ejsEngine.render(content, renderContext, { async: true, ...ejsOptions });
-	const body = cleanupBlankLines(rawBody);
+	try {
+		const rawBody = await ejsEngine.render(content, renderContext, {
+			async: true,
+			...ejsOptions,
+			// Add EJS options to handle undefined variables gracefully
+			strict: false,
+			localsName: 'locals',
+			// This option makes undefined variables return undefined instead of throwing
+			rmWhitespace: false,
+		});
+		const body = cleanupBlankLines(rawBody);
 
-	return { body, blocks };
+		return { body, blocks };
+	} catch (error) {
+		// Handle ReferenceError for undefined variables
+		if (error instanceof ReferenceError && error.message.includes('is not defined')) {
+			// Check if this is an output context (like <%- variable %>) rather than a logic context
+			const errorLineMatch = error.message.match(/ejs:(\d+)/);
+			if (errorLineMatch) {
+				const errorLineNumber = parseInt(errorLineMatch[1]);
+				const lines = content.split('\n');
+				const errorLine = lines[errorLineNumber - 1] || '';
+
+				// Extract the undefined variable name from the error message
+				const varMatch = error.message.match(/(\w+) is not defined/);
+				if (varMatch) {
+					const undefinedVar = varMatch[1];
+
+					// Check if the variable is used in an output context on this line
+					// Output contexts: <%- variable %>, <%= variable %>
+					// Logic contexts: <% if (variable) { %>, <% for (variable in items) { %>, etc.
+					const outputPattern = new RegExp(`<%-?\\s*${undefinedVar}\\s*%>`);
+					const logicPattern = new RegExp(
+						`<%\\s*(if|for|while|switch|case)\\s*\\([^)]*${undefinedVar}[^)]*\\)`,
+					);
+
+					const isOutputContext = outputPattern.test(errorLine);
+					const isLogicContext = logicPattern.test(errorLine);
+
+					// Only show warning if it's an output context and not a logic context
+					if (isOutputContext && !isLogicContext) {
+						console.warn(`Warning: Undefined variable in template: ${error.message}`);
+					}
+				}
+			}
+
+			// Try to render with a safer approach - replace all undefined variables with empty strings
+			try {
+				// Create a safer data object with default values for all potentially undefined variables
+				const safeData = { ...data };
+
+				// Extract all variable names from the template that might be undefined
+				const variableMatches = content.match(/<%[^%]*\b(\w+)\b[^%]*%>/g);
+				if (variableMatches) {
+					for (const match of variableMatches) {
+						// Extract variable names from EJS tags
+						const varMatches = match.match(/\b(\w+)\b/g);
+						if (varMatches) {
+							for (const varName of varMatches) {
+								// Skip EJS keywords and common variables
+								if (
+									![
+										'if',
+										'else',
+										'end',
+										'for',
+										'in',
+										'each',
+										'block',
+										'layout',
+										'partial',
+										'include',
+									].includes(varName) &&
+									!safeData.hasOwnProperty(varName)
+								) {
+									safeData[varName] = '';
+								}
+							}
+						}
+					}
+				}
+
+				const safeContext = createRenderingContext(safeData, blocks);
+				const rawBody = await ejsEngine.render(content, safeContext, {
+					async: true,
+					...ejsOptions,
+					strict: false,
+					localsName: 'locals',
+				});
+				const body = cleanupBlankLines(rawBody);
+				return { body, blocks };
+			} catch (retryError) {
+				// If retry fails, return empty content
+				console.warn(`Failed to retry rendering after undefined variable fix: ${retryError}`);
+				return { body: '', blocks };
+			}
+		}
+		// Re-throw other errors
+		throw error;
+	}
 }
 
 async function renderLayout(
@@ -337,13 +433,195 @@ async function renderLayout(
 	ejsOptions: any = {},
 ): Promise<string> {
 	const layoutContext = createRenderingContext(data, blocks, true, body);
-	return await ejsEngine.render(layoutContent, layoutContext, { async: true, ...ejsOptions });
+
+	try {
+		return await ejsEngine.render(layoutContent, layoutContext, {
+			async: true,
+			...ejsOptions,
+			// Add EJS options to handle undefined variables gracefully
+			strict: false,
+			localsName: 'locals',
+		});
+	} catch (error) {
+		// Handle ReferenceError for undefined variables
+		if (error instanceof ReferenceError && error.message.includes('is not defined')) {
+			// Check if this is an output context (like <%- variable %>) rather than a logic context
+			const errorLineMatch = error.message.match(/ejs:(\d+)/);
+			if (errorLineMatch) {
+				const errorLineNumber = parseInt(errorLineMatch[1]);
+				const lines = layoutContent.split('\n');
+				const errorLine = lines[errorLineNumber - 1] || '';
+
+				// Extract the undefined variable name from the error message
+				const varMatch = error.message.match(/(\w+) is not defined/);
+				if (varMatch) {
+					const undefinedVar = varMatch[1];
+
+					// Check if the variable is used in an output context on this line
+					// Output contexts: <%- variable %>, <%= variable %>
+					// Logic contexts: <% if (variable) { %>, <% for (variable in items) { %>, etc.
+					const outputPattern = new RegExp(`<%-?\\s*${undefinedVar}\\s*%>`);
+					const logicPattern = new RegExp(
+						`<%\\s*(if|for|while|switch|case)\\s*\\([^)]*${undefinedVar}[^)]*\\)`,
+					);
+
+					const isOutputContext = outputPattern.test(errorLine);
+					const isLogicContext = logicPattern.test(errorLine);
+
+					// Only show warning if it's an output context and not a logic context
+					if (isOutputContext && !isLogicContext) {
+						console.warn(`Warning: Undefined variable in layout: ${error.message}`);
+					}
+				}
+			}
+
+			// Try to render with a safer approach
+			try {
+				const safeData = { ...data };
+
+				// Extract all variable names from the layout template that might be undefined
+				const variableMatches = layoutContent.match(/<%[^%]*\b(\w+)\b[^%]*%>/g);
+				if (variableMatches) {
+					for (const match of variableMatches) {
+						// Extract variable names from EJS tags
+						const varMatches = match.match(/\b(\w+)\b/g);
+						if (varMatches) {
+							for (const varName of varMatches) {
+								// Skip EJS keywords and common variables
+								if (
+									![
+										'if',
+										'else',
+										'end',
+										'for',
+										'in',
+										'each',
+										'block',
+										'layout',
+										'partial',
+										'include',
+									].includes(varName) &&
+									!safeData.hasOwnProperty(varName)
+								) {
+									safeData[varName] = '';
+								}
+							}
+						}
+					}
+				}
+
+				const safeContext = createRenderingContext(safeData, blocks, true, body);
+				return await ejsEngine.render(layoutContent, safeContext, {
+					async: true,
+					...ejsOptions,
+					strict: false,
+					localsName: 'locals',
+				});
+			} catch (retryError) {
+				console.warn(`Failed to retry layout rendering after undefined variable fix: ${retryError}`);
+				return '';
+			}
+		}
+		// Re-throw other errors
+		throw error;
+	}
 }
 
 async function processWithoutLayout(content: string, data: Record<string, any>, ejsOptions: any = {}): Promise<string> {
 	const blocks: Record<string, Block> = {};
 	const renderContext = createRenderingContext(data, blocks);
-	return await ejsEngine.render(content, renderContext, { async: true, ...ejsOptions });
+
+	try {
+		return await ejsEngine.render(content, renderContext, {
+			async: true,
+			...ejsOptions,
+			// Add EJS options to handle undefined variables gracefully
+			strict: false,
+			localsName: 'locals',
+		});
+	} catch (error) {
+		// Handle ReferenceError for undefined variables
+		if (error instanceof ReferenceError && error.message.includes('is not defined')) {
+			// Check if this is an output context (like <%- variable %>) rather than a logic context
+			const errorLineMatch = error.message.match(/ejs:(\d+)/);
+			if (errorLineMatch) {
+				const errorLineNumber = parseInt(errorLineMatch[1]);
+				const lines = content.split('\n');
+				const errorLine = lines[errorLineNumber - 1] || '';
+
+				// Extract the undefined variable name from the error message
+				const varMatch = error.message.match(/(\w+) is not defined/);
+				if (varMatch) {
+					const undefinedVar = varMatch[1];
+
+					// Check if the variable is used in an output context on this line
+					// Output contexts: <%- variable %>, <%= variable %>
+					// Logic contexts: <% if (variable) { %>, <% for (variable in items) { %>, etc.
+					const outputPattern = new RegExp(`<%-?\\s*${undefinedVar}\\s*%>`);
+					const logicPattern = new RegExp(
+						`<%\\s*(if|for|while|switch|case)\\s*\\([^)]*${undefinedVar}[^)]*\\)`,
+					);
+
+					const isOutputContext = outputPattern.test(errorLine);
+					const isLogicContext = logicPattern.test(errorLine);
+
+					// Only show warning if it's an output context and not a logic context
+					if (isOutputContext && !isLogicContext) {
+						console.warn(`Warning: Undefined variable in template: ${error.message}`);
+					}
+				}
+			}
+
+			// Try to render with a safer approach
+			try {
+				const safeData = { ...data };
+
+				// Extract all variable names from the template that might be undefined
+				const variableMatches = content.match(/<%[^%]*\b(\w+)\b[^%]*%>/g);
+				if (variableMatches) {
+					for (const match of variableMatches) {
+						// Extract variable names from EJS tags
+						const varMatches = match.match(/\b(\w+)\b/g);
+						if (varMatches) {
+							for (const varName of varMatches) {
+								// Skip EJS keywords and common variables
+								if (
+									![
+										'if',
+										'else',
+										'end',
+										'for',
+										'in',
+										'each',
+										'block',
+										'layout',
+										'partial',
+										'include',
+									].includes(varName) &&
+									!safeData.hasOwnProperty(varName)
+								) {
+									safeData[varName] = '';
+								}
+							}
+						}
+					}
+				}
+
+				const safeContext = createRenderingContext(safeData, blocks);
+				return await ejsEngine.render(content, safeContext, {
+					async: true,
+					...ejsOptions,
+					strict: false,
+					localsName: 'locals',
+				});
+			} catch (retryError) {
+				console.warn(`Failed to retry rendering after undefined variable fix: ${retryError}`);
+				return '';
+			}
+		}
+		// Re-throw other errors
+		throw error;
+	}
 }
 
 // ===== LAYOUT PROCESSING =====

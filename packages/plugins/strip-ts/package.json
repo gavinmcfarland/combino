@@ -1,6 +1,6 @@
 {
 	"name": "@combino/plugin-strip-ts",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"type": "module",
 	"description": "TypeScript stripping plugin for Combino",
 	"main": "./dist/index.js",
@@ -34,7 +34,7 @@
 	"author": "",
 	"license": "MIT",
 	"peerDependencies": {
-		"combino": "^0.1.0"
+		"combino": "^1.0.0"
 	},
 	"dependencies": {
 		"chalk": "^5.4.1",

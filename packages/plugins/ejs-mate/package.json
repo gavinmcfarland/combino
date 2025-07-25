@@ -1,6 +1,6 @@
 {
 	"name": "@combino/plugin-ejs-mate",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"type": "module",
 	"description": "EJS-Mate template engine plugin for Combino with layout support",
 	"main": "./dist/index.js",
@@ -35,7 +35,7 @@
 	"author": "",
 	"license": "MIT",
 	"peerDependencies": {
-		"combino": "^0.1.0"
+		"combino": "^1.0.0"
 	},
 	"dependencies": {
 		"ejs": "^3.1.10"

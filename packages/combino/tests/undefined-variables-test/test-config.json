@@ -1,0 +1,8 @@
+{
+	"data": {
+		"name": "Test Project",
+		"framework": "react"
+	},
+	"plugins": ["ejs-mate"],
+	"description": "Test that undefined variables in EJS templates are handled gracefully"
+}
