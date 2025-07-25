@@ -48,7 +48,7 @@ export class FileProcessor {
 			cwd: templatePath,
 			dot: true,
 			nodir: true,
-			ignore: [...excludePatterns, `**/${this.configFileName}`, '**/config.json', '**/*.combino'],
+			ignore: [...excludePatterns, `**/${this.configFileName}`, '**/*.combino'],
 		});
 
 		for (const file of allFiles) {
@@ -57,6 +57,10 @@ export class FileProcessor {
 			if (underscoreResult.exclude) {
 				continue;
 			}
+
+			// Check for tilde prefix: files starting with ~ should have the prefix removed
+			const tildeResult = this.shouldRemoveTildePrefix(file);
+			const processedFilePath = tildeResult.shouldRemove ? tildeResult.targetPath : file;
 
 			const sourcePath = join(templatePath, file);
 			const content = await fs.readFile(sourcePath, 'utf-8');
@@ -71,8 +75,8 @@ export class FileProcessor {
 				// No file-specific config
 			}
 
-			// Use the target path from underscore result if available, otherwise use the original file path
-			const targetPath = underscoreResult.targetPath || file;
+			// Use the target path from underscore result if available, otherwise use the processed file path
+			const targetPath = underscoreResult.targetPath || processedFilePath;
 
 			files.push({
 				sourcePath,
@@ -177,6 +181,31 @@ export class FileProcessor {
 			return part;
 		});
 		return processedParts.join('/');
+	}
+
+	/**
+	 * Check if a file should have its tilde prefix removed.
+	 * Files starting with ~ are excluded until processed.
+	 */
+	private shouldRemoveTildePrefix(filePath: string): { shouldRemove: boolean; targetPath: string } {
+		// Check if any part of the path starts with ~
+		const pathParts = filePath.split('/');
+		const hasTildePrefix = pathParts.some((part) => part.startsWith('~'));
+
+		if (!hasTildePrefix) {
+			return { shouldRemove: false, targetPath: filePath };
+		}
+
+		// Remove tilde prefix from all parts that have it
+		const processedParts = pathParts.map((part) => {
+			if (part.startsWith('~')) {
+				return part.substring(1); // Remove the tilde
+			}
+			return part;
+		});
+		const targetPath = processedParts.join('/');
+
+		return { shouldRemove: true, targetPath };
 	}
 
 	async compileFiles(

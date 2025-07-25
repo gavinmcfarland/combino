@@ -1,0 +1,9 @@
+{
+	"data": {
+		"framework": "react",
+		"language": "ts"
+	},
+	"plugins": ["ejs"],
+	"inputDirs": ["input/base"],
+	"description": "Test that tilde (~) prefixed files have their prefix removed when processed"
+}
