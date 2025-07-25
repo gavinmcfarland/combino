@@ -29,14 +29,12 @@
 		"format:check": "pnpm --recursive run format:check",
 		"start": "pnpm --filter=combino run start",
 		"dev": "pnpm --filter=combino run dev",
-		"changeset": "changeset",
-		"version": "changeset version",
-		"release": "changeset publish",
 		"prepublish": "pnpm run test && pnpm run build",
 		"test:plugins": "node dist/scripts/test-plugins.js",
-		"publish": "pnpm run prepublish && pnpm run version && pnpm run release",
-		"publish:plugins": "node dist/scripts/publish-plugins.js",
-		"publish:combino": "pnpm --filter=combino run prepublish && pnpm --filter=combino run version && pnpm --filter=combino run release"
+		"test:lerna": "npx lerna list",
+		"version": "lerna version",
+		"publish": "lerna publish",
+		"publish:from-package": "lerna publish from-package"
 	},
 	"keywords": [
 		"scaffolding",
@@ -48,7 +46,6 @@
 	"license": "MIT",
 	"devDependencies": {
 		"@babel/traverse": "^7.27.7",
-		"@changesets/cli": "^2.29.4",
 		"@types/commander": "^2.12.0",
 		"@types/deepmerge": "^2.1.0",
 		"@types/ejs": "^3.1.5",
@@ -60,6 +57,7 @@
 		"@typescript-eslint/parser": "^5.0.0",
 		"@vitest/ui": "^1.0.0",
 		"eslint": "^8.0.0",
+		"lerna": "8.2.3",
 		"ts-node": "^10.9.2",
 		"typescript": "^5.0.0",
 		"vitest": "^1.0.0"
