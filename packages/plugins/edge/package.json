@@ -1,6 +1,6 @@
 {
 	"name": "@combino/plugin-edge",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"type": "module",
 	"description": "Edge.js template engine plugin for Combino",
 	"main": "./dist/index.js",

@@ -1,6 +1,6 @@
 {
 	"name": "@combino/plugin-ejs-mate",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"type": "module",
 	"description": "EJS-Mate template engine plugin for Combino with layout support",
 	"main": "./dist/index.js",
