@@ -1,0 +1,23 @@
+{
+	"compilerOptions": {
+		"target": "ES2020",
+		"useDefineForClassFields": true,
+		"lib": ["ES2020", "DOM", "DOM.Iterable"],
+		"module": "ESNext",
+		"skipLibCheck": true,
+		"moduleResolution": "bundler",
+		"allowImportingTsExtensions": true,
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"noEmit": true,
+		"jsx": "react-jsx",
+		"strict": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noFallthroughCasesInSwitch": true,
+		"typeRoots": ["<%= rebase('node_modules/@types') %>"],
+		"baseUrl": "<%= rebase('.') %>"
+	},
+	"include": ["<%= rebase('src/**/*.ts') %>", "<%= rebase('src/**/*.tsx') %>", "<%= rebase('vite-env.d.ts') %>"],
+	"exclude": ["<%= rebase('node_modules') %>", "<%= rebase('dist') %>"]
+}

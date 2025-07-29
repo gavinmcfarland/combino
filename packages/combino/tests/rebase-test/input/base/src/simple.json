@@ -1,0 +1,4 @@
+{
+	"test": "<%= rebase('simple.json') %>",
+	"simple": "value"
+}

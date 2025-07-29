@@ -11,6 +11,7 @@ import eta from '../../plugins/eta/dist/index.js';
 import { Plugin } from '../src/types.js';
 import { assertDirectoriesEqual } from '../src/utils/directory-compare.js';
 import stripTS from '../../plugins/strip-ts/dist/index.js';
+import rebase from '../../plugins/rebase/dist/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -35,6 +36,7 @@ const pluginMap: Record<string, (options?: any) => Plugin> = {
 	edge: (options) => edge(options),
 	eta: (options) => eta(options),
 	stripTS: (options) => stripTS(options),
+	rebase: (options) => rebase(options),
 	custom: (options) => {
 		// Custom plugin for plugin architecture tests
 		return {
