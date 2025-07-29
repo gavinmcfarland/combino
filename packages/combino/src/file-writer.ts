@@ -11,6 +11,11 @@ export class FileWriter {
 	}
 
 	async mergeFiles(files: ProcessedFile[]): Promise<ProcessedFile[]> {
+		console.log('DEBUG: FileWriter.mergeFiles - Input files:');
+		files.forEach((file) => {
+			console.log(`  - ${file.sourcePath} -> ${file.targetPath} (strategy: ${file.mergeStrategy || 'replace'})`);
+		});
+
 		// Group files by target path for merging
 		const fileGroups = new Map<string, ProcessedFile[]>();
 
@@ -22,15 +27,25 @@ export class FileWriter {
 			fileGroups.get(key)!.push(file);
 		}
 
+		console.log('DEBUG: FileWriter.mergeFiles - File groups:');
+		for (const [targetPath, fileGroup] of fileGroups) {
+			console.log(`  - ${targetPath}: ${fileGroup.length} files`);
+			fileGroup.forEach((file) => {
+				console.log(`    - ${file.sourcePath} (strategy: ${file.mergeStrategy || 'replace'})`);
+			});
+		}
+
 		const mergedFiles: ProcessedFile[] = [];
 
 		// Process each group
 		for (const [targetPath, fileGroup] of fileGroups) {
 			if (fileGroup.length === 1) {
 				// Single file, no merging needed
+				console.log(`DEBUG: FileWriter.mergeFiles - Single file for ${targetPath}, no merging needed`);
 				mergedFiles.push(fileGroup[0]);
 			} else {
 				// Multiple files, merge them
+				console.log(`DEBUG: FileWriter.mergeFiles - Merging ${fileGroup.length} files for ${targetPath}`);
 				const mergedContent = await this.fileMerger.mergeFiles(fileGroup);
 				// Use the first file as the base and update its content
 				mergedFiles.push({
@@ -39,6 +54,11 @@ export class FileWriter {
 				});
 			}
 		}
+
+		console.log('DEBUG: FileWriter.mergeFiles - Final merged files:');
+		mergedFiles.forEach((file) => {
+			console.log(`  - ${file.targetPath}`);
+		});
 
 		return mergedFiles;
 	}

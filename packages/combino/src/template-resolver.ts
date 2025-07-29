@@ -39,33 +39,45 @@ export class TemplateResolver {
 	 * Apply conditional logic to include paths, filtering out paths that should be excluded
 	 */
 	private applyConditionalLogicToIncludePaths(includes: IncludeConfig[], data: Record<string, any>): IncludeConfig[] {
-		// If conditional include paths are disabled, return includes as-is
 		if (!this.enableConditionalIncludePaths) {
 			return includes;
 		}
 
-		return includes
-			.filter((include) => {
-				// Apply conditional logic to the source path
-				const processedSource = this.applyConditionalLogicToIncludePath(include.source, data);
-				return processedSource !== null; // Keep only paths that aren't excluded
-			})
-			.map((include) => {
-				// Apply conditional logic to both source and target paths
-				const processedSource = this.applyConditionalLogicToIncludePath(include.source, data);
-				const processedTarget = include.target
-					? this.applyConditionalLogicToIncludePath(include.target, data)
-					: undefined;
+		const result: IncludeConfig[] = [];
 
-				// Resolve the physical path for disk lookup
-				const physicalSource = this.resolvePhysicalPathForInclude(processedSource!, include.source, data);
+		for (const include of includes) {
+			console.log('DEBUG: Processing include:', include.source, '->', include.target);
 
-				return {
-					source: processedSource!,
-					target: processedTarget || include.target,
-					physicalSource: physicalSource || undefined, // Convert null to undefined
-				};
-			});
+			// Apply conditional logic to the source path
+			const logicalPath = this.applyConditionalLogicToIncludePath(include.source, data);
+			console.log('DEBUG: Logical path result:', logicalPath);
+
+			if (logicalPath === null) {
+				console.log('DEBUG: Skipping include - condition is false');
+				continue; // Skip this include if condition is false
+			}
+
+			// Resolve the physical path for disk lookup
+			const physicalPath = this.resolvePhysicalPathForInclude(logicalPath, include.source, data);
+			console.log('DEBUG: Physical path result:', physicalPath);
+
+			if (physicalPath === null) {
+				console.log('DEBUG: Skipping include - physical path resolution failed');
+				continue; // Skip if physical path resolution failed
+			}
+
+			// Create new include config with resolved paths
+			const resolvedInclude: IncludeConfig = {
+				...include,
+				source: logicalPath,
+				physicalSource: physicalPath,
+			};
+
+			console.log('DEBUG: Adding resolved include:', resolvedInclude.source, '->', resolvedInclude.target);
+			result.push(resolvedInclude);
+		}
+
+		return result;
 	}
 
 	/**
@@ -373,8 +385,8 @@ export class TemplateResolver {
 				if (!shouldInclude) {
 					return null; // Skip the entire path
 				}
-				// Remove the conditional part for disk lookup (same as logical path)
-				processedSegment = processedSegment.replace(match, '');
+				// Keep the conditional part for physical path lookup (different from logical path)
+				// Don't remove it - keep it as-is for disk lookup
 			} else {
 				// Not a conditional, treat as dynamic expression
 				const evaluated = this.evaluateExpression(conditionExpr, data);
@@ -455,9 +467,11 @@ export class TemplateResolver {
 					: config;
 
 			if (configObj.include) {
+				console.log('DEBUG: Processing global config includes:', configObj.include);
 				const normalizedIncludes = this.normalizeIncludeArray(configObj.include);
 				// Apply conditional logic to include paths
 				const conditionalIncludes = this.applyConditionalLogicToIncludePaths(normalizedIncludes, data || {});
+				console.log('DEBUG: Global conditional includes after processing:', conditionalIncludes);
 				for (const include of conditionalIncludes) {
 					// Use physicalSource for disk lookup and exclusion tracking
 					const resolvedPath = resolve(include.physicalSource || include.source);
@@ -472,41 +486,9 @@ export class TemplateResolver {
 						const relativePath = (include.physicalSource || include.source).split('/').pop() || '';
 						targetedIncludes.get(resolvedPath)!.add(relativePath);
 					}
-				}
-			}
-		}
 
-		// Second pass: process templates, filtering out targeted includes
-		for (const includePath of includePaths) {
-			const resolvedPath = resolve(includePath);
-
-			// Get the specific paths to exclude for this template
-			const pathsToExclude = targetedIncludes.get(resolvedPath);
-			const template = await this.resolveTemplate(
-				resolvedPath,
-				undefined,
-				globalExclude,
-				pathsToExclude,
-				pluginManager,
-				data,
-			);
-			templates.push(template);
-		}
-
-		// Handle additional includes from config files
-		if (config) {
-			const configObj =
-				typeof config === 'string'
-					? await this.configParser.parseConfigFile(config, pluginManager, data, this.configFileName)
-					: config;
-
-			if (configObj.include) {
-				const normalizedIncludes = this.normalizeIncludeArray(configObj.include);
-				// Apply conditional logic to include paths
-				const conditionalIncludes = this.applyConditionalLogicToIncludePaths(normalizedIncludes, data || {});
-				for (const include of conditionalIncludes) {
-					// Use physicalSource for disk lookup
-					const resolvedPath = resolve(include.physicalSource || include.source);
+					// Resolve the template for this include
+					console.log('DEBUG: Resolving template for global include:', include.source, '->', resolvedPath);
 					const template = await this.resolveTemplate(
 						resolvedPath,
 						include.target,
@@ -515,9 +497,74 @@ export class TemplateResolver {
 						pluginManager,
 						data,
 					);
+					console.log(
+						'DEBUG: Global template resolved:',
+						template.path,
+						'with',
+						template.files.length,
+						'files',
+					);
 					templates.push(template);
 				}
 			}
+		}
+
+		// Resolve all templates
+		for (const templatePath of includePaths) {
+			console.log('DEBUG: Resolving main template:', templatePath);
+			const resolvedPath = resolve(templatePath);
+			console.log('DEBUG: Resolved path:', resolvedPath);
+
+			// Get paths to exclude for this template
+			const pathsToExclude = targetedIncludes.get(resolvedPath);
+			console.log('DEBUG: Paths to exclude for template:', pathsToExclude ? Array.from(pathsToExclude) : 'none');
+
+			const template = await this.resolveTemplate(
+				resolvedPath,
+				undefined,
+				globalExclude,
+				pathsToExclude,
+				pluginManager,
+				data,
+			);
+			console.log('DEBUG: Main template resolved:', template.path, 'with', template.files.length, 'files');
+			templates.push(template);
+		}
+
+		// Handle additional includes from config files
+		if (config) {
+			console.log('DEBUG: Template has config, processing includes');
+			const configObj =
+				typeof config === 'string'
+					? await this.configParser.parseConfigFile(config, pluginManager, data, this.configFileName)
+					: config;
+
+			if (configObj.include) {
+				console.log('DEBUG: Processing template config includes:', configObj.include);
+				const normalizedIncludes = this.normalizeIncludeArray(configObj.include);
+				// Apply conditional logic to include paths
+				const conditionalIncludes = this.applyConditionalLogicToIncludePaths(normalizedIncludes, data || {});
+				console.log('DEBUG: Template conditional includes after processing:', conditionalIncludes);
+				for (const include of conditionalIncludes) {
+					// Use physicalSource for disk lookup
+					const resolvedPath = resolve(include.physicalSource || include.source);
+					console.log('DEBUG: Resolving template for include:', include.source, '->', resolvedPath);
+					const template = await this.resolveTemplate(
+						resolvedPath,
+						include.target,
+						globalExclude,
+						undefined,
+						pluginManager,
+						data,
+					);
+					console.log('DEBUG: Template resolved:', template.path, 'with', template.files.length, 'files');
+					templates.push(template);
+				}
+			} else {
+				console.log('DEBUG: Template config has no includes');
+			}
+		} else {
+			console.log('DEBUG: Template has no config');
 		}
 
 		return templates;
@@ -583,6 +630,12 @@ export class TemplateResolver {
 				const physicalSource = include.physicalSource; // Use the physical source from applyConditionalLogicToIncludePaths
 				if (!physicalSource) continue;
 				const includeSourcePath = resolve(templatePath, physicalSource);
+
+				console.log(`DEBUG: TemplateResolver - Processing include:`);
+				console.log(`  - logicalSource: ${logicalSource}`);
+				console.log(`  - physicalSource: ${physicalSource}`);
+				console.log(`  - templatePath: ${templatePath}`);
+				console.log(`  - includeSourcePath: ${includeSourcePath}`);
 
 				// Load the configuration from the included directory
 				const includeConfigPath = join(includeSourcePath, this.configFileName);
@@ -653,14 +706,22 @@ export class TemplateResolver {
 					const logicalBase = resolve(templatePath, logicalSource);
 					let logicalOutputPath = join(logicalBase, logicalRelative);
 
+					const finalTargetPath = targetPath || logicalOutputPath;
+					console.log(
+						`DEBUG: TemplateResolver - Mapping include file: ${file.sourcePath} -> ${finalTargetPath}`,
+					);
+
 					return {
 						...file,
-						targetPath: targetPath || logicalOutputPath,
+						targetPath: finalTargetPath,
 						// Store the include config so it can be used for merge strategy determination
 						includeConfig: includeConfig,
 					};
 				});
 
+				console.log(
+					`DEBUG: TemplateResolver - Added ${mappedFiles.length} files from include: ${include.source} -> ${include.target}`,
+				);
 				includedFiles.push(...mappedFiles);
 			}
 

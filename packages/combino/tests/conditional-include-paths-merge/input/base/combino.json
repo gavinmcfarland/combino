@@ -1,0 +1,21 @@
+{
+	"include": [
+		{
+			"source": "../typescript[typescript]/tsconfig.ui.json",
+			"target": "src/ui/tsconfig.json"
+		},
+		{
+			"source": "../frameworks/[framework]/[typescript]/tsconfig.ui.json",
+			"target": "src/ui/tsconfig.json"
+		}
+	],
+	"data": {
+		"project.name": "Merge Test Project",
+		"project.version": "1.0.0"
+	},
+	"merge": {
+		"**/*.json": {
+			"strategy": "deep"
+		}
+	}
+}

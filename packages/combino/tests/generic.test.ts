@@ -27,6 +27,7 @@ interface TestConfig {
 	exclude?: string[];
 	configFileName?: string; // Custom config filename
 	enableConditionalIncludePaths?: boolean; // Enable/disable conditional include paths feature
+	merge?: Record<string, Record<string, any>>; // Merge configuration
 }
 
 // Plugin mapping
@@ -193,6 +194,7 @@ describe('Combino Integration Test Suite', () => {
 			} catch {}
 			const inputDirs = getInputDirsForTest(testConfig, testCaseDir);
 			const plugins = getPluginsFromConfig(testConfig);
+
 			const combino = new Combino();
 			await combino.build({
 				outputDir,

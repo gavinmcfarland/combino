@@ -5,6 +5,7 @@ import { minimatch } from 'minimatch';
 import { Parser } from 'expr-eval';
 import { ResolvedTemplate, ResolvedFile, ProcessedFile, CombinoConfig, MergeStrategy, TemplateInfo } from './types.js';
 import { PluginManager } from './types.js';
+import { existsSync } from 'fs';
 
 export class FileProcessor {
 	private configFileName: string;
@@ -92,6 +93,11 @@ export class FileProcessor {
 			ignore: [...excludePatterns, `**/${this.configFileName}`, '**/*.combino'],
 		});
 
+		console.log('DEBUG: FileProcessor found files in template:', templatePath);
+		console.log('DEBUG: allFiles:', allFiles);
+		console.log('DEBUG: excludePatterns:', excludePatterns);
+		console.log('DEBUG: configFileName:', this.configFileName);
+
 		// Manually filter out files that match exclusion patterns
 		const filteredFiles = allFiles.filter((file) => {
 			for (const pattern of excludePatterns) {
@@ -101,6 +107,14 @@ export class FileProcessor {
 			}
 			return true;
 		});
+
+		console.log('DEBUG: Filtered files:', filteredFiles);
+
+		// Get config file
+		const configPath = join(templatePath, this.configFileName);
+		console.log('DEBUG: Looking for config file at:', configPath);
+		const configExists = existsSync(configPath);
+		console.log('DEBUG: Config file exists:', configExists);
 
 		for (const file of filteredFiles) {
 			// Check for underscore exclusion: files/folders starting with _ should be excluded unless explicitly included
@@ -265,6 +279,7 @@ export class FileProcessor {
 		pluginManager: PluginManager,
 		globalConfig?: CombinoConfig,
 	): Promise<ProcessedFile[]> {
+		console.log('DEBUG: FileProcessor.compileFiles - Starting compilation');
 		const compiledFiles: ProcessedFile[] = [];
 
 		// Combine merge configurations in topological order
@@ -283,17 +298,32 @@ export class FileProcessor {
 		}));
 
 		for (const template of templates) {
+			console.log(`DEBUG: FileProcessor.compileFiles - Processing template: ${template.path}`);
 			for (const file of template.files) {
+				console.log(
+					`DEBUG: FileProcessor.compileFiles - Processing file: ${file.sourcePath} -> ${file.targetPath}`,
+				);
+
 				// Skip companion files (they're only used for data)
 				const isCompanionFile = file.targetPath.match(/\.json\.json$/);
 
 				if (isCompanionFile) {
+					console.log(`DEBUG: FileProcessor.compileFiles - Skipping companion file: ${file.targetPath}`);
 					continue;
 				}
 
 				// Apply conditional logic to file paths
 				const targetPath = this.applyConditionalLogic(file.targetPath, data);
-				if (!targetPath) continue; // File excluded by conditional logic
+				if (!targetPath) {
+					console.log(
+						`DEBUG: FileProcessor.compileFiles - File excluded by conditional logic: ${file.targetPath}`,
+					);
+					continue; // File excluded by conditional logic
+				}
+
+				console.log(
+					`DEBUG: FileProcessor.compileFiles - Conditional logic result: ${file.targetPath} -> ${targetPath}`,
+				);
 
 				// Compile file content with plugins (single compile hook with full context)
 				const context = {
@@ -309,15 +339,21 @@ export class FileProcessor {
 				// Determine merge strategy using combined configuration
 				const mergeStrategy = this.getMergeStrategy(file, this.combinedMergeConfig);
 
+				const finalTargetPath = result.id || targetPath;
+				console.log(
+					`DEBUG: FileProcessor.compileFiles - Final target path: ${finalTargetPath} (strategy: ${mergeStrategy})`,
+				);
+
 				compiledFiles.push({
 					sourcePath: file.sourcePath,
-					targetPath: result.id || targetPath,
+					targetPath: finalTargetPath,
 					content: result.content,
 					mergeStrategy,
 				});
 			}
 		}
 
+		console.log('DEBUG: FileProcessor.compileFiles - Compilation complete');
 		return compiledFiles;
 	}
 
@@ -520,38 +556,53 @@ export class FileProcessor {
 	}
 
 	private getMergeStrategy(file: ResolvedFile, config: Record<string, Record<string, any>>): MergeStrategy {
+		console.log(`DEBUG: getMergeStrategy - File: ${file.targetPath}`);
+		console.log(`DEBUG: getMergeStrategy - Config:`, config);
+
 		// Check file-specific config first
 		if (file.config?.merge) {
+			console.log(`DEBUG: getMergeStrategy - File config merge:`, file.config.merge);
 			for (const [pattern, config] of Object.entries(file.config.merge)) {
 				if (this.matchesPattern(file.targetPath, pattern)) {
-					return config.strategy || 'replace';
+					const strategy = config.strategy || 'replace';
+					console.log(`DEBUG: getMergeStrategy - File config match: ${pattern} -> ${strategy}`);
+					return strategy;
 				}
 			}
 		}
 
 		// Check include config (for files that come from included directories)
 		if (file.includeConfig?.merge) {
+			console.log(`DEBUG: getMergeStrategy - Include config merge:`, file.includeConfig.merge);
 			for (const [pattern, config] of Object.entries(file.includeConfig.merge)) {
 				if (this.matchesPattern(file.targetPath, pattern)) {
-					return config.strategy || 'replace';
+					const strategy = config.strategy || 'replace';
+					console.log(`DEBUG: getMergeStrategy - Include config match: ${pattern} -> ${strategy}`);
+					return strategy;
 				}
 			}
 		}
 
 		// Check template config
 		if (config) {
+			console.log(`DEBUG: getMergeStrategy - Template config:`, config);
 			for (const [pattern, mergeConfig] of Object.entries(config)) {
 				if (this.matchesPattern(file.targetPath, pattern)) {
-					return mergeConfig.strategy || 'replace';
+					const strategy = mergeConfig.strategy || 'replace';
+					console.log(`DEBUG: getMergeStrategy - Template config match: ${pattern} -> ${strategy}`);
+					return strategy;
 				}
 			}
 		}
 
+		console.log(`DEBUG: getMergeStrategy - No match found, using default: replace`);
 		return 'replace'; // Default strategy
 	}
 
 	private matchesPattern(filePath: string, pattern: string): boolean {
 		// Use minimatch for proper glob pattern matching
-		return minimatch(filePath, pattern);
+		const result = minimatch(filePath, pattern);
+		console.log(`DEBUG: matchesPattern - "${filePath}" matches "${pattern}": ${result}`);
+		return result;
 	}
 }

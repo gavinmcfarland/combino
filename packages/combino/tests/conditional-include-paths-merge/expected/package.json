@@ -1,0 +1,5 @@
+{
+	"name": "merge-test-project",
+	"version": "1.0.0",
+	"description": "Test project for conditional include paths merging"
+}

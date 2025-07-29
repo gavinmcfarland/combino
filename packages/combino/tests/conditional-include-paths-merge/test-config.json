@@ -1,0 +1,10 @@
+{
+	"data": {
+		"typescript": true,
+		"framework": "react",
+		"language": "ts"
+	},
+	"plugins": ["ejs"],
+	"inputDirs": ["input/base"],
+	"description": "Test that conditional include paths targeting the same location are properly merged"
+}
