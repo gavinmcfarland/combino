@@ -15,9 +15,9 @@
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"noFallthroughCasesInSwitch": true,
-		"typeRoots": ["node_modules/@types"],
+		"typeRoots": ["./node_modules/@types"],
 		"baseUrl": "."
 	},
-	"include": ["src/**/*.ts", "src/**/*.tsx", "vite-env.d.ts"],
-	"exclude": ["node_modules", "dist"]
+	"include": ["./src/**/*.ts", "./src/**/*.tsx", "./vite-env.d.ts"],
+	"exclude": ["./node_modules", "./dist"]
 }

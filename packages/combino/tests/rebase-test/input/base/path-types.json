@@ -1,0 +1,6 @@
+{
+	"cwdExample": "<%= rebase('src') %>",
+	"relativeExample": "<%= rebase('node_modules') %>",
+	"absoluteExample": "<%= rebase('dist') %>",
+	"nestedExample": "<%= rebase('src/components') %>"
+}

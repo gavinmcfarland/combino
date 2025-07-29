@@ -1,0 +1,6 @@
+{
+	"cwdExample": "src",
+	"relativeExample": "node_modules",
+	"absoluteExample": "dist",
+	"nestedExample": "src/components"
+}

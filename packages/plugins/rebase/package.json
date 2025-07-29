@@ -2,7 +2,7 @@
 	"name": "@combino/plugin-rebase",
 	"version": "1.0.0",
 	"type": "module",
-	"description": "Rebase plugin for Combino - handles relative path calculations for configuration files",
+	"description": "Rebase plugin for Combino - handles relative path calculations for templatefiles",
 	"main": "./dist/index.js",
 	"module": "./dist/index.js",
 	"types": "./dist/index.d.ts",

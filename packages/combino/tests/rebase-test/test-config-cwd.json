@@ -1,0 +1,17 @@
+{
+	"data": {
+		"framework": "typescript",
+		"language": "ts",
+		"type": "web",
+		"name": "test-project",
+		"version": "1.0.0"
+	},
+	"plugins": ["rebase", "ejs"],
+	"inputDirs": ["input/base"],
+	"description": "Test rebase plugin with cwd path type",
+	"pluginConfigs": {
+		"rebase": {
+			"pathType": "cwd"
+		}
+	}
+}

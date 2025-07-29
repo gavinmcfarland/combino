@@ -3,10 +3,10 @@
 	"version": "1.0.0",
 	"type": "module",
 	"scripts": {
-		"dev": "vite --config vite.config.ts",
-		"build": "tsc && vite build --config vite.config.ts",
+		"dev": "vite --config ./vite.config.ts",
+		"build": "tsc && vite build --config ./vite.config.ts",
 		"preview": "vite preview",
-		"lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+		"lint": "eslint ./src --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
 	},
 	"dependencies": {
 		"react": "^18.2.0",
