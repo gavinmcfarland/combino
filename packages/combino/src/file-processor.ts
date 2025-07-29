@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs';
-import { join } from 'path';
+import { join, basename } from 'path';
 import { glob } from 'glob';
 import { minimatch } from 'minimatch';
 import { Parser } from 'expr-eval';
@@ -42,6 +42,47 @@ export class FileProcessor {
 	async getTemplateFiles(templatePath: string, config?: CombinoConfig): Promise<ResolvedFile[]> {
 		const files: ResolvedFile[] = [];
 		const excludePatterns = config?.exclude || [];
+
+		// Check if templatePath is actually a file (not a directory)
+		try {
+			const stats = await fs.stat(templatePath);
+			if (stats.isFile()) {
+				// Handle individual file include
+				const content = await fs.readFile(templatePath, 'utf-8');
+
+				// Parse file-specific config if it exists
+				const fileConfigPath = join(templatePath, this.configFileName);
+				let fileConfig;
+				try {
+					const configContent = await fs.readFile(fileConfigPath, 'utf-8');
+					fileConfig = JSON.parse(configContent);
+				} catch {
+					// No file-specific config
+				}
+
+				// For individual files, use the filename as the target path
+				const fileName = basename(templatePath);
+
+				// Apply underscore exclusion logic to individual files
+				const underscoreResult = this.shouldExcludeUnderscoreFile(fileName, config);
+				if (underscoreResult.exclude) {
+					return files; // Return empty array if file should be excluded
+				}
+
+				const targetPath = underscoreResult.targetPath || fileName;
+
+				files.push({
+					sourcePath: templatePath,
+					targetPath,
+					content,
+					config: fileConfig,
+				});
+
+				return files;
+			}
+		} catch {
+			// If we can't stat the path, assume it's a directory and continue with normal processing
+		}
 
 		// Get all files in the template directory, excluding config files
 		const allFiles = await glob('**/*', {

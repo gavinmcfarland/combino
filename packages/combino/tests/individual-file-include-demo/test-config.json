@@ -1,0 +1,9 @@
+{
+	"data": {
+		"framework": "react"
+	},
+	"plugins": ["ejs"],
+	"inputDirs": ["input/base"],
+	"description": "Demo that individual file includes with targets work correctly",
+	"skip": false
+}

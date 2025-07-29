@@ -1,4 +1,4 @@
-import { resolve, join } from 'path';
+import { resolve, join, basename, dirname } from 'path';
 import { promises as fs } from 'fs';
 import { ResolvedTemplate, ResolvedFile, CombinoConfig, IncludeConfig, IncludeItem, PluginManager } from './types.js';
 import { ConfigParser } from './config-parser.js';
@@ -249,12 +249,34 @@ export class TemplateResolver {
 				);
 
 				// Map the files to the target directory if specified and apply include config
-				const mappedFiles = includeFiles.map((file) => ({
-					...file,
-					targetPath: include.target ? join(include.target, file.targetPath) : file.targetPath,
-					// Store the include config so it can be used for merge strategy determination
-					includeConfig: includeConfig,
-				}));
+				const mappedFiles = includeFiles.map((file) => {
+					let targetPath = file.targetPath;
+
+					if (include.target) {
+						// Check if the include target is a file path (ends with a filename)
+						const targetBasename = basename(include.target);
+						const targetDirname = dirname(include.target);
+
+						// If the target has a filename (not just a directory), use it directly
+						if (
+							targetBasename !== targetDirname &&
+							targetBasename !== '.' &&
+							targetBasename.includes('.')
+						) {
+							targetPath = include.target;
+						} else {
+							// Otherwise, join the target directory with the file's target path
+							targetPath = join(include.target, file.targetPath);
+						}
+					}
+
+					return {
+						...file,
+						targetPath,
+						// Store the include config so it can be used for merge strategy determination
+						includeConfig: includeConfig,
+					};
+				});
 
 				includedFiles.push(...mappedFiles);
 			}
