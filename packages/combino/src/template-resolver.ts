@@ -415,7 +415,8 @@ export class TemplateResolver {
 						data || {},
 					);
 					for (const include of conditionalIncludes) {
-						const includeSourcePath = resolve(resolvedPath, include.source);
+						// Use physicalSource for disk lookup and exclusion tracking
+						const includeSourcePath = resolve(resolvedPath, include.physicalSource || include.source);
 
 						// Only track includes that have targets - these need to be excluded from their source
 						if (include.target) {
@@ -458,7 +459,8 @@ export class TemplateResolver {
 				// Apply conditional logic to include paths
 				const conditionalIncludes = this.applyConditionalLogicToIncludePaths(normalizedIncludes, data || {});
 				for (const include of conditionalIncludes) {
-					const resolvedPath = resolve(include.source);
+					// Use physicalSource for disk lookup and exclusion tracking
+					const resolvedPath = resolve(include.physicalSource || include.source);
 
 					// Only track includes that have targets
 					if (include.target) {
@@ -467,7 +469,7 @@ export class TemplateResolver {
 						}
 
 						// Extract the relative path from the include source
-						const relativePath = include.source.split('/').pop() || '';
+						const relativePath = (include.physicalSource || include.source).split('/').pop() || '';
 						targetedIncludes.get(resolvedPath)!.add(relativePath);
 					}
 				}
@@ -503,7 +505,8 @@ export class TemplateResolver {
 				// Apply conditional logic to include paths
 				const conditionalIncludes = this.applyConditionalLogicToIncludePaths(normalizedIncludes, data || {});
 				for (const include of conditionalIncludes) {
-					const resolvedPath = resolve(include.source);
+					// Use physicalSource for disk lookup
+					const resolvedPath = resolve(include.physicalSource || include.source);
 					const template = await this.resolveTemplate(
 						resolvedPath,
 						include.target,
@@ -551,8 +554,12 @@ export class TemplateResolver {
 		// Add specific paths to exclude from targeted includes
 		if (pathsToExclude) {
 			for (const pathToExclude of pathsToExclude) {
-				excludePatterns.push(`${pathToExclude}/**`);
-				excludePatterns.push(pathToExclude);
+				// Escape square brackets for minimatch (treat as literal text, not character classes)
+				const escapedPath = pathToExclude.replace(/\[/g, '\\[').replace(/\]/g, '\\]');
+				const pattern1 = `${escapedPath}/**`;
+				const pattern2 = escapedPath;
+				excludePatterns.push(pattern1);
+				excludePatterns.push(pattern2);
 			}
 		}
 

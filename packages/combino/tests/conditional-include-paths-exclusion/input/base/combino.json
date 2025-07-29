@@ -1,0 +1,16 @@
+{
+	"include": [
+		{
+			"source": "../frameworks/<%= framework %>/[typescript]/tsconfig.ui.json",
+			"target": "src/ui/tsconfig.json"
+		},
+		{
+			"source": "../frameworks/<%= framework %>/[typescript]/components",
+			"target": "src/ui/components"
+		}
+	],
+	"data": {
+		"project.name": "Exclusion Test Project",
+		"project.version": "1.0.0"
+	}
+}

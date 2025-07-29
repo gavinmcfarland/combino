@@ -1,0 +1,10 @@
+{
+	"data": {
+		"typescript": true,
+		"framework": "react",
+		"language": "ts"
+	},
+	"plugins": ["ejs"],
+	"inputDirs": ["input/base", "input/frameworks/react"],
+	"description": "Test that conditional include paths properly exclude files from being merged elsewhere"
+}

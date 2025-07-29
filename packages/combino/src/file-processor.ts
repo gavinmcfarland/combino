@@ -92,7 +92,17 @@ export class FileProcessor {
 			ignore: [...excludePatterns, `**/${this.configFileName}`, '**/*.combino'],
 		});
 
-		for (const file of allFiles) {
+		// Manually filter out files that match exclusion patterns
+		const filteredFiles = allFiles.filter((file) => {
+			for (const pattern of excludePatterns) {
+				if (minimatch(file, pattern)) {
+					return false;
+				}
+			}
+			return true;
+		});
+
+		for (const file of filteredFiles) {
 			// Check for underscore exclusion: files/folders starting with _ should be excluded unless explicitly included
 			const underscoreResult = this.shouldExcludeUnderscoreFile(file, config);
 			if (underscoreResult.exclude) {

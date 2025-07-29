@@ -1,0 +1,5 @@
+{
+	"name": "Exclusion Test Project",
+	"version": "1.0.0",
+	"description": "Test project for conditional include paths exclusion"
+}
