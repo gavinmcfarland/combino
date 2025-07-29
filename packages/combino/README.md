@@ -41,6 +41,7 @@ interface Options {
     data?: Record<string, any>;
     plugins?: Plugin[];
     configFileName?: string;
+    enableConditionalIncludePaths?: boolean; // Enable/disable conditional include paths feature (default: true)
 }
 
 interface CombinoConfig {
@@ -130,6 +131,74 @@ templates/
             App.tsx
         vite.d.ts[ts]             # Only outputted if ts=true
 ```
+
+### Conditional Include Paths
+
+Include paths in `combino.json` can use conditional logic with square bracket syntax. When a condition is truthy, the folder is entered but its name is dropped from the resolved output path. When falsy, the entire entry is skipped.
+
+**Example**
+
+```json
+{
+    "include": [
+        {
+            "source": "../frameworks/<%= framework %>/[typescript]/tsconfig.ui.json",
+            "target": "src/ui/tsconfig.json"
+        },
+        {
+            "source": "../frameworks/<%= framework %>/[javascript]/config.js",
+            "target": "src/config.js"
+        }
+    ]
+}
+```
+
+**Directory Structure**
+
+```bash
+frameworks/
+    react/
+        [typescript]/
+            tsconfig.ui.json      # Only included if typescript=true
+        [javascript]/
+            config.js             # Only included if javascript=true
+```
+
+**Behavior**
+
+- If `typescript: true`: File is copied from `frameworks/react/[typescript]/tsconfig.ui.json` to `src/ui/tsconfig.json`
+- If `typescript: false`: File is not copied at all
+- The `[typescript]` segment is not included in the final output path
+
+**Supported Expressions**
+
+- Simple boolean: `[typescript]` (truthy if `typescript` is true)
+- Comparison: `[framework=="react"]` (truthy if `framework` equals "react")
+- Ternary: `[typescript ? "ts" : "js"]` (evaluates to "ts" or "js")
+
+### Disabling Conditional Include Paths
+
+You can disable the conditional include paths feature by setting the `enableConditionalIncludePaths` option to `false`. When disabled, conditional logic in include paths will be ignored and paths will be processed as-is.
+
+**Example**
+
+```js
+import { Combino } from 'combino';
+
+const combino = new Combino();
+
+await combino.build({
+    outputDir: './output',
+    include: ['./templates/base'],
+    enableConditionalIncludePaths: false, // Disable the feature
+    data: {
+        typescript: true,
+        framework: 'react',
+    },
+});
+```
+
+When disabled, include paths like `../frameworks/<%= framework %>/[typescript]/tsconfig.ui.json` will be processed as literal paths without conditional logic.
 
 ### Special Folder and File Naming
 

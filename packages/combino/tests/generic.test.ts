@@ -26,6 +26,7 @@ interface TestConfig {
 	pluginConfigs?: Record<string, any>;
 	exclude?: string[];
 	configFileName?: string; // Custom config filename
+	enableConditionalIncludePaths?: boolean; // Enable/disable conditional include paths feature
 }
 
 // Plugin mapping
@@ -201,6 +202,9 @@ describe('Combino Integration Test Suite', () => {
 				exclude: testConfig.exclude,
 				...(configFile ? { config: configFile } : {}),
 				...(testConfig.configFileName ? { configFileName: testConfig.configFileName } : {}),
+				...(testConfig.enableConditionalIncludePaths !== undefined
+					? { enableConditionalIncludePaths: testConfig.enableConditionalIncludePaths }
+					: {}),
 			});
 
 			// Only compare with expected directory if it exists

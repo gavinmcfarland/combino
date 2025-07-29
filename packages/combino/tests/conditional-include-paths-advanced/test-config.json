@@ -1,0 +1,11 @@
+{
+	"data": {
+		"typescript": true,
+		"framework": "react",
+		"language": "ts",
+		"ext": "json"
+	},
+	"plugins": ["ejs"],
+	"inputDirs": ["input/base"],
+	"description": "Test advanced conditional include paths with complex expressions and mixed syntax"
+}

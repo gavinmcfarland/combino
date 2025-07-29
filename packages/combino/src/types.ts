@@ -70,6 +70,8 @@ export interface Options {
 	plugins?: Plugin[];
 	/** Custom filename for config files in template directories (default: 'combino.json') */
 	configFileName?: string;
+	/** Enable/disable conditional include paths feature (default: true) */
+	enableConditionalIncludePaths?: boolean;
 }
 
 export interface ResolvedTemplate {

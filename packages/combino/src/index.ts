@@ -31,7 +31,7 @@ export class Combino {
 		this.fileProcessor = new FileProcessor(configFileName);
 		this.fileMerger = new FileMerger();
 		this.dataCollector = new DataCollector();
-		this.templateResolver = new TemplateResolver(configFileName);
+		this.templateResolver = new TemplateResolver(configFileName, true); // Default to enabled
 		this.fileTransformer = new FileTransformer();
 		this.fileFormatter = new FileFormatter();
 		this.fileWriter = new FileWriter();
@@ -43,10 +43,13 @@ export class Combino {
 			this.pluginManager.addPlugins(options.plugins);
 		}
 
-		// Step 2: Update config filename if provided
-		if (options.configFileName) {
+		// Step 2: Update config filename and feature flags if provided
+		if (options.configFileName || options.enableConditionalIncludePaths !== undefined) {
 			this.fileProcessor = new FileProcessor(options.configFileName);
-			this.templateResolver = new TemplateResolver(options.configFileName);
+			this.templateResolver = new TemplateResolver(
+				options.configFileName,
+				options.enableConditionalIncludePaths !== undefined ? options.enableConditionalIncludePaths : true,
+			);
 		}
 
 		// Step 3: Parse global config if provided

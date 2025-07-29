@@ -1,0 +1,11 @@
+{
+	"data": {
+		"typescript": false,
+		"framework": "vue",
+		"language": "js",
+		"ext": "js"
+	},
+	"plugins": ["ejs"],
+	"inputDirs": ["input/base"],
+	"description": "Test advanced conditional include paths when conditions are false"
+}

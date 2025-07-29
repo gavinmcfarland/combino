@@ -9,11 +9,13 @@ export class TemplateResolver {
 	private configParser: ConfigParser;
 	private fileProcessor: FileProcessor;
 	private configFileName: string;
+	private enableConditionalIncludePaths: boolean;
 
-	constructor(configFileName: string = 'combino.json') {
+	constructor(configFileName: string = 'combino.json', enableConditionalIncludePaths: boolean = true) {
 		this.configParser = new ConfigParser();
 		this.fileProcessor = new FileProcessor(configFileName);
 		this.configFileName = configFileName;
+		this.enableConditionalIncludePaths = enableConditionalIncludePaths;
 	}
 
 	/**
@@ -37,6 +39,11 @@ export class TemplateResolver {
 	 * Apply conditional logic to include paths, filtering out paths that should be excluded
 	 */
 	private applyConditionalLogicToIncludePaths(includes: IncludeConfig[], data: Record<string, any>): IncludeConfig[] {
+		// If conditional include paths are disabled, return includes as-is
+		if (!this.enableConditionalIncludePaths) {
+			return includes;
+		}
+
 		return includes
 			.filter((include) => {
 				// Apply conditional logic to the source path
@@ -70,10 +77,10 @@ export class TemplateResolver {
 		const resolvedSegments: string[] = [];
 
 		for (const segment of segments) {
-			// Check if this segment is a conditional expression [expression]
-			const match = segment.match(/^\[(.+?)\]$/);
-			if (match) {
-				const conditionExpr = match[1];
+			// First, check if this segment is a complete conditional expression [expression]
+			const completeMatch = segment.match(/^\[(.+?)\]$/);
+			if (completeMatch) {
+				const conditionExpr = completeMatch[1];
 
 				// Skip ternary expressions (they contain "?" and ":")
 				if (conditionExpr.includes('?') && conditionExpr.includes(':')) {
@@ -102,13 +109,61 @@ export class TemplateResolver {
 					}
 				}
 			} else {
-				// Regular segment - apply EJS templating
-				const interpolated = this.ejsRender(segment, data);
-				resolvedSegments.push(interpolated);
+				// Check for embedded conditional expressions within the segment
+				const processedSegment = this.processEmbeddedConditionals(segment, data);
+				if (processedSegment === null) {
+					return null; // Skip the entire path
+				}
+				if (processedSegment !== '') {
+					// Apply EJS templating to the processed segment
+					const interpolated = this.ejsRender(processedSegment, data);
+					resolvedSegments.push(interpolated);
+				}
 			}
 		}
 
 		return resolvedSegments.join('/');
+	}
+
+	/**
+	 * Process embedded conditional expressions within a segment
+	 */
+	private processEmbeddedConditionals(segment: string, data: Record<string, any>): string | null {
+		// Find all conditional expressions within the segment
+		const conditionalMatches = segment.match(/\[([^\]]+)\]/g);
+		if (!conditionalMatches) {
+			return segment; // No conditionals found, return as-is
+		}
+
+		let processedSegment = segment;
+
+		for (const match of conditionalMatches) {
+			const conditionExpr = match.slice(1, -1); // Remove [ and ]
+
+			// Skip ternary expressions
+			if (conditionExpr.includes('?') && conditionExpr.includes(':')) {
+				const evaluated = this.evaluateExpression(conditionExpr, data);
+				processedSegment = processedSegment.replace(match, evaluated);
+				continue;
+			}
+
+			// Check if this is a conditional expression
+			const isConditional = this.isConditionalExpression(conditionExpr, data);
+			if (isConditional) {
+				const shouldInclude = this.evaluateCondition(conditionExpr, data);
+				if (!shouldInclude) {
+					return null; // Skip the entire path
+				}
+				// Remove the conditional part from the segment
+				processedSegment = processedSegment.replace(match, '');
+			} else {
+				// Not a conditional, treat as dynamic expression
+				const evaluated = this.evaluateExpression(conditionExpr, data);
+				processedSegment = processedSegment.replace(match, evaluated);
+			}
+		}
+
+		return processedSegment;
 	}
 
 	/**
@@ -259,14 +314,15 @@ export class TemplateResolver {
 
 		for (let i = 0; i < originalSegments.length; i++) {
 			const segment = originalSegments[i];
-			const match = segment.match(/^\[(.+?)\]$/);
-			if (match) {
-				const conditionExpr = match[1];
+			// First, check if this segment is a complete conditional expression [expression]
+			const completeMatch = segment.match(/^\[(.+?)\]$/);
+			if (completeMatch) {
+				const conditionExpr = completeMatch[1];
 				const isConditional = this.isConditionalExpression(conditionExpr, data);
 				if (isConditional) {
 					const shouldInclude = this.evaluateCondition(conditionExpr, data);
 					if (!shouldInclude) return null;
-					// If truthy, add the segment as-is (with brackets) for disk lookup
+					// If truthy, keep the segment as-is (with brackets) for disk lookup
 					resolvedSegments.push(segment);
 				} else {
 					// Not a conditional, treat as dynamic expression
@@ -276,11 +332,57 @@ export class TemplateResolver {
 					}
 				}
 			} else {
-				// Regular segment, add as-is
-				resolvedSegments.push(segment);
+				// Check for embedded conditional expressions within the segment
+				const processedSegment = this.processEmbeddedConditionalsForPhysicalPath(segment, data);
+				if (processedSegment === null) {
+					return null; // Skip the entire path
+				}
+				resolvedSegments.push(processedSegment);
 			}
 		}
 		return resolvedSegments.join('/');
+	}
+
+	/**
+	 * Process embedded conditional expressions within a segment for physical path resolution
+	 * This is similar to processEmbeddedConditionals but keeps the conditional parts for disk lookup
+	 */
+	private processEmbeddedConditionalsForPhysicalPath(segment: string, data: Record<string, any>): string | null {
+		// Find all conditional expressions within the segment
+		const conditionalMatches = segment.match(/\[([^\]]+)\]/g);
+		if (!conditionalMatches) {
+			return segment; // No conditionals found, return as-is
+		}
+
+		let processedSegment = segment;
+
+		for (const match of conditionalMatches) {
+			const conditionExpr = match.slice(1, -1); // Remove [ and ]
+
+			// Skip ternary expressions
+			if (conditionExpr.includes('?') && conditionExpr.includes(':')) {
+				const evaluated = this.evaluateExpression(conditionExpr, data);
+				processedSegment = processedSegment.replace(match, evaluated);
+				continue;
+			}
+
+			// Check if this is a conditional expression
+			const isConditional = this.isConditionalExpression(conditionExpr, data);
+			if (isConditional) {
+				const shouldInclude = this.evaluateCondition(conditionExpr, data);
+				if (!shouldInclude) {
+					return null; // Skip the entire path
+				}
+				// Remove the conditional part for disk lookup (same as logical path)
+				processedSegment = processedSegment.replace(match, '');
+			} else {
+				// Not a conditional, treat as dynamic expression
+				const evaluated = this.evaluateExpression(conditionExpr, data);
+				processedSegment = processedSegment.replace(match, evaluated);
+			}
+		}
+
+		return processedSegment;
 	}
 
 	async resolveTemplates(

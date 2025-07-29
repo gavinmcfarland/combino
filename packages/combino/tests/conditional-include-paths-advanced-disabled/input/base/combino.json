@@ -1,0 +1,16 @@
+{
+	"include": [
+		{
+			"source": "../frameworks/<%= framework %>/typescript[typescript]/tsconfig.ui.[ext]",
+			"target": "src/ui/tsconfig.json"
+		},
+		{
+			"source": "../frameworks/[framework==\"react\"]/config.js",
+			"target": "src/config.js"
+		}
+	],
+	"data": {
+		"project.name": "Advanced Test Project",
+		"project.version": "2.0.0"
+	}
+}
