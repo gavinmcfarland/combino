@@ -1,0 +1,10 @@
+{
+	"data": {
+		"typescript": true,
+		"framework": "react",
+		"language": "ts"
+	},
+	"plugins": ["ejs"],
+	"inputDirs": ["input/base"],
+	"description": "Test conditional include paths where include paths with square brackets are conditionally included based on data values"
+}

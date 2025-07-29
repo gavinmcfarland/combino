@@ -1,0 +1,16 @@
+{
+	"include": [
+		{
+			"source": "../frameworks/<%= framework %>/[typescript]/tsconfig.ui.json",
+			"target": "src/ui/tsconfig.json"
+		},
+		{
+			"source": "../frameworks/<%= framework %>/[javascript]/config.js",
+			"target": "src/config.js"
+		}
+	],
+	"data": {
+		"project.name": "Test Project",
+		"project.version": "1.0.0"
+	}
+}

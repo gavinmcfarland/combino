@@ -1,5 +1,6 @@
 import { resolve, join, basename, dirname } from 'path';
 import { promises as fs } from 'fs';
+import { Parser } from 'expr-eval';
 import { ResolvedTemplate, ResolvedFile, CombinoConfig, IncludeConfig, IncludeItem, PluginManager } from './types.js';
 import { ConfigParser } from './config-parser.js';
 import { FileProcessor } from './file-processor.js';
@@ -32,6 +33,256 @@ export class TemplateResolver {
 		return include.map((item) => this.normalizeIncludeItem(item));
 	}
 
+	/**
+	 * Apply conditional logic to include paths, filtering out paths that should be excluded
+	 */
+	private applyConditionalLogicToIncludePaths(includes: IncludeConfig[], data: Record<string, any>): IncludeConfig[] {
+		return includes
+			.filter((include) => {
+				// Apply conditional logic to the source path
+				const processedSource = this.applyConditionalLogicToIncludePath(include.source, data);
+				return processedSource !== null; // Keep only paths that aren't excluded
+			})
+			.map((include) => {
+				// Apply conditional logic to both source and target paths
+				const processedSource = this.applyConditionalLogicToIncludePath(include.source, data);
+				const processedTarget = include.target
+					? this.applyConditionalLogicToIncludePath(include.target, data)
+					: undefined;
+
+				// Resolve the physical path for disk lookup
+				const physicalSource = this.resolvePhysicalPathForInclude(processedSource!, include.source, data);
+
+				return {
+					source: processedSource!,
+					target: processedTarget || include.target,
+					physicalSource: physicalSource || undefined, // Convert null to undefined
+				};
+			});
+	}
+
+	/**
+	 * Apply conditional logic to include paths using the correct unwrapping algorithm
+	 */
+	private applyConditionalLogicToIncludePath(path: string, data: Record<string, any>): string | null {
+		// Split path into segments and process each one
+		const segments = path.split('/');
+		const resolvedSegments: string[] = [];
+
+		for (const segment of segments) {
+			// Check if this segment is a conditional expression [expression]
+			const match = segment.match(/^\[(.+?)\]$/);
+			if (match) {
+				const conditionExpr = match[1];
+
+				// Skip ternary expressions (they contain "?" and ":")
+				if (conditionExpr.includes('?') && conditionExpr.includes(':')) {
+					// Handle as dynamic expression
+					const evaluated = this.evaluateExpression(conditionExpr, data);
+					if (evaluated) {
+						resolvedSegments.push(evaluated);
+					}
+					continue;
+				}
+
+				// Check if this is a conditional expression
+				const isConditional = this.isConditionalExpression(conditionExpr, data);
+				if (isConditional) {
+					const shouldInclude = this.evaluateCondition(conditionExpr, data);
+					if (!shouldInclude) {
+						return null; // Skip the entire path
+					}
+					// Don't add anything to resolvedSegments - we're "unwrapping" the folder
+					// The folder is entered but the name is dropped from the resolved path
+				} else {
+					// Not a conditional, treat as dynamic expression
+					const evaluated = this.evaluateExpression(conditionExpr, data);
+					if (evaluated) {
+						resolvedSegments.push(evaluated);
+					}
+				}
+			} else {
+				// Regular segment - apply EJS templating
+				const interpolated = this.ejsRender(segment, data);
+				resolvedSegments.push(interpolated);
+			}
+		}
+
+		return resolvedSegments.join('/');
+	}
+
+	/**
+	 * Simple EJS-like rendering for path segments
+	 */
+	private ejsRender(segment: string, data: Record<string, any>): string {
+		// Handle basic EJS interpolation like <%= variable %>
+		return segment.replace(/<%=?\s*([^%>]+)\s*%>/g, (match, expression) => {
+			try {
+				// Handle nested properties
+				const keys = expression.trim().split('.');
+				let value = data;
+				for (const key of keys) {
+					value = value?.[key];
+					if (value === undefined) break;
+				}
+				return String(value || '');
+			} catch (error) {
+				return '';
+			}
+		});
+	}
+
+	private isConditionalExpression(expression: string, data: Record<string, any>): boolean {
+		// Check if the expression contains conditional operators
+		if (
+			expression.includes('==') ||
+			expression.includes('!=') ||
+			expression.includes('&&') ||
+			expression.includes('||')
+		) {
+			return true;
+		}
+
+		// Check if the expression is a simple boolean variable in the data
+		try {
+			const cleanExpression = expression.trim();
+			// If it's a simple variable name and the value is a boolean, treat it as conditional
+			if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(cleanExpression)) {
+				const value = data[cleanExpression];
+				return typeof value === 'boolean';
+			}
+		} catch (error) {
+			// If we can't determine, assume it's not conditional
+		}
+
+		return false;
+	}
+
+	private evaluateCondition(condition: string, data: Record<string, any>): boolean {
+		try {
+			// For conditions that don't have brackets, add them
+			const conditionWithBrackets = condition.startsWith('[') ? condition : `[${condition}]`;
+
+			// Remove the [ and ] from the condition
+			const cleanCondition = conditionWithBrackets.slice(1, -1);
+
+			// Replace operators to be compatible with expr-eval
+			const parsedCondition = cleanCondition.replace(/&&/g, ' and ').replace(/\|\|/g, ' or ');
+
+			// Create a parser instance
+			const parser = new Parser();
+
+			// Create a scope with the data
+			const scope = Object.entries(data).reduce(
+				(acc, [key, value]) => {
+					// Handle nested properties
+					const keys = key.split('.');
+					let current = acc;
+					for (let i = 0; i < keys.length - 1; i++) {
+						current[keys[i]] = current[keys[i]] || {};
+						current = current[keys[i]];
+					}
+					current[keys[keys.length - 1]] = value;
+					return acc;
+				},
+				{} as Record<string, any>,
+			);
+
+			// Parse and evaluate the expression
+			const expr = parser.parse(parsedCondition);
+			const result = expr.evaluate(scope);
+			return !!result; // Convert to boolean
+		} catch (error) {
+			console.error('Error evaluating condition:', error);
+			return false;
+		}
+	}
+
+	private evaluateExpression(expression: string, data: Record<string, any>): string {
+		try {
+			// Handle ternary expressions like framework=="react"?"tsx":"ts"
+			const ternaryMatch = expression.match(/^(.+)\?(.+):(.+)$/);
+			if (ternaryMatch) {
+				const condition = ternaryMatch[1];
+				const trueValue = ternaryMatch[2].replace(/^["']|["']$/g, '');
+				const falseValue = ternaryMatch[3].replace(/^["']|["']$/g, '');
+
+				const result = this.evaluateCondition(condition, data) ? trueValue : falseValue;
+
+				return result;
+			}
+
+			// Create a parser instance for simple expressions
+			const parser = new Parser();
+
+			// Create a scope with the data
+			const scope = Object.entries(data).reduce(
+				(acc, [key, value]) => {
+					// Handle nested properties
+					const keys = key.split('.');
+					let current = acc;
+					for (let i = 0; i < keys.length - 1; i++) {
+						current[keys[i]] = current[keys[i]] || {};
+						current = current[keys[i]];
+					}
+					current[keys[keys.length - 1]] = value;
+					return acc;
+				},
+				{} as Record<string, any>,
+			);
+
+			// Try to evaluate as an expression first
+			try {
+				const expr = parser.parse(expression);
+				const result = expr.evaluate(scope);
+				return String(result);
+			} catch {
+				// If parsing fails, treat as simple key lookup
+				return String(data[expression] || '');
+			}
+		} catch (error) {
+			console.error('Error evaluating expression:', error);
+			return '';
+		}
+	}
+
+	/**
+	 * Given a logical include path (with [expr] segments unwrapped), return the real path on disk (with [expr] segments included if truthy)
+	 */
+	private resolvePhysicalPathForInclude(
+		logicalPath: string,
+		originalPath: string,
+		data: Record<string, any>,
+	): string | null {
+		const originalSegments = originalPath.split('/');
+		const resolvedSegments: string[] = [];
+
+		for (let i = 0; i < originalSegments.length; i++) {
+			const segment = originalSegments[i];
+			const match = segment.match(/^\[(.+?)\]$/);
+			if (match) {
+				const conditionExpr = match[1];
+				const isConditional = this.isConditionalExpression(conditionExpr, data);
+				if (isConditional) {
+					const shouldInclude = this.evaluateCondition(conditionExpr, data);
+					if (!shouldInclude) return null;
+					// If truthy, add the segment as-is (with brackets) for disk lookup
+					resolvedSegments.push(segment);
+				} else {
+					// Not a conditional, treat as dynamic expression
+					const evaluated = this.evaluateExpression(conditionExpr, data);
+					if (evaluated) {
+						resolvedSegments.push(evaluated);
+					}
+				}
+			} else {
+				// Regular segment, add as-is
+				resolvedSegments.push(segment);
+			}
+		}
+		return resolvedSegments.join('/');
+	}
+
 	async resolveTemplates(
 		includePaths: string[],
 		config?: CombinoConfig | string,
@@ -56,7 +307,12 @@ export class TemplateResolver {
 				);
 				if (config.include) {
 					const normalizedIncludes = this.normalizeIncludeArray(config.include);
-					for (const include of normalizedIncludes) {
+					// Apply conditional logic to include paths
+					const conditionalIncludes = this.applyConditionalLogicToIncludePaths(
+						normalizedIncludes,
+						data || {},
+					);
+					for (const include of conditionalIncludes) {
 						const includeSourcePath = resolve(resolvedPath, include.source);
 
 						// Only track includes that have targets - these need to be excluded from their source
@@ -97,7 +353,9 @@ export class TemplateResolver {
 
 			if (configObj.include) {
 				const normalizedIncludes = this.normalizeIncludeArray(configObj.include);
-				for (const include of normalizedIncludes) {
+				// Apply conditional logic to include paths
+				const conditionalIncludes = this.applyConditionalLogicToIncludePaths(normalizedIncludes, data || {});
+				for (const include of conditionalIncludes) {
 					const resolvedPath = resolve(include.source);
 
 					// Only track includes that have targets
@@ -140,7 +398,9 @@ export class TemplateResolver {
 
 			if (configObj.include) {
 				const normalizedIncludes = this.normalizeIncludeArray(configObj.include);
-				for (const include of normalizedIncludes) {
+				// Apply conditional logic to include paths
+				const conditionalIncludes = this.applyConditionalLogicToIncludePaths(normalizedIncludes, data || {});
+				for (const include of conditionalIncludes) {
 					const resolvedPath = resolve(include.source);
 					const template = await this.resolveTemplate(
 						resolvedPath,
@@ -203,10 +463,17 @@ export class TemplateResolver {
 		// Handle includes from the template's config
 		if (config?.include) {
 			const normalizedIncludes = this.normalizeIncludeArray(config.include);
+			// Apply conditional logic to include paths
+			const conditionalIncludes = this.applyConditionalLogicToIncludePaths(normalizedIncludes, data || {});
 			const includedFiles: ResolvedFile[] = [];
 
-			for (const include of normalizedIncludes) {
-				const includeSourcePath = resolve(templatePath, include.source);
+			for (const include of conditionalIncludes) {
+				// Use the original include.source for disk lookup, and the processed (logical) one for output
+				const logicalSource = include.source;
+				const originalInclude = this.normalizeIncludeItem(include);
+				const physicalSource = include.physicalSource; // Use the physical source from applyConditionalLogicToIncludePaths
+				if (!physicalSource) continue;
+				const includeSourcePath = resolve(templatePath, physicalSource);
 
 				// Load the configuration from the included directory
 				const includeConfigPath = join(includeSourcePath, this.configFileName);
@@ -270,9 +537,16 @@ export class TemplateResolver {
 						}
 					}
 
+					// Compute the relative path from the physical include dir to the file
+					const relativeFromPhysical = file.sourcePath.replace(includeSourcePath, '').replace(/^\/+/, '');
+					// Remove any [expr] segments from the relative path for output
+					const logicalRelative = relativeFromPhysical.replace(/\[.*?\]\/?/g, '');
+					const logicalBase = resolve(templatePath, logicalSource);
+					let logicalOutputPath = join(logicalBase, logicalRelative);
+
 					return {
 						...file,
-						targetPath,
+						targetPath: targetPath || logicalOutputPath,
 						// Store the include config so it can be used for merge strategy determination
 						includeConfig: includeConfig,
 					};

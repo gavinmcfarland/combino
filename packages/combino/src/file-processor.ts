@@ -339,7 +339,7 @@ export class FileProcessor {
 		return assembledFiles;
 	}
 
-	private applyConditionalLogic(path: string, data: Record<string, any>): string | null {
+	public applyConditionalLogic(path: string, data: Record<string, any>): string | null {
 		// Handle conditional file paths like [framework=="react"]App.tsx
 		let result = path;
 

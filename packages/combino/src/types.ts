@@ -10,6 +10,7 @@ export interface MergeConfig {
 export interface IncludeConfig {
 	source: string;
 	target?: string;
+	physicalSource?: string; // Physical path on disk (with [expr] segments included if truthy)
 }
 
 // Support both string and object formats for include configuration
