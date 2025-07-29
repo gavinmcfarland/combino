@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.2.0](https://github.com/gavinmcfarland/combino/compare/v1.1.1...v1.2.0) (2025-07-29)
+
+### Features
+
+- enhance debugging and logging in file processing and template resolution ([65ed6eb](https://github.com/gavinmcfarland/combino/commit/65ed6eb91ec693429a0e81685c0ec03ff557a8db))
+
 ## [1.1.1](https://github.com/gavinmcfarland/combino/compare/v1.1.0...v1.1.1) (2025-07-29)
 
 **Note:** Version bump only for package combino
