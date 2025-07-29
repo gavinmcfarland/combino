@@ -77,5 +77,6 @@
 		"mustache": "^4.2.0",
 		"prettier": "^3.5.3",
 		"prettier-plugin-svelte": "^3.4.0"
-	}
+	},
+	"gitHead": "5a545761375e204ef7b55d57f15cefe7db7f4f32"
 }
