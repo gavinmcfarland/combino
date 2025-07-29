@@ -1,0 +1,8 @@
+{
+	"staticPath": "<%= rebase('src') %>",
+	"dynamicPath": "<%= rebase(`${srcDir}`) %>",
+	"dynamicNestedPath": "<%= rebase(`${srcDir}/components`) %>",
+	"dynamicWithType": "<%= rebase(`${srcDir}`, 'cwd') %>",
+	"mixedPath": "<%= rebase(`${srcDir}/${componentName}`) %>",
+	"complexPath": "<%= rebase(`${baseDir}/${framework}/${language}`) %>"
+}

@@ -4,7 +4,10 @@
 		"language": "ts",
 		"type": "web",
 		"name": "test-project",
-		"version": "1.0.0"
+		"version": "1.0.0",
+		"srcDir": "src",
+		"componentName": "Button",
+		"baseDir": "packages"
 	},
 	"plugins": ["rebase", "ejs"],
 	"inputDirs": ["input/base"],

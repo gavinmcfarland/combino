@@ -115,6 +115,88 @@ You can override the path type for individual `rebase()` calls by passing a seco
 
 This is useful when you need different path types for different parts of the same file.
 
+## Dynamic Paths
+
+The rebase plugin supports dynamic paths using template variables. This allows you to use data from Combino's template system within your `rebase()` calls.
+
+### Example: Dynamic Paths with Template Variables
+
+**Template:** `frameworks/typescript/tsconfig.json`
+
+```json
+{
+    "compilerOptions": {
+        "typeRoots": ["<%= rebase(`${srcDir}/@types`) %>"],
+        "baseUrl": "<%= rebase('.') %>"
+    },
+    "include": [
+        "<%= rebase(`${srcDir}/**/*.ts`) %>",
+        "<%= rebase(`${srcDir}/**/*.tsx`) %>",
+        "<%= rebase('vite-env.d.ts') %>"
+    ],
+    "exclude": ["<%= rebase(`${buildDir}`) %>"]
+}
+```
+
+**With data:** `{ srcDir: "src", buildDir: "dist" }`
+
+**Output:** `examples/basic/src/main/tsconfig.json`
+
+```json
+{
+    "compilerOptions": {
+        "typeRoots": ["../../src/@types"],
+        "baseUrl": "."
+    },
+    "include": ["../../src/**/*.ts", "../../src/**/*.tsx", "../vite-env.d.ts"],
+    "exclude": ["../../dist"]
+}
+```
+
+### Example: Mixed Static and Dynamic Paths
+
+**Template:** `frameworks/typescript/package.json`
+
+```json
+{
+    "scripts": {
+        "dev": "vite --config <%= rebase('vite.config.ts') %>",
+        "build": "tsc && vite build --config <%= rebase('vite.config.ts') %>",
+        "lint": "eslint <%= rebase(`${srcDir}`) %> --ext ts,tsx"
+    },
+    "dependencies": {
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0"
+    }
+}
+```
+
+**With data:** `{ srcDir: "src" }`
+
+**Output:** `examples/basic/package.json`
+
+```json
+{
+    "scripts": {
+        "dev": "vite --config ./vite.config.ts",
+        "build": "tsc && vite build --config ./vite.config.ts",
+        "lint": "eslint ./src --ext ts,tsx"
+    },
+    "dependencies": {
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0"
+    }
+}
+```
+
+### How Dynamic Paths Work
+
+1. **Static paths** (like `rebase('src')`) are processed before EJS compilation
+2. **Dynamic paths** (like `rebase(`${srcDir}`)`) are processed by EJS during template rendering
+3. Both types support the same path type options and function overrides
+
+This hybrid approach gives you the best of both worlds: fast processing for static paths and full flexibility for dynamic paths.
+
 ## License
 
 MIT

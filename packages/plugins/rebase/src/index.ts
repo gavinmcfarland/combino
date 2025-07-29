@@ -125,7 +125,7 @@ function createRebaseFunction(
  */
 export default function plugin(options: RebaseOptions = {}): Plugin {
 	return {
-		// Compile hook: Preprocess rebase() calls before EJS compilation
+		// Compile hook: Add rebase function to template data and process static rebase() calls
 		compile: async (context: FileHookContext): Promise<FileHookResult | void> => {
 			// Only process files that contain rebase() calls
 			if (!context.content.includes('rebase(')) {
@@ -135,13 +135,21 @@ export default function plugin(options: RebaseOptions = {}): Plugin {
 			// Create the rebase function for this specific file
 			const rebase = createRebaseFunction(context.id, options);
 
-			// Process rebase() calls in the content before EJS compilation
-			// This replaces rebase() calls with their calculated values
+			// Add rebase function to the template data so EJS can access it
+			// Note: This modifies the context.data object directly
+			context.data.rebase = rebase;
+
+			// Process static rebase() calls (those with literal strings) before EJS compilation
 			let processedContent = context.content;
 
-			// Replace rebase() calls with their calculated values
-			// This regex matches rebase('path') or rebase("path") patterns
+			// Replace static rebase() calls with their calculated values
+			// This regex matches rebase('path') or rebase("path") patterns with literal strings
 			processedContent = processedContent.replace(/rebase\(['"`]([^'"`]+)['"`]\)/g, (match, targetPath) => {
+				// Skip if the targetPath contains template variables (${...})
+				if (targetPath.includes('${')) {
+					return match; // Let EJS handle this
+				}
+
 				try {
 					const relativePath = rebase(targetPath);
 					return `"${relativePath}"`;
@@ -152,10 +160,15 @@ export default function plugin(options: RebaseOptions = {}): Plugin {
 				}
 			});
 
-			// Handle rebase('path', 'pathType') patterns
+			// Handle static rebase('path', 'pathType') patterns
 			processedContent = processedContent.replace(
 				/rebase\(['"`]([^'"`]+)['"`]\s*,\s*['"`]([^'"`]+)['"`]\)/g,
 				(match, targetPath, pathType) => {
+					// Skip if the targetPath contains template variables (${...})
+					if (targetPath.includes('${')) {
+						return match; // Let EJS handle this
+					}
+
 					try {
 						const relativePath = rebase(targetPath, pathType);
 						return `"${relativePath}"`;
@@ -170,11 +183,16 @@ export default function plugin(options: RebaseOptions = {}): Plugin {
 				},
 			);
 
-			// Also handle rebase() calls without quotes (for template engines that support it)
+			// Also handle static rebase() calls without quotes
 			processedContent = processedContent.replace(/rebase\(([^)]+)\)/g, (match, targetPath) => {
 				// Skip if it's already been processed (has quotes)
 				if (match.includes('"') || match.includes("'") || match.includes('`')) {
 					return match;
+				}
+
+				// Skip if the targetPath contains template variables (${...})
+				if (targetPath.includes('${')) {
+					return match; // Let EJS handle this
 				}
 
 				// Check if this is a two-argument call (path, pathType)
@@ -199,6 +217,52 @@ export default function plugin(options: RebaseOptions = {}): Plugin {
 					return match; // Return original if processing fails
 				}
 			});
+
+			return { content: processedContent };
+		},
+
+		// Assemble hook: Process any remaining rebase() calls after EJS compilation
+		assemble: async (context: FileHookContext): Promise<FileHookResult | void> => {
+			// Only process files that contain rebase() calls
+			if (!context.content.includes('rebase(')) {
+				return;
+			}
+
+			// Create the rebase function for this specific file
+			const rebase = createRebaseFunction(context.id, options);
+
+			// Process any remaining rebase() calls after EJS compilation
+			let processedContent = context.content;
+
+			// Replace any remaining rebase() calls with their calculated values
+			processedContent = processedContent.replace(/rebase\(['"`]([^'"`]+)['"`]\)/g, (match, targetPath) => {
+				try {
+					const relativePath = rebase(targetPath);
+					return `"${relativePath}"`;
+				} catch (error) {
+					const errorMessage = error instanceof Error ? error.message : String(error);
+					console.warn(`Warning: Failed to process rebase('${targetPath}'):`, errorMessage);
+					return match; // Return original if processing fails
+				}
+			});
+
+			// Handle any remaining rebase('path', 'pathType') patterns
+			processedContent = processedContent.replace(
+				/rebase\(['"`]([^'"`]+)['"`]\s*,\s*['"`]([^'"`]+)['"`]\)/g,
+				(match, targetPath, pathType) => {
+					try {
+						const relativePath = rebase(targetPath, pathType);
+						return `"${relativePath}"`;
+					} catch (error) {
+						const errorMessage = error instanceof Error ? error.message : String(error);
+						console.warn(
+							`Warning: Failed to process rebase('${targetPath}', '${pathType}'):`,
+							errorMessage,
+						);
+						return match; // Return original if processing fails
+					}
+				},
+			);
 
 			return { content: processedContent };
 		},

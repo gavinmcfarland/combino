@@ -1,0 +1,8 @@
+{
+	"staticPath": "./src",
+	"dynamicPath": "./src",
+	"dynamicNestedPath": "./src/components",
+	"dynamicWithType": "src",
+	"mixedPath": "./src/Button",
+	"complexPath": "./packages/typescript/ts"
+}
