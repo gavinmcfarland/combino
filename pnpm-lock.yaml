@@ -311,6 +311,34 @@ importers:
         specifier: ^5.0.0
         version: 5.8.3
 
+  packages/plugins/rebase:
+    dependencies:
+      combino:
+        specifier: ^1.0.0
+        version: link:../../combino
+      path:
+        specifier: ^0.12.7
+        version: 0.12.7
+    devDependencies:
+      '@types/node':
+        specifier: ^20.17.55
+        version: 20.19.7
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^5.0.0
+        version: 5.62.0(@typescript-eslint/parser@5.62.0)(eslint@8.57.1)(typescript@5.8.3)
+      '@typescript-eslint/parser':
+        specifier: ^5.0.0
+        version: 5.62.0(eslint@8.57.1)(typescript@5.8.3)
+      eslint:
+        specifier: ^8.0.0
+        version: 8.57.1
+      prettier:
+        specifier: ^3.5.3
+        version: 3.6.2
+      typescript:
+        specifier: ^5.0.0
+        version: 5.8.3
+
   packages/plugins/strip-ts:
     dependencies:
       chalk:
@@ -4553,6 +4581,11 @@ packages:
       wrappy: 1.0.2
     dev: true
 
+  /inherits@2.0.3:
+    resolution:
+      { integrity: sha512-x00IRNXNy63jwGkJmzPigoySHbaqpNuzKbBOmzK+g2OdZpQ9w+sxCN+VSB3ja7IAge2OP2qpfxTjeNcyjmW1uw== }
+    dev: false
+
   /inherits@2.0.4:
     resolution:
       { integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ== }
@@ -6194,6 +6227,14 @@ packages:
     engines: { node: '>=8' }
     dev: true
 
+  /path@0.12.7:
+    resolution:
+      { integrity: sha512-aXXC6s+1w7otVF9UletFkFcDsJeO7lSZBPUQhtb5O0xJe8LtYhj/GxldoL09bBj9+ZmE2hNoHqQSFMN5fikh4Q== }
+    dependencies:
+      process: 0.11.10
+      util: 0.10.4
+    dev: false
+
   /pathe@1.1.2:
     resolution:
       { integrity: sha512-whLdWMYL2TwI08hn8/ZqAbrVemu0LNaNNJZX73O6qaIdCTfXutsLhMkjdENX0qhsQ9uIimo4/aQOmXkoon2nDQ== }
@@ -6339,6 +6380,12 @@ packages:
     resolution:
       { integrity: sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag== }
     dev: true
+
+  /process@0.11.10:
+    resolution:
+      { integrity: sha512-cdGef/drWFoydD1JsMzuFf8100nZl+GT+yacc2bEced5f9Rjk4z+WtFUTBu9PhOi9j/jfmBPu0mMEY4wIdAF8A== }
+    engines: { node: '>= 0.6.0' }
+    dev: false
 
   /proggy@2.0.0:
     resolution:
@@ -7476,6 +7523,13 @@ packages:
     resolution:
       { integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw== }
     dev: true
+
+  /util@0.10.4:
+    resolution:
+      { integrity: sha512-0Pm9hTQ3se5ll1XihRic3FDIku70C+iHUdT/W926rSgHV5QgXsYbKZN8MSC3tJtSkhuROzvsQjAaFENRXr+19A== }
+    dependencies:
+      inherits: 2.0.3
+    dev: false
 
   /uuid@10.0.0:
     resolution:
