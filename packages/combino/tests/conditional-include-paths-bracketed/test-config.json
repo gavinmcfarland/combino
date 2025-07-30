@@ -1,0 +1,10 @@
+{
+	"data": {
+		"framework": "react",
+		"typescript": true
+	},
+	"plugins": ["ejs"],
+	"inputDirs": ["input/base"],
+	"description": "Test conditional include paths with bracketed directory structure like [typescript]",
+	"skip": false
+}

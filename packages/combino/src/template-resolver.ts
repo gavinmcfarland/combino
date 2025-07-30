@@ -57,20 +57,12 @@ export class TemplateResolver {
 				continue; // Skip this include if condition is false
 			}
 
-			// Resolve the physical path for disk lookup with fallback support
-			const physicalPath = this.tryResolvePhysicalPathWithFallback(logicalPath, include.source, data);
-			console.log('DEBUG: Physical path result:', physicalPath);
-
-			if (physicalPath === null) {
-				console.log('DEBUG: Skipping include - physical path resolution failed');
-				continue; // Skip if physical path resolution failed
-			}
-
 			// Create new include config with resolved paths
+			// Use the original source as physicalSource for disk lookup
 			const resolvedInclude: IncludeConfig = {
 				...include,
 				source: logicalPath,
-				physicalSource: physicalPath,
+				physicalSource: include.source, // Use original source for physical path resolution
 			};
 
 			console.log('DEBUG: Adding resolved include:', resolvedInclude.source, '->', resolvedInclude.target);
@@ -334,15 +326,9 @@ export class TemplateResolver {
 				if (isConditional) {
 					const shouldInclude = this.evaluateCondition(conditionExpr, data);
 					if (!shouldInclude) return null;
-					// For simple conditionals like [typescript], unwrap to just the name
-					// For complex conditionals like [framework=="react"], keep the full expression
-					if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(conditionExpr)) {
-						// Simple variable name, unwrap it
-						resolvedSegments.push(conditionExpr);
-					} else {
-						// Complex expression, keep the full segment with brackets
-						resolvedSegments.push(segment);
-					}
+					// Keep the original segment with brackets for physical path lookup
+					// This matches the actual directory structure on disk
+					resolvedSegments.push(segment);
 				} else {
 					// Not a conditional, treat as dynamic expression
 					const evaluated = this.evaluateExpression(conditionExpr, data);
@@ -766,40 +752,34 @@ export class TemplateResolver {
 				if (!physicalSource) continue;
 
 				// Try to find the actual path on disk with fallback support
-				let includeSourcePath = resolve(templatePath, physicalSource);
-				let fallbackSourcePath: string | null = null;
+				console.log(`DEBUG: TemplateResolver - Resolving physical path:`);
+				console.log(`  - logicalSource: ${logicalSource}`);
+				console.log(`  - physicalSource: ${physicalSource}`);
+				console.log(`  - templatePath: ${templatePath}`);
 
-				// Check if the primary path exists
+				const resolvedPhysicalSource = this.tryResolvePhysicalPathWithFallback(
+					logicalSource,
+					physicalSource,
+					data || {},
+				);
+				console.log(`DEBUG: TemplateResolver - Resolved physical source: ${resolvedPhysicalSource}`);
+
+				if (!resolvedPhysicalSource) {
+					console.log(`DEBUG: TemplateResolver - Physical path resolution failed, skipping include`);
+					continue;
+				}
+
+				let includeSourcePath = resolve(templatePath, resolvedPhysicalSource);
+
+				// Check if the resolved path exists
+				console.log(`DEBUG: TemplateResolver - Checking resolved path: ${includeSourcePath}`);
 				try {
 					await fs.access(includeSourcePath);
+					console.log(`DEBUG: TemplateResolver - Resolved path exists: ${includeSourcePath}`);
 				} catch {
-					// Primary path doesn't exist, try fallback path
-					const fallbackPhysicalSource = this.resolvePhysicalPathForInclude(
-						logicalSource,
-						include.source,
-						data || {},
-					);
-					if (fallbackPhysicalSource && fallbackPhysicalSource !== physicalSource) {
-						fallbackSourcePath = resolve(templatePath, fallbackPhysicalSource);
-						try {
-							await fs.access(fallbackSourcePath);
-							// Fallback path exists, use it
-							includeSourcePath = fallbackSourcePath;
-							console.log(`DEBUG: TemplateResolver - Using fallback path: ${fallbackSourcePath}`);
-						} catch {
-							// Fallback path also doesn't exist, skip this include
-							console.log(
-								`DEBUG: TemplateResolver - Both primary and fallback paths don't exist, skipping include`,
-							);
-							continue;
-						}
-					} else {
-						// No fallback available, skip this include
-						console.log(
-							`DEBUG: TemplateResolver - Primary path doesn't exist and no fallback available, skipping include`,
-						);
-						continue;
-					}
+					// Path doesn't exist, skip this include
+					console.log(`DEBUG: TemplateResolver - Resolved path doesn't exist, skipping include`);
+					continue;
 				}
 
 				console.log(`DEBUG: TemplateResolver - Processing include:`);

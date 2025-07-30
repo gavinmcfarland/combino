@@ -1,0 +1,12 @@
+{
+	"include": [
+		{
+			"source": "../frameworks/[framework]/[typescript]/tsconfig.ui.json",
+			"target": "src/ui/tsconfig.json"
+		}
+	],
+	"data": {
+		"framework": "react",
+		"typescript": true
+	}
+}
