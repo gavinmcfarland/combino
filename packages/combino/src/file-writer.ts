@@ -59,7 +59,10 @@ export class FileWriter {
 		mergedFiles.forEach((file) => {
 			console.log(`  - ${file.targetPath}`);
 		});
-
+		console.log(
+			'DEBUG: FileWriter.mergeFiles - Full mergedFiles:',
+			mergedFiles.map((f) => ({ targetPath: f.targetPath, sourcePath: f.sourcePath })),
+		);
 		return mergedFiles;
 	}
 
@@ -71,6 +74,7 @@ export class FileWriter {
 	): Promise<void> {
 		for (const file of files) {
 			const filePath = join(outputDir, file.targetPath);
+			console.log('DEBUG: FileWriter.writeFiles - Writing file:', filePath);
 			await this.writeFile(filePath, file.content);
 
 			// Call output hook after file is written

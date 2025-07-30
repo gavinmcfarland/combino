@@ -27,6 +27,10 @@ export interface CombinoConfig {
 	merge?: Record<string, Record<string, any>>;
 	/** Layout directories configuration for template engines like EJS-Mate */
 	layout?: string[];
+	/** Internal: Set of resolved logical paths to exclude (used for advanced exclusion logic) */
+	_resolvedExcludes?: Set<string>;
+	/** Internal: Set of resolved logical paths that are explicitly included (used to override underscore exclusion) */
+	_resolvedIncludes?: Set<string>;
 }
 
 export interface TemplateConfig {

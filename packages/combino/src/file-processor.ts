@@ -40,7 +40,11 @@ export class FileProcessor {
 		return combinedConfig;
 	}
 
-	async getTemplateFiles(templatePath: string, config?: CombinoConfig): Promise<ResolvedFile[]> {
+	async getTemplateFiles(
+		templatePath: string,
+		config?: CombinoConfig,
+		data?: Record<string, any>,
+	): Promise<ResolvedFile[]> {
 		const files: ResolvedFile[] = [];
 		const excludePatterns = config?.exclude || [];
 
@@ -93,13 +97,109 @@ export class FileProcessor {
 			ignore: [...excludePatterns, `**/${this.configFileName}`, '**/*.combino'],
 		});
 
-		console.log('DEBUG: FileProcessor found files in template:', templatePath);
-		console.log('DEBUG: allFiles:', allFiles);
-		console.log('DEBUG: excludePatterns:', excludePatterns);
-		console.log('DEBUG: configFileName:', this.configFileName);
-
-		// Manually filter out files that match exclusion patterns
+		// Manually filter out files that match exclusion patterns or resolved exclusion paths
 		const filteredFiles = allFiles.filter((file) => {
+			// Always print debug info for every file
+			const resolvedFile = this.applyConditionalLogic(file, data || {});
+			if (resolvedFile) {
+				const fileName = basename(resolvedFile);
+				console.log('DEBUG: FileProcessor processing file:', {
+					file,
+					resolvedFile,
+					fileName,
+					hasExclusions: !!(config && config._resolvedExcludes),
+					excludes: config && config._resolvedExcludes ? Array.from(config._resolvedExcludes) : [],
+				});
+			}
+
+			// Exclude if matches any resolved exclusion path
+			if (config && config._resolvedExcludes) {
+				if (resolvedFile) {
+					const fileName = basename(resolvedFile);
+					console.log('DEBUG: FileProcessor exclusion check:', {
+						file,
+						resolvedFile,
+						fileName,
+						excludes: Array.from(config._resolvedExcludes),
+					});
+					const isExcluded = Array.from(config._resolvedExcludes).some((excludePath) => {
+						console.log('  Checking excludePath:', excludePath);
+
+						// Apply conditional logic to the exclude path to remove brackets for comparison
+						const processedExcludePath = this.applyConditionalLogic(excludePath, data || {});
+						const excludeFileName = processedExcludePath
+							? basename(processedExcludePath)
+							: basename(excludePath);
+
+						// Also apply conditional logic to the file path to remove brackets for comparison
+						const processedResolvedFile = this.applyConditionalLogic(resolvedFile, data || {});
+						const processedFileName = processedResolvedFile ? basename(processedResolvedFile) : fileName;
+
+						if (excludePath === resolvedFile) {
+							console.log('    -> Exact match!');
+							return true;
+						}
+						if (processedExcludePath === resolvedFile) {
+							console.log('    -> Processed exact match!');
+							return true;
+						}
+						if (processedExcludePath === processedResolvedFile) {
+							console.log('    -> Processed exact match (both processed)!');
+							return true;
+						}
+						if (excludePath === fileName) {
+							console.log('    -> Filename match!');
+							return true;
+						}
+						if (excludeFileName === fileName) {
+							console.log('    -> Processed filename match!');
+							return true;
+						}
+						if (excludeFileName === processedFileName) {
+							console.log('    -> Processed filename match (both processed)!');
+							return true;
+						}
+						if (excludePath.endsWith('/') && resolvedFile.startsWith(excludePath)) {
+							console.log('    -> Directory match!');
+							return true;
+						}
+						if (
+							processedExcludePath &&
+							processedExcludePath.endsWith('/') &&
+							resolvedFile.startsWith(processedExcludePath)
+						) {
+							console.log('    -> Processed directory match!');
+							return true;
+						}
+						return false;
+					});
+					if (isExcluded) {
+						console.log('  -> File EXCLUDED');
+						return false;
+					}
+					console.log('  -> File NOT excluded');
+				}
+			}
+			// Handle underscore exclusion using resolved paths
+			if (resolvedFile) {
+				// Check if file should be excluded by underscore rule
+				const segments = resolvedFile.split('/');
+				for (const segment of segments) {
+					if (segment.startsWith('_') && segment !== '_') {
+						// Check if this underscore file/folder is explicitly included via config
+						const isExplicitlyIncluded =
+							config?._resolvedIncludes &&
+							Array.from(config._resolvedIncludes).some(
+								(includedPath) =>
+									resolvedFile.startsWith(includedPath + '/') || resolvedFile === includedPath,
+							);
+						if (!isExplicitlyIncluded) {
+							return false; // Exclude underscore-prefixed files/folders unless explicitly included
+						}
+					}
+				}
+			}
+			// Fallback to minimatch for legacy patterns
 			for (const pattern of excludePatterns) {
 				if (minimatch(file, pattern)) {
 					return false;
@@ -108,13 +208,9 @@ export class FileProcessor {
 			return true;
 		});
 
-		console.log('DEBUG: Filtered files:', filteredFiles);
-
 		// Get config file
 		const configPath = join(templatePath, this.configFileName);
-		console.log('DEBUG: Looking for config file at:', configPath);
 		const configExists = existsSync(configPath);
-		console.log('DEBUG: Config file exists:', configExists);
 
 		for (const file of filteredFiles) {
 			// Check for underscore exclusion: files/folders starting with _ should be excluded unless explicitly included
@@ -155,6 +251,28 @@ export class FileProcessor {
 	}
 
 	/**
+	 * Resolve a pattern for comparison by applying conditional logic
+	 * This is used to match exclusion patterns with actual file paths
+	 */
+	private resolvePatternForComparison(pattern: string, data: Record<string, any>): string {
+		// Apply conditional logic to resolve the pattern
+		// This removes [expression] segments when conditions are true
+		const resolved = this.applyConditionalLogic(pattern, data);
+		return resolved || pattern;
+	}
+
+	/**
+	 * Resolve a file path for comparison by applying conditional logic
+	 * This is used to match actual file paths with exclusion patterns
+	 */
+	private resolveFilePathForComparison(filePath: string, data: Record<string, any>): string {
+		// Apply conditional logic to resolve the file path
+		// This removes [expression] segments when conditions are true
+		const resolved = this.applyConditionalLogic(filePath, data);
+		return resolved || filePath;
+	}
+
+	/**
 	 * Check if a file should be excluded due to underscore prefix
 	 * Files and folders starting with _ are excluded unless explicitly included via local config
 	 */
@@ -183,8 +301,19 @@ export class FileProcessor {
 			if (this.pathMatchesInclude(filePath, include.source)) {
 				// If there's a target specified, use it for renaming
 				if (include.target) {
-					// For individual files, the target should be the new filename
-					return { exclude: false, targetPath: include.target };
+					// Check if this is a directory include (file is within the included directory)
+					if (filePath.startsWith(include.source + '/')) {
+						// File is within the included directory, construct proper target path
+						const relativePath = filePath.substring(include.source.length + 1); // +1 for the '/'
+						const targetPath = join(include.target, relativePath);
+						return { exclude: false, targetPath };
+					} else if (filePath === include.source) {
+						// Exact match - this is the directory itself
+						return { exclude: false, targetPath: include.target };
+					} else {
+						// Individual file include
+						return { exclude: false, targetPath: include.target };
+					}
 				}
 				// If explicitly included without a target, remove the underscore prefix
 				const targetPath = this.removeUnderscorePrefix(filePath);
