@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.3.0](https://github.com/gavinmcfarland/combino/compare/v1.2.0...v1.3.0) (2025-07-30)
+
+### Features
+
+- enhance template resolution with fallback support for conditional paths ([77483f0](https://github.com/gavinmcfarland/combino/commit/77483f0933f659415a30eb5303c060022d8a710a))
+
 # [1.2.0](https://github.com/gavinmcfarland/combino/compare/v1.1.1...v1.2.0) (2025-07-29)
 
 ### Features
