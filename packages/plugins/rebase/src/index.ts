@@ -30,7 +30,9 @@ export interface RebaseOptions {
 	/** Project root directory (default: current working directory) */
 	projectRoot?: string;
 	/** Type of path to output: "cwd" (relative to process.cwd()), "relative" (relative to file), or "absolute" (full path) */
-	pathType?: 'cwd' | 'relative' | 'absolute';
+	format?: 'cwd' | 'relative' | 'absolute';
+	/** Whether to find the actual output location of the file/folder (default: false) */
+	locate?: boolean;
 }
 
 /**
@@ -41,7 +43,8 @@ function calculateRebasePath(targetPath: string, outputFilePath: string, options
 		baseDir = path.dirname(outputFilePath),
 		normalize = true,
 		projectRoot = process.cwd(),
-		pathType = 'relative',
+		format = 'relative',
+		locate = false,
 	} = options;
 
 	// Resolve the target path relative to project root
@@ -51,22 +54,47 @@ function calculateRebasePath(targetPath: string, outputFilePath: string, options
 	const resolvedOutputPath = path.resolve(outputFilePath);
 
 	let resultPath: string;
+	let targetPathToUse: string;
 
-	switch (pathType) {
+	// If locate is enabled, find the actual output location of the referenced file
+	if (locate) {
+		// Look for the src directory or similar source directory
+		const currentFileDir = path.dirname(resolvedOutputPath);
+		let srcDir = currentFileDir;
+
+		while (srcDir !== path.dirname(srcDir)) {
+			if (path.basename(srcDir) === 'src' || path.basename(srcDir) === 'source') {
+				break;
+			}
+			srcDir = path.dirname(srcDir);
+		}
+
+		// If we found a src directory, resolve relative to the src directory itself
+		// Otherwise, resolve relative to the current file's directory
+		const fileBaseDir =
+			path.basename(srcDir) === 'src' || path.basename(srcDir) === 'source' ? srcDir : currentFileDir;
+
+		// Resolve the target path relative to the base directory
+		targetPathToUse = path.resolve(fileBaseDir, targetPath);
+	} else {
+		targetPathToUse = resolvedTargetPath;
+	}
+
+	switch (format) {
 		case 'cwd':
 			// Calculate path relative to process.cwd()
-			resultPath = path.relative(process.cwd(), resolvedTargetPath);
+			resultPath = path.relative(process.cwd(), targetPathToUse);
 			break;
 
 		case 'absolute':
 			// Return absolute path
-			resultPath = resolvedTargetPath;
+			resultPath = targetPathToUse;
 			break;
 
 		case 'relative':
 		default:
 			// Calculate relative path from output file location to target
-			resultPath = path.relative(baseDir, resolvedTargetPath);
+			resultPath = path.relative(baseDir, targetPathToUse);
 			break;
 	}
 
@@ -79,7 +107,7 @@ function calculateRebasePath(targetPath: string, outputFilePath: string, options
 	resultPath = resultPath.replace(/\\/g, '/');
 
 	// Handle edge cases for relative paths
-	if (pathType !== 'absolute') {
+	if (format !== 'absolute') {
 		if (resultPath === '') {
 			return '.';
 		}
@@ -89,7 +117,7 @@ function calculateRebasePath(targetPath: string, outputFilePath: string, options
 		}
 
 		// Add dot notation for relative paths when not already present
-		if (pathType === 'relative' && !resultPath.startsWith('./') && !resultPath.startsWith('../')) {
+		if (format === 'relative' && !resultPath.startsWith('./') && !resultPath.startsWith('../')) {
 			resultPath = './' + resultPath;
 		}
 	}
@@ -102,18 +130,30 @@ function calculateRebasePath(targetPath: string, outputFilePath: string, options
  */
 function createRebaseFunction(
 	outputFilePath: string,
-	options: RebaseOptions = {},
-): (targetPath: string, pathType?: string) => string {
-	return (targetPath: string, pathType?: string): string => {
+	pluginOptions: RebaseOptions = {},
+): (targetPath: string, options?: { format?: string; locate?: boolean }) => string {
+	return (targetPath: string, options?: { format?: string; locate?: boolean }): string => {
 		if (typeof targetPath !== 'string') {
 			throw new Error('rebase() expects a string argument');
 		}
 
-		// If pathType is provided as second argument, use it; otherwise use the default from options
-		const finalOptions = { ...options };
-		if (pathType && ['cwd', 'relative', 'absolute'].includes(pathType)) {
-			finalOptions.pathType = pathType as 'cwd' | 'relative' | 'absolute';
+		// Handle the options
+		let finalOptions = { ...pluginOptions };
+		let finalFormat: 'cwd' | 'relative' | 'absolute' = pluginOptions.format || 'relative';
+		let locate = false;
+
+		// If options object is provided, use it
+		if (options && typeof options === 'object') {
+			if (options.locate) {
+				locate = true;
+			}
+			if (options.format && ['cwd', 'relative', 'absolute'].includes(options.format)) {
+				finalFormat = options.format as 'cwd' | 'relative' | 'absolute';
+			}
 		}
+
+		finalOptions.format = finalFormat;
+		finalOptions.locate = locate;
 
 		return calculateRebasePath(targetPath, outputFilePath, finalOptions);
 	};
@@ -160,22 +200,24 @@ export default function plugin(options: RebaseOptions = {}): Plugin {
 				}
 			});
 
-			// Handle static rebase('path', 'pathType') patterns
+			// Handle static rebase('path', {options}) patterns
 			processedContent = processedContent.replace(
-				/rebase\(['"`]([^'"`]+)['"`]\s*,\s*['"`]([^'"`]+)['"`]\)/g,
-				(match, targetPath, pathType) => {
+				/rebase\(['"`]([^'"`]+)['"`]\s*,\s*(\{[^}]+\})\)/g,
+				(match, targetPath, optionsStr) => {
 					// Skip if the targetPath contains template variables (${...})
 					if (targetPath.includes('${')) {
 						return match; // Let EJS handle this
 					}
 
 					try {
-						const relativePath = rebase(targetPath, pathType);
+						// Parse the options object
+						const options = eval(`(${optionsStr})`);
+						const relativePath = rebase(targetPath, options);
 						return `"${relativePath}"`;
 					} catch (error) {
 						const errorMessage = error instanceof Error ? error.message : String(error);
 						console.warn(
-							`Warning: Failed to process rebase('${targetPath}', '${pathType}'):`,
+							`Warning: Failed to process rebase('${targetPath}', ${optionsStr}):`,
 							errorMessage,
 						);
 						return match; // Return original if processing fails
@@ -246,17 +288,19 @@ export default function plugin(options: RebaseOptions = {}): Plugin {
 				}
 			});
 
-			// Handle any remaining rebase('path', 'pathType') patterns
+			// Handle any remaining rebase('path', {options}) patterns
 			processedContent = processedContent.replace(
-				/rebase\(['"`]([^'"`]+)['"`]\s*,\s*['"`]([^'"`]+)['"`]\)/g,
-				(match, targetPath, pathType) => {
+				/rebase\(['"`]([^'"`]+)['"`]\s*,\s*(\{[^}]+\})\)/g,
+				(match, targetPath, optionsStr) => {
 					try {
-						const relativePath = rebase(targetPath, pathType);
+						// Parse the options object
+						const options = eval(`(${optionsStr})`);
+						const relativePath = rebase(targetPath, options);
 						return `"${relativePath}"`;
 					} catch (error) {
 						const errorMessage = error instanceof Error ? error.message : String(error);
 						console.warn(
-							`Warning: Failed to process rebase('${targetPath}', '${pathType}'):`,
+							`Warning: Failed to process rebase('${targetPath}', ${optionsStr}):`,
 							errorMessage,
 						);
 						return match; // Return original if processing fails

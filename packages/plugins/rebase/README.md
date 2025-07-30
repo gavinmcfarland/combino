@@ -68,7 +68,8 @@ await combino.build({
         rebase({
             baseDir: 'src', // Optional: base directory for relative calculations
             normalize: true, // Optional: normalize paths (default: true)
-            pathType: 'cwd', // Optional: path type - "cwd", "relative", or "absolute"
+            format: 'relative', // Optional: path format - "cwd", "relative", or "absolute"
+            locate: false, // Optional: whether to find actual file location (default: false)
         }),
     ],
 });
@@ -78,21 +79,20 @@ await combino.build({
 
 ### Path Type Examples
 
-The `pathType` option controls how paths are calculated. You can set it globally in the plugin options or override it per function call:
+The `format` option controls how paths are calculated. You can set it globally in the plugin options or override it per function call:
 
 ```javascript
 // Example: File at examples/basic/src/main/tsconfig.json
 // Target: node_modules/@types
 
 // Global plugin option (affects all rebase() calls)
-rebase({ pathType: 'cwd' });
+rebase({ format: 'relative' });
 
 // Per-function override (overrides the global setting)
-rebase('node_modules/@types'); // Uses global pathType
-rebase('node_modules/@types', 'cwd'); // → "node_modules/@types"
-rebase('node_modules/@types', 'relative'); // → "../../../../node_modules/@types"
-rebase('src', 'relative'); // → "./src" (note the ./ prefix)
-rebase('node_modules/@types', 'absolute'); // → "/Users/gavin/project/node_modules/@types"
+rebase('node_modules/@types'); // Uses global format
+rebase('node_modules/@types', { format: 'cwd' }); // → "node_modules/@types"
+rebase('node_modules/@types', { format: 'relative' }); // → "../../../../node_modules/@types"
+rebase('node_modules/@types', { format: 'absolute' }); // → "/Users/gavin/project/node_modules/@types"
 ```
 
 **When to use each type:**
@@ -103,17 +103,107 @@ rebase('node_modules/@types', 'absolute'); // → "/Users/gavin/project/node_mod
 
 ### Function Override
 
-You can override the path type for individual `rebase()` calls by passing a second argument:
+You can override the path format for individual `rebase()` calls by passing an options object:
 
 ```javascript
 // In your template files:
-<%= rebase('src') %>                    // Uses global pathType setting
-<%= rebase('src', 'cwd') %>             // Forces cwd path type
-<%= rebase('src', 'relative') %>        // Forces relative path type
-<%= rebase('src', 'absolute') %>        // Forces absolute path type
+<%= rebase('src') %>                    // Uses global format setting
+<%= rebase('src', {format: 'cwd'}) %>             // Forces cwd path format
+<%= rebase('src', {format: 'relative'}) %>        // Forces relative path format
+<%= rebase('src', {format: 'absolute'}) %>        // Forces absolute path format
 ```
 
-This is useful when you need different path types for different parts of the same file.
+This is useful when you need different path formats for different parts of the same file.
+
+## File Location Method
+
+The `locate` option allows you to find the actual output location of the referenced file or folder and then format the path using any of the standard path types. This is particularly useful when you want to reference files or folders that will be generated in specific locations relative to the current file.
+
+### Function Signature
+
+```javascript
+rebase(targetPath, options?)
+```
+
+- `targetPath`: The file or folder path to reference
+- `options`: Optional object with the following properties:
+    - `format`: The path type to use for output (`'cwd'`, `'relative'`, or `'absolute'`)
+    - `locate`: Whether to find the actual output location of the file/folder (default: `false`)
+
+### Usage
+
+```javascript
+// Standard usage (uses plugin's default pathType)
+<%= rebase('vite-env.d.ts') %>
+
+// Specify output format
+<%= rebase('vite-env.d.ts', {format: 'cwd'}) %>
+<%= rebase('vite-env.d.ts', {format: 'relative'}) %>
+<%= rebase('vite-env.d.ts', {format: 'absolute'}) %>
+
+// Find actual file/folder location and return as relative path (default)
+<%= rebase('vite-env.d.ts', {locate: true}) %>
+
+// Find actual file/folder location and return as specific format
+<%= rebase('vite-env.d.ts', {format: 'absolute', locate: true}) %>
+<%= rebase('vite-env.d.ts', {format: 'cwd', locate: true}) %>
+
+// Works with folders too!
+<%= rebase('src/components', {locate: true}) %>
+<%= rebase('node_modules/@types', {format: 'cwd', locate: true}) %>
+<%= rebase('dist', {format: 'absolute', locate: true}) %>
+```
+
+### How It Works
+
+The `locate` option:
+
+1. **Finds the source directory**: Looks for a `src` or `source` directory by walking up the directory tree from the current file
+2. **Resolves target paths**: Resolves the target path relative to the found source directory
+3. **Applies path format**: Formats the result using the specified path format (`cwd`, `relative`, or `absolute`)
+
+### Example
+
+**Project Structure:**
+
+```
+/
+├── src/
+│   └── ui/
+│       └── tsconfig.json (will be generated)
+└── vite-env.d.ts (will be generated)
+```
+
+**Template:** `frameworks/typescript/src/ui/tsconfig.json`
+
+```json
+{
+    "include": ["<%= rebase('vite-env.d.ts', 'file') %>"]
+}
+```
+
+**Output:** `examples/basic/src/ui/tsconfig.json`
+
+```json
+{
+    "include": ["../vite-env.d.ts"]
+}
+```
+
+**Different path type examples:**
+
+```javascript
+rebase('vite-env.d.ts'); // → "../../../../../vite-env.d.ts" (uses plugin default)
+rebase('vite-env.d.ts', { format: 'cwd' }); // → "vite-env.d.ts" (cwd-relative)
+rebase('vite-env.d.ts', { format: 'absolute' }); // → "/path/to/vite-env.d.ts" (absolute)
+rebase('vite-env.d.ts', { locate: true }); // → "../vite-env.d.ts" (finds location, relative)
+rebase('vite-env.d.ts', { format: 'absolute', locate: true }); // → "/path/to/examples/basic/src/vite-env.d.ts" (finds location, absolute)
+
+// Folder examples
+rebase('src/components', { locate: true }); // → "../src/components" (finds location, relative)
+rebase('src/components', { format: 'cwd', locate: true }); // → "examples/basic/src/src/components" (finds location, cwd-relative)
+rebase('src/components', { format: 'absolute', locate: true }); // → "/path/to/examples/basic/src/src/components" (finds location, absolute)
+```
 
 ## Dynamic Paths
 
@@ -188,15 +278,3 @@ The rebase plugin supports dynamic paths using template variables. This allows y
     }
 }
 ```
-
-### How Dynamic Paths Work
-
-1. **Static paths** (like `rebase('src')`) are processed before EJS compilation
-2. **Dynamic paths** (like `rebase(`${srcDir}`)`) are processed by EJS during template rendering
-3. Both types support the same path type options and function overrides
-
-This hybrid approach gives you the best of both worlds: fast processing for static paths and full flexibility for dynamic paths.
-
-## License
-
-MIT
