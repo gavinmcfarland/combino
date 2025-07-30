@@ -1,0 +1,11 @@
+{
+	"data": {
+		"typescript": true,
+		"framework": "react",
+		"language": "ts",
+		"ext": "json"
+	},
+	"plugins": ["ejs"],
+	"inputDirs": ["input/base"],
+	"description": "Test that conditional include paths work with both bracketed and non-bracketed directory structures"
+}

@@ -57,8 +57,8 @@ export class TemplateResolver {
 				continue; // Skip this include if condition is false
 			}
 
-			// Resolve the physical path for disk lookup
-			const physicalPath = this.resolvePhysicalPathForInclude(logicalPath, include.source, data);
+			// Resolve the physical path for disk lookup with fallback support
+			const physicalPath = this.tryResolvePhysicalPathWithFallback(logicalPath, include.source, data);
 			console.log('DEBUG: Physical path result:', physicalPath);
 
 			if (physicalPath === null) {
@@ -334,8 +334,15 @@ export class TemplateResolver {
 				if (isConditional) {
 					const shouldInclude = this.evaluateCondition(conditionExpr, data);
 					if (!shouldInclude) return null;
-					// If truthy, keep the segment as-is (with brackets) for disk lookup
-					resolvedSegments.push(segment);
+					// For simple conditionals like [typescript], unwrap to just the name
+					// For complex conditionals like [framework=="react"], keep the full expression
+					if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(conditionExpr)) {
+						// Simple variable name, unwrap it
+						resolvedSegments.push(conditionExpr);
+					} else {
+						// Complex expression, keep the full segment with brackets
+						resolvedSegments.push(segment);
+					}
 				} else {
 					// Not a conditional, treat as dynamic expression
 					const evaluated = this.evaluateExpression(conditionExpr, data);
@@ -353,6 +360,133 @@ export class TemplateResolver {
 			}
 		}
 		return resolvedSegments.join('/');
+	}
+
+	/**
+	 * Try to resolve a physical path by attempting both bracketed and non-bracketed versions
+	 * of conditional segments. This allows for flexible directory structures.
+	 */
+	private tryResolvePhysicalPathWithFallback(
+		logicalPath: string,
+		originalPath: string,
+		data: Record<string, any>,
+	): string | null {
+		// First try the original resolution (with brackets)
+		const primaryPath = this.resolvePhysicalPathForInclude(logicalPath, originalPath, data);
+		if (primaryPath) {
+			return primaryPath;
+		}
+
+		// If that fails, try without brackets for conditional segments
+		const originalSegments = originalPath.split('/');
+		const fallbackSegments: string[] = [];
+
+		for (let i = 0; i < originalSegments.length; i++) {
+			const segment = originalSegments[i];
+			// Check if this segment is a complete conditional expression [expression]
+			const completeMatch = segment.match(/^\[(.+?)\]$/);
+			if (completeMatch) {
+				const conditionExpr = completeMatch[1];
+				const isConditional = this.isConditionalExpression(conditionExpr, data);
+				if (isConditional) {
+					const shouldInclude = this.evaluateCondition(conditionExpr, data);
+					if (!shouldInclude) return null;
+					// For fallback, try without brackets (just the condition name)
+					// Extract the condition name from expressions like "typescript" or "framework=='react'"
+					const conditionName = this.extractConditionName(conditionExpr);
+					if (conditionName) {
+						fallbackSegments.push(conditionName);
+					} else {
+						// If we can't extract a name, skip this path
+						return null;
+					}
+				} else {
+					// Not a conditional, treat as dynamic expression
+					const evaluated = this.evaluateExpression(conditionExpr, data);
+					if (evaluated) {
+						fallbackSegments.push(evaluated);
+					}
+				}
+			} else {
+				// Check for embedded conditional expressions within the segment
+				const processedSegment = this.processEmbeddedConditionalsForPhysicalPathFallback(segment, data);
+				if (processedSegment === null) {
+					return null; // Skip the entire path
+				}
+				fallbackSegments.push(processedSegment);
+			}
+		}
+		return fallbackSegments.join('/');
+	}
+
+	/**
+	 * Extract a condition name from a conditional expression for fallback path resolution
+	 */
+	private extractConditionName(conditionExpr: string): string | null {
+		// For simple variable names like "typescript", return as-is
+		if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(conditionExpr)) {
+			return conditionExpr;
+		}
+
+		// For comparison expressions like "framework=='react'", extract the variable name
+		const comparisonMatch = conditionExpr.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\s*[=!<>]+\s*['"][^'"]*['"]$/);
+		if (comparisonMatch) {
+			return comparisonMatch[1];
+		}
+
+		// For complex expressions, we can't easily extract a meaningful name
+		return null;
+	}
+
+	/**
+	 * Process embedded conditional expressions within a segment for fallback physical path resolution
+	 * This version tries to extract condition names for fallback paths
+	 */
+	private processEmbeddedConditionalsForPhysicalPathFallback(
+		segment: string,
+		data: Record<string, any>,
+	): string | null {
+		// Find all conditional expressions within the segment
+		const conditionalMatches = segment.match(/\[([^\]]+)\]/g);
+		if (!conditionalMatches) {
+			return segment; // No conditionals found, return as-is
+		}
+
+		let processedSegment = segment;
+
+		for (const match of conditionalMatches) {
+			const conditionExpr = match.slice(1, -1); // Remove [ and ]
+
+			// Skip ternary expressions
+			if (conditionExpr.includes('?') && conditionExpr.includes(':')) {
+				const evaluated = this.evaluateExpression(conditionExpr, data);
+				processedSegment = processedSegment.replace(match, evaluated);
+				continue;
+			}
+
+			// Check if this is a conditional expression
+			const isConditional = this.isConditionalExpression(conditionExpr, data);
+			if (isConditional) {
+				const shouldInclude = this.evaluateCondition(conditionExpr, data);
+				if (!shouldInclude) {
+					return null; // Skip the entire path
+				}
+				// For fallback, try to extract the condition name
+				const conditionName = this.extractConditionName(conditionExpr);
+				if (conditionName) {
+					processedSegment = processedSegment.replace(match, conditionName);
+				} else {
+					// If we can't extract a name, skip this path
+					return null;
+				}
+			} else {
+				// Not a conditional, treat as dynamic expression
+				const evaluated = this.evaluateExpression(conditionExpr, data);
+				processedSegment = processedSegment.replace(match, evaluated);
+			}
+		}
+
+		return processedSegment;
 	}
 
 	/**
@@ -385,8 +519,9 @@ export class TemplateResolver {
 				if (!shouldInclude) {
 					return null; // Skip the entire path
 				}
-				// Keep the conditional part for physical path lookup (different from logical path)
-				// Don't remove it - keep it as-is for disk lookup
+				// Remove the conditional part for physical path lookup (same as logical path)
+				// The physical path should match the actual directory structure on disk
+				processedSegment = processedSegment.replace(match, '');
 			} else {
 				// Not a conditional, treat as dynamic expression
 				const evaluated = this.evaluateExpression(conditionExpr, data);
@@ -629,7 +764,43 @@ export class TemplateResolver {
 				const originalInclude = this.normalizeIncludeItem(include);
 				const physicalSource = include.physicalSource; // Use the physical source from applyConditionalLogicToIncludePaths
 				if (!physicalSource) continue;
-				const includeSourcePath = resolve(templatePath, physicalSource);
+
+				// Try to find the actual path on disk with fallback support
+				let includeSourcePath = resolve(templatePath, physicalSource);
+				let fallbackSourcePath: string | null = null;
+
+				// Check if the primary path exists
+				try {
+					await fs.access(includeSourcePath);
+				} catch {
+					// Primary path doesn't exist, try fallback path
+					const fallbackPhysicalSource = this.resolvePhysicalPathForInclude(
+						logicalSource,
+						include.source,
+						data || {},
+					);
+					if (fallbackPhysicalSource && fallbackPhysicalSource !== physicalSource) {
+						fallbackSourcePath = resolve(templatePath, fallbackPhysicalSource);
+						try {
+							await fs.access(fallbackSourcePath);
+							// Fallback path exists, use it
+							includeSourcePath = fallbackSourcePath;
+							console.log(`DEBUG: TemplateResolver - Using fallback path: ${fallbackSourcePath}`);
+						} catch {
+							// Fallback path also doesn't exist, skip this include
+							console.log(
+								`DEBUG: TemplateResolver - Both primary and fallback paths don't exist, skipping include`,
+							);
+							continue;
+						}
+					} else {
+						// No fallback available, skip this include
+						console.log(
+							`DEBUG: TemplateResolver - Primary path doesn't exist and no fallback available, skipping include`,
+						);
+						continue;
+					}
+				}
 
 				console.log(`DEBUG: TemplateResolver - Processing include:`);
 				console.log(`  - logicalSource: ${logicalSource}`);
