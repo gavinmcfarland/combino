@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.4.0](https://github.com/gavinmcfarland/combino/compare/v1.3.1...v1.4.0) (2025-07-30)
+
+### Features
+
+- enhance file processing and template resolution with advanced exclusion logic ([a6487ad](https://github.com/gavinmcfarland/combino/commit/a6487adcbed241b0e4829d81d936cb13cdaddef6))
+
 ## [1.3.1](https://github.com/gavinmcfarland/combino/compare/v1.3.0...v1.3.1) (2025-07-30)
 
 **Note:** Version bump only for package combino
