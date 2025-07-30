@@ -1,9 +1,9 @@
 {
 	"defaultPath": "<%= rebase('src') %>",
-	"cwdPath": "<%= rebase('src', 'cwd') %>",
-	"relativePath": "<%= rebase('src', 'relative') %>",
-	"absolutePath": "<%= rebase('src', 'absolute') %>",
-	"nestedCwd": "<%= rebase('src/components', 'cwd') %>",
-	"nestedRelative": "<%= rebase('src/components', 'relative') %>",
-	"nestedAbsolute": "<%= rebase('src/components', 'absolute') %>"
+	"cwdPath": "<%= rebase('src', {format: 'cwd'}) %>",
+	"relativePath": "<%= rebase('src', {format: 'relative'}) %>",
+	"absolutePath": "<%= rebase('src', {format: 'absolute'}) %>",
+	"nestedCwd": "<%= rebase('src/components', {format: 'cwd'}) %>",
+	"nestedRelative": "<%= rebase('src/components', {format: 'relative'}) %>",
+	"nestedAbsolute": "<%= rebase('src/components', {format: 'absolute'}) %>"
 }
