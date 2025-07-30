@@ -1,0 +1,8 @@
+{
+	"include": [
+		{
+			"source": "../other/tsconfig.ui.json",
+			"target": "src/main/tsconfig.json"
+		}
+	]
+}

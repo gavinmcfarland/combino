@@ -1,0 +1,3 @@
+{
+	"include": ["<%= rebase('vite-en.d.ts', { locate: true }) %>"]
+}

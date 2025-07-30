@@ -178,7 +178,7 @@ The `locate` option:
 
 ```json
 {
-    "include": ["<%= rebase('vite-env.d.ts', 'file') %>"]
+    "include": ["<%= rebase('vite-env.d.ts', {locate: true}) %>"]
 }
 ```
 
