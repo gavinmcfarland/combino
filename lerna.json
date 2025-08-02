@@ -1,19 +1,22 @@
 {
-	"version": "1.6.0",
-	"npmClient": "pnpm",
-	"packages": ["packages/combino", "packages/plugins/*"],
-	"command": {
-		"publish": {
-			"conventionalCommits": true,
-			"message": "chore(release): publish",
-			"registry": "https://registry.npmjs.org/",
-			"yes": true,
-			"preDistTag": "latest"
-		},
-		"version": {
-			"conventionalCommits": true,
-			"message": "chore(release): version",
-			"yes": true
-		}
-	}
+  "version": "1.7.0",
+  "npmClient": "pnpm",
+  "packages": [
+    "packages/combino",
+    "packages/plugins/*"
+  ],
+  "command": {
+    "publish": {
+      "conventionalCommits": true,
+      "message": "chore(release): publish",
+      "registry": "https://registry.npmjs.org/",
+      "yes": true,
+      "preDistTag": "latest"
+    },
+    "version": {
+      "conventionalCommits": true,
+      "message": "chore(release): version",
+      "yes": true
+    }
+  }
 }
