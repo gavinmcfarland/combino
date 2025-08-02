@@ -3,16 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-# [1.7.0](https://github.com/gavinmcfarland/combino/compare/v1.6.0...v1.7.0) (2025-08-02)
-
+# [1.8.0](https://github.com/gavinmcfarland/combino/compare/v1.6.0...v1.8.0) (2025-08-02)
 
 ### Features
 
-* enhance template resolution with async path resolution and variation generation ([2e5ad96](https://github.com/gavinmcfarland/combino/commit/2e5ad9600b52fcc609fd354b1087a6b6f478305e))
+- enhance template resolution with async path resolution and variation generation ([2e5ad96](https://github.com/gavinmcfarland/combino/commit/2e5ad9600b52fcc609fd354b1087a6b6f478305e))
 
+# [1.7.0](https://github.com/gavinmcfarland/combino/compare/v1.6.0...v1.7.0) (2025-08-02)
 
+### Features
 
-
+- enhance template resolution with async path resolution and variation generation ([2e5ad96](https://github.com/gavinmcfarland/combino/commit/2e5ad9600b52fcc609fd354b1087a6b6f478305e))
 
 # [1.6.0](https://github.com/gavinmcfarland/combino/compare/v1.5.1...v1.6.0) (2025-08-02)
 
