@@ -1,0 +1,9 @@
+{
+	"data": {
+		"typescript": true,
+		"hasUI": true
+	},
+	"plugins": ["ejs"],
+	"inputDirs": ["input/base"],
+	"description": "Test that filename conditionals like [hasUI] are properly resolved"
+}

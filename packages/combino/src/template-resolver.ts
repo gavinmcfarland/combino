@@ -357,62 +357,261 @@ export class TemplateResolver {
 	 * Try to resolve a physical path by attempting both bracketed and non-bracketed versions
 	 * of conditional segments. This allows for flexible directory structures.
 	 */
-	private tryResolvePhysicalPathWithFallback(
+	private async tryResolvePhysicalPathWithFallback(
 		logicalPath: string,
 		originalPath: string,
 		data: Record<string, any>,
-	): string | null {
+		templatePath?: string,
+	): Promise<string | null> {
 		// First try the original resolution (with brackets)
 		const primaryPath = this.resolvePhysicalPathForInclude(logicalPath, originalPath, data);
-		// console.log(`DEBUG: tryResolvePhysicalPathWithFallback - primaryPath: ${primaryPath}`);
+		DebugLogger.log(`DEBUG: tryResolvePhysicalPathWithFallback - primaryPath: ${primaryPath}`);
 		if (primaryPath) {
 			// If the primary path contains brackets, it might not exist on disk
 			// In that case, try the fallback logic
 			if (primaryPath.includes('[') || primaryPath.includes(']')) {
-				// console.log(
-				// 	`DEBUG: tryResolvePhysicalPathWithFallback - primaryPath contains brackets, trying fallback`,
-				// );
+				DebugLogger.log(
+					`DEBUG: tryResolvePhysicalPathWithFallback - primaryPath contains brackets, trying fallback`,
+				);
 			} else {
 				return primaryPath;
 			}
 		}
 
-		// If that fails, try without brackets for conditional segments
-		// But first, let's try the original path with brackets since that's the actual directory structure
-		const originalSegments = originalPath.split('/');
-		const fallbackSegments: string[] = [];
+		// Try multiple path variations to find the actual file on disk
+		const pathVariations = this.generatePathVariations(originalPath, data);
+		DebugLogger.log(`DEBUG: tryResolvePhysicalPathWithFallback - trying path variations:`, pathVariations);
 
-		for (let i = 0; i < originalSegments.length; i++) {
-			const segment = originalSegments[i];
-
-			// Check if this segment is a complete conditional expression [expression]
-			const completeMatch = segment.match(/^\[(.+?)\]$/);
-			if (completeMatch) {
-				const conditionExpr = completeMatch[1];
-				const isConditional = this.isConditionalExpression(conditionExpr, data);
-				if (isConditional) {
-					const shouldInclude = this.evaluateCondition(conditionExpr, data);
-					if (!shouldInclude) return null;
-					// For fallback, try the original bracketed version first
-					// This matches the actual directory structure on disk
-					fallbackSegments.push(segment);
+		for (const variation of pathVariations) {
+			DebugLogger.log(`DEBUG: tryResolvePhysicalPathWithFallback - trying variation: ${variation}`);
+			// Check if this variation exists on disk
+			try {
+				let fullPath: string;
+				if (templatePath && !variation.startsWith('/')) {
+					// Resolve relative to template path
+					fullPath = resolve(templatePath, variation);
 				} else {
-					// Not a conditional, treat as dynamic expression
-					const evaluated = this.evaluateExpression(conditionExpr, data);
-					if (evaluated) {
-						fallbackSegments.push(evaluated);
+					fullPath = resolve(variation);
+				}
+				await fs.access(fullPath);
+				DebugLogger.log(`DEBUG: tryResolvePhysicalPathWithFallback - found existing file: ${variation}`);
+				return variation;
+			} catch {
+				// This variation doesn't exist, try the next one
+				continue;
+			}
+		}
+
+		// If no variations exist, return the primary path (which will be checked later)
+		return primaryPath;
+	}
+
+	/**
+	 * Generate multiple path variations to try when looking for files on disk
+	 * This handles cases where files exist with conditionals in their names
+	 */
+	private generatePathVariations(originalPath: string, data: Record<string, any>): string[] {
+		const variations: string[] = [];
+
+		// Split the path into segments
+		const segments = originalPath.split('/');
+		const processedSegments: string[][] = [];
+
+		// Process each segment to generate variations
+		for (const segment of segments) {
+			const segmentVariations = this.generateSegmentVariations(segment, data);
+			processedSegments.push(segmentVariations);
+		}
+
+		// Generate all combinations of segment variations
+		const combinations = this.generateCombinations(processedSegments);
+		for (const combination of combinations) {
+			variations.push(combination.join('/'));
+		}
+
+		return variations;
+	}
+
+	/**
+	 * Generate variations for a single path segment
+	 */
+	private generateSegmentVariations(segment: string, data: Record<string, any>): string[] {
+		const variations: string[] = [];
+
+		// Add the original segment
+		variations.push(segment);
+
+		// Check if this segment is a complete conditional expression [expression]
+		const completeMatch = segment.match(/^\[(.+?)\]$/);
+		if (completeMatch) {
+			const conditionExpr = completeMatch[1];
+			const isConditional = this.isConditionalExpression(conditionExpr, data);
+			if (isConditional) {
+				const shouldInclude = this.evaluateCondition(conditionExpr, data);
+				if (shouldInclude) {
+					// Add the resolved version (without brackets)
+					const resolved = this.evaluateExpression(conditionExpr, data);
+					if (resolved) {
+						variations.push(resolved);
 					}
 				}
 			} else {
-				// Check for embedded conditional expressions within the segment
-				const processedSegment = this.processEmbeddedConditionalsForPhysicalPathFallback(segment, data);
-				if (processedSegment === null) {
-					return null; // Skip the entire path
+				// Not a conditional, treat as dynamic expression
+				const evaluated = this.evaluateExpression(conditionExpr, data);
+				if (evaluated) {
+					variations.push(evaluated);
 				}
-				fallbackSegments.push(processedSegment);
+			}
+		} else {
+			// Check for embedded conditional expressions within the segment
+			const embeddedVariations = this.generateEmbeddedSegmentVariations(segment, data);
+			variations.push(...embeddedVariations);
+		}
+
+		return variations;
+	}
+
+	/**
+	 * Generate variations for a segment with embedded conditionals
+	 */
+	private generateEmbeddedSegmentVariations(segment: string, data: Record<string, any>): string[] {
+		const variations: string[] = [];
+
+		// Find all conditional expressions within the segment
+		const conditionalMatches = segment.match(/\[([^\]]+)\]/g);
+		if (!conditionalMatches) {
+			return variations; // No conditionals found
+		}
+
+		// Add the original segment
+		variations.push(segment);
+
+		// Generate all possible combinations of conditionals being included or excluded
+		const conditionalExpressions = conditionalMatches.map((match) => match.slice(1, -1)); // Remove [ and ]
+		const combinations = this.generateConditionalCombinations(segment, conditionalExpressions, data);
+		variations.push(...combinations);
+
+		// Also try variations where conditionals are moved to different positions in the filename
+		// This handles cases like "tsconfig.ui.json[hasUI]" -> "tsconfig.ui[hasUI].json"
+		const filenameVariations = this.generateFilenameVariations(segment, conditionalExpressions, data);
+		variations.push(...filenameVariations);
+
+		return variations;
+	}
+
+	/**
+	 * Generate filename variations by moving conditionals to different positions
+	 */
+	private generateFilenameVariations(segment: string, conditionals: string[], data: Record<string, any>): string[] {
+		const variations: string[] = [];
+
+		// Check if this looks like a filename with extension
+		// Handle cases like "tsconfig.ui.json[hasUI]" where the conditional is after the extension
+		const filenameMatch = segment.match(/^(.+?)(\.[^.]*?)(\[[^\]]+\])?$/);
+		if (!filenameMatch) {
+			// Try alternative pattern for cases where the conditional is embedded in the extension
+			const altMatch = segment.match(/^(.+?)(\.[^.]*\[[^\]]+\])$/);
+			if (altMatch) {
+				const baseName = altMatch[1];
+				const extensionWithConditional = altMatch[2];
+				// Extract the extension and conditional
+				const extMatch = extensionWithConditional.match(/^(\.[^.]*?)(\[[^\]]+\])$/);
+				if (extMatch) {
+					const extension = extMatch[1];
+					const conditional = extMatch[2];
+					// If there's a conditional after the extension, move it before the extension
+					if (conditional) {
+						const conditionExpr = conditional.slice(1, -1); // Remove [ and ]
+						const isConditional = this.isConditionalExpression(conditionExpr, data);
+						if (isConditional) {
+							const conditionValue = this.evaluateCondition(conditionExpr, data);
+							if (conditionValue) {
+								// Create variation with conditional before the extension
+								const withConditionalBeforeExtension = `${baseName}[${conditionExpr}]${extension}`;
+								variations.push(withConditionalBeforeExtension);
+							}
+						}
+					}
+				}
+			}
+			return variations; // Not a filename with extension
+		}
+		if (!filenameMatch) {
+			return variations; // Not a filename with extension
+		}
+
+		const baseName = filenameMatch[1];
+		const extension = filenameMatch[2];
+		const conditional = filenameMatch[3];
+
+		// If there's a conditional after the extension, move it before the extension
+		if (conditional) {
+			const conditionExpr = conditional.slice(1, -1); // Remove [ and ]
+			const isConditional = this.isConditionalExpression(conditionExpr, data);
+			if (isConditional) {
+				const conditionValue = this.evaluateCondition(conditionExpr, data);
+				if (conditionValue) {
+					// Create variation with conditional before the extension
+					const withConditionalBeforeExtension = `${baseName}[${conditionExpr}]${extension}`;
+					variations.push(withConditionalBeforeExtension);
+				}
 			}
 		}
-		return fallbackSegments.join('/');
+
+		return variations;
+	}
+
+	/**
+	 * Generate all possible combinations of conditionals in a segment
+	 */
+	private generateConditionalCombinations(
+		segment: string,
+		conditionals: string[],
+		data: Record<string, any>,
+	): string[] {
+		const combinations: string[] = [];
+
+		// For each conditional, generate a variation with it removed if the condition is true
+		for (const conditionExpr of conditionals) {
+			// Check if this is a conditional expression
+			const isConditional = this.isConditionalExpression(conditionExpr, data);
+			if (isConditional) {
+				const conditionValue = this.evaluateCondition(conditionExpr, data);
+				if (conditionValue) {
+					// If condition is true, generate variation without the conditional
+					const variation = segment.replace(`[${conditionExpr}]`, '');
+					combinations.push(variation);
+				}
+			} else {
+				// Not a conditional, treat as dynamic expression
+				const evaluated = this.evaluateExpression(conditionExpr, data);
+				const variation = segment.replace(`[${conditionExpr}]`, evaluated);
+				combinations.push(variation);
+			}
+		}
+
+		return combinations;
+	}
+
+	/**
+	 * Generate all combinations of segment variations
+	 */
+	private generateCombinations(segments: string[][]): string[][] {
+		if (segments.length === 0) {
+			return [[]];
+		}
+
+		const [firstSegment, ...restSegments] = segments;
+		const restCombinations = this.generateCombinations(restSegments);
+		const combinations: string[][] = [];
+
+		for (const variation of firstSegment) {
+			for (const restCombination of restCombinations) {
+				combinations.push([variation, ...restCombination]);
+			}
+		}
+
+		return combinations;
 	}
 
 	/**
@@ -970,10 +1169,11 @@ export class TemplateResolver {
 				DebugLogger.log(`  - physicalSource: ${physicalSource}`);
 				DebugLogger.log(`  - templatePath: ${templatePath}`);
 
-				const resolvedPhysicalSource = this.tryResolvePhysicalPathWithFallback(
+				const resolvedPhysicalSource = await this.tryResolvePhysicalPathWithFallback(
 					logicalSource,
 					physicalSource,
 					data || {},
+					templatePath,
 				);
 				DebugLogger.log(`DEBUG: TemplateResolver - Resolved physical source: ${resolvedPhysicalSource}`);
 				DebugLogger.log(`DEBUG: TemplateResolver - Original physical source: ${physicalSource}`);

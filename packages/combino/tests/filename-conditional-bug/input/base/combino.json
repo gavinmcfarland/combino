@@ -1,0 +1,12 @@
+{
+	"include": [
+		{
+			"source": "../typescript[typescript]/tsconfig.ui.json[hasUI]",
+			"target": "src/ui/tsconfig.json"
+		}
+	],
+	"data": {
+		"project.name": "Filename Conditional Bug Test",
+		"project.version": "1.0.0"
+	}
+}
