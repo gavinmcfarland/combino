@@ -954,7 +954,12 @@ export class TemplateResolver {
 						// and we're processing the typescript template, we need to extract the filename
 						const excludePathSegments = excludePath.split('/');
 						const lastSegment = excludePathSegments[excludePathSegments.length - 1];
-						if (lastSegment && lastSegment.includes('.')) {
+
+						// Check if this is a folder path (no file extension)
+						if (lastSegment && !lastSegment.includes('.')) {
+							// This is a folder path, add it to exclusions
+							templateExcludeSet.add(lastSegment);
+						} else if (lastSegment && lastSegment.includes('.')) {
 							// This is a file path, check if it matches any files in this template
 							// For now, we'll add the filename to the exclusion set
 							templateExcludeSet.add(lastSegment);
@@ -1090,8 +1095,8 @@ export class TemplateResolver {
 
 		// Add specific paths to exclude from targeted includes
 		if (pathsToExclude) {
+			// Skip underscore patterns for minimatch - they'll be handled by resolved path logic
 			for (const pathToExclude of pathsToExclude) {
-				// Skip underscore patterns for minimatch - they'll be handled by resolved path logic
 				if (!pathToExclude.includes('_')) {
 					// Escape square brackets for minimatch (treat as literal text, not character classes)
 					const escapedPath = pathToExclude.replace(/\[/g, '\\[').replace(/\]/g, '\\]');
