@@ -11,9 +11,9 @@ export class FileWriter {
 	}
 
 	async mergeFiles(files: ProcessedFile[]): Promise<ProcessedFile[]> {
-		// console.log('DEBUG: FileWriter.mergeFiles - Input files:');
+		console.log('DEBUG: FileWriter.mergeFiles - Input files:');
 		files.forEach((file) => {
-			// console.log(`  - ${file.sourcePath} -> ${file.targetPath} (strategy: ${file.mergeStrategy || 'replace'})`);
+			console.log(`  - ${file.sourcePath} -> ${file.targetPath} (strategy: ${file.mergeStrategy || 'replace'})`);
 		});
 
 		// Group files by target path for merging
@@ -27,11 +27,11 @@ export class FileWriter {
 			fileGroups.get(key)!.push(file);
 		}
 
-		// console.log('DEBUG: FileWriter.mergeFiles - File groups:');
+		console.log('DEBUG: FileWriter.mergeFiles - File groups:');
 		for (const [targetPath, fileGroup] of fileGroups) {
-			// console.log(`  - ${targetPath}: ${fileGroup.length} files`);
+			console.log(`  - ${targetPath}: ${fileGroup.length} files`);
 			fileGroup.forEach((file) => {
-				// console.log(`    - ${file.sourcePath} (strategy: ${file.mergeStrategy || 'replace'})`);
+				console.log(`    - ${file.sourcePath} (strategy: ${file.mergeStrategy || 'replace'})`);
 			});
 		}
 
@@ -39,17 +39,14 @@ export class FileWriter {
 
 		// Process each group
 		for (const [targetPath, fileGroup] of fileGroups) {
-			if (fileGroup.length === 1) {
-				// Single file, no merging needed
-				// console.log(`DEBUG: FileWriter.mergeFiles - Single file for ${targetPath}, no merging needed`);
-				mergedFiles.push(fileGroup[0]);
+			// Filter out duplicate files by sourcePath
+			const uniqueFiles = Array.from(new Map(fileGroup.map((f) => [f.sourcePath, f])).values());
+			if (uniqueFiles.length === 1) {
+				mergedFiles.push(uniqueFiles[0]);
 			} else {
-				// Multiple files, merge them
-				// console.log(`DEBUG: FileWriter.mergeFiles - Merging ${fileGroup.length} files for ${targetPath}`);
-				const mergedContent = await this.fileMerger.mergeFiles(fileGroup);
-				// Use the first file as the base and update its content
+				const mergedContent = await this.fileMerger.mergeFiles(uniqueFiles);
 				mergedFiles.push({
-					...fileGroup[0],
+					...uniqueFiles[0],
 					content: mergedContent,
 				});
 			}
