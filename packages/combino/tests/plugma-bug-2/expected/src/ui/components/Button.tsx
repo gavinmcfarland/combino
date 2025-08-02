@@ -1,3 +1,5 @@
+import React from 'react';
+
 const Button = ({ children, href, target, style, onClick }) => {
 	const buttonStyle = {
 		display: 'block',

@@ -1,5 +1,5 @@
 {
-	"plugins": ["rebase", "ejs-mate", "stripTS"],
+	"plugins": ["rebase", "ejs-mate"],
 	"inputDirs": ["input/examples/plugin-blank-w-ui", "input/frameworks/react", "input/typescript"],
 	"description": "Basic merge test with default configuration",
 	"configFileName": "template.json",

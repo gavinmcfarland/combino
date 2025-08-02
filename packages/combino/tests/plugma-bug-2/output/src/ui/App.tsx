@@ -1,8 +1,9 @@
+import React from 'react';
 import reactLogo from './assets/react.svg';
 import Icon from './components/Icon';
 import Button from './components/Button';
 
-const App = () => {
+const App: React.FC = () => {
 	const styles = {
 		container: {
 			display: 'flex',
@@ -10,7 +11,7 @@ const App = () => {
 			justifyContent: 'center',
 			height: '100%',
 			width: '100%',
-			flexDirection: 'column',
+			flexDirection: 'column' as const,
 		},
 		banner: {
 			display: 'flex',

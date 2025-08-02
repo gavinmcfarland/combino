@@ -1,3 +1,5 @@
+import React from 'react';
+
 const Input = ({ value = '', type = 'text', showIcon = false, onChange, style }) => {
 	const containerStyle = {
 		...style,

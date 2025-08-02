@@ -21,7 +21,6 @@ This <%- type %> was created with [Plugma](https://github.com/gavinmcfarland/plu
     ```
 
 2. Open the Figma desktop app and import the plugin:
-
     - Open a file in Figma.
     - Search for "Import plugin from manifest..." using the [Quick Actions](https://help.figma.com/hc/en-us/articles/360040328653-Use-shortcuts-and-quick-actions#Use_quick_actions) bar.
     - Choose the `manifest.json` file from the `dist` folder.
