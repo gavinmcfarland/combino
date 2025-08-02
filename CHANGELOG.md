@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.9.1](https://github.com/gavinmcfarland/combino/compare/v1.8.0...v1.9.1) (2025-08-02)
+
+### Bug Fixes
+
+- enhance template exclusion logic and update test configurations ([1f0861f](https://github.com/gavinmcfarland/combino/commit/1f0861f3f18c1e6186769cde3d5a345894a02691))
+
 # [1.8.0](https://github.com/gavinmcfarland/combino/compare/v1.6.0...v1.8.0) (2025-08-02)
 
 ### Features
