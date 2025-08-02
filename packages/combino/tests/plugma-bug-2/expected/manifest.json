@@ -1,0 +1,1 @@
+{ "documentAccess": "dynamic-page", "api": "1.0.0", "networkAccess": { "allowedDomains": ["none"] } }

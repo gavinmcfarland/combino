@@ -1,0 +1,15 @@
+{
+	"plugins": ["ejs-mate", "stripTS"],
+	"inputDirs": ["input/examples/plugin-blank-w-ui", "input/frameworks/react", "input/typescript"],
+	"description": "Basic merge test with default configuration",
+	"configFileName": "template.json",
+	"data": {
+		"name": "hello-world",
+		"framework": "react",
+		"typescript": true,
+		"type": "plugin",
+		"versions": {
+			"plugma": "1.0.0"
+		}
+	}
+}

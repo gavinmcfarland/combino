@@ -1,0 +1,13 @@
+{
+	"include": [
+		"../non-existent-folder",
+		"../another-missing-folder",
+		{
+			"source": "../missing-file.json",
+			"target": "src/config.json"
+		}
+	],
+	"data": {
+		"projectName": "Test Project"
+	}
+}

@@ -25,6 +25,7 @@ program
 		"Merge strategy for file patterns (e.g., '*.json=deep', '*.md=replace')",
 		collectMergeStrategies,
 	)
+	.option('--no-warnings', 'Disable warning messages')
 	.action(async (include: string[], options: any) => {
 		try {
 			// Plugins are now separate packages and should be configured via config files
@@ -95,6 +96,7 @@ program
 				config: options.config || (Object.keys(mergeConfig).length > 0 ? { merge: mergeConfig } : undefined),
 				data: templateData,
 				plugins: plugins.length > 0 ? plugins : undefined,
+				warnings: options.warnings,
 			};
 
 			await combino.build(templateOptions);

@@ -8,6 +8,7 @@ import { TemplateResolver } from './template-resolver.js';
 import { FileTransformer } from './file-transformer.js';
 import { FileFormatter } from './file-formatter.js';
 import { FileWriter } from './file-writer.js';
+import { DebugLogger } from './utils/debug.js';
 import ejsProcessConfig from './plugins/ejs-process-config.js';
 
 export class Combino {
@@ -38,12 +39,17 @@ export class Combino {
 	}
 
 	async build(options: Options): Promise<void> {
-		// Step 1: Add plugins to the manager
+		// Step 1: Configure warnings
+		if (options.warnings !== undefined) {
+			DebugLogger.setWarningsEnabled(options.warnings);
+		}
+
+		// Step 2: Add plugins to the manager
 		if (options.plugins) {
 			this.pluginManager.addPlugins(options.plugins);
 		}
 
-		// Step 2: Update config filename and feature flags if provided
+		// Step 3: Update config filename and feature flags if provided
 		if (options.configFileName || options.enableConditionalIncludePaths !== undefined) {
 			this.fileProcessor = new FileProcessor(options.configFileName);
 			this.templateResolver = new TemplateResolver(
@@ -52,7 +58,7 @@ export class Combino {
 			);
 		}
 
-		// Step 3: Parse global config if provided
+		// Step 4: Parse global config if provided
 		let globalConfig;
 		if (options.config) {
 			globalConfig =
@@ -66,7 +72,7 @@ export class Combino {
 					: options.config;
 		}
 
-		// Step 4: Resolve all templates with plugin manager and initial data
+		// Step 5: Resolve all templates with plugin manager and initial data
 		const resolvedTemplates = await this.templateResolver.resolveTemplates(
 			options.include,
 			options.config,
@@ -75,10 +81,10 @@ export class Combino {
 			options.data || {},
 		);
 
-		// Step 5: Collect all data from config files (now with preprocessed configs)
+		// Step 6: Collect all data from config files (now with preprocessed configs)
 		const globalData = await this.dataCollector.collectData(resolvedTemplates, options.data || {});
 
-		// Step 6: Compile all files with plugins (single compile hook)
+		// Step 7: Compile all files with plugins (single compile hook)
 		const compiledFiles = await this.fileProcessor.compileFiles(
 			resolvedTemplates,
 			globalData,
@@ -86,16 +92,16 @@ export class Combino {
 			globalConfig,
 		);
 
-		// Step 7: Merge files (without formatting)
+		// Step 8: Merge files (without formatting)
 		const mergedFiles = await this.fileWriter.mergeFiles(compiledFiles);
 
-		// Step 8: Assemble files with plugins (assemble hook)
+		// Step 9: Assemble files with plugins (assemble hook)
 		const assembledFiles = await this.fileProcessor.assembleFiles(mergedFiles, globalData, this.pluginManager);
 
-		// Step 9: Format merged files with Prettier (centralized formatting)
+		// Step 10: Format merged files with Prettier (centralized formatting)
 		const formattedFiles = await this.fileFormatter.formatFiles(assembledFiles);
 
-		// Step 10: Write formatted files to output
+		// Step 11: Write formatted files to output
 		await this.fileWriter.writeFiles(formattedFiles, options.outputDir, this.pluginManager, globalData);
 	}
 }

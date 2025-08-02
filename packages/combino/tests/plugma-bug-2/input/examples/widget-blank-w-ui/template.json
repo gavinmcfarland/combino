@@ -1,0 +1,23 @@
+{
+    "meta": {
+        "name": "Blank",
+		"description": "A blank widget to start from the ground up",
+        "type": "widget",
+        "uiFrameworks": ["svelte", "vue", "react"],
+		"rank": 1000
+    },
+    "include": [
+        "../../base",
+        {
+			"source": "../../frameworks/<%= framework %>/components",
+			"target": "src/ui/components"
+		},
+		{
+			"source": "../../frameworks/<%= framework %>/assets",
+			"target": "src/ui/assets"
+		}
+    ],
+    "data": {
+        "description": "A sticky notes widget for Figma"
+    }
+}

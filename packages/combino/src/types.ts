@@ -76,6 +76,8 @@ export interface Options {
 	configFileName?: string;
 	/** Enable/disable conditional include paths feature (default: true) */
 	enableConditionalIncludePaths?: boolean;
+	/** Enable/disable warning messages (default: true) */
+	warnings?: boolean;
 }
 
 export interface ResolvedTemplate {

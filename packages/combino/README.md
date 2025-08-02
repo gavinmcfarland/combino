@@ -42,6 +42,7 @@ interface Options {
     plugins?: Plugin[];
     configFileName?: string;
     enableConditionalIncludePaths?: boolean; // Enable/disable conditional include paths feature (default: true)
+    warnings?: boolean; // Enable/disable warning messages (default: true)
 }
 
 interface CombinoConfig {
@@ -305,6 +306,33 @@ Combino will load `combino.json` files that exist within each template.
 }
 ```
 
+## Warnings and Error Handling
+
+Combino provides warning messages to help identify issues during template processing. By default, warnings are enabled and will show when:
+
+- Include paths cannot be found on disk
+- Conditional include paths fail to resolve
+- Other non-critical issues occur
+
+### Disabling Warnings
+
+You can disable warnings by setting the `warnings` option to `false`:
+
+```js
+await combino.build({
+    outputDir: './output',
+    include: ['./templates/base'],
+    warnings: false, // Disable warning messages
+    data: {
+        framework: 'react',
+    },
+});
+```
+
+### Debug Mode
+
+For detailed debugging information, see the [Debug Mode documentation](./DEBUG.md).
+
 ## CLI
 
 `combino [include...] [options]`
@@ -320,3 +348,4 @@ Combino will load `combino.json` files that exist within each template.
 - **`--data <key=value>`** Inline key-value data
 - **`--template-engine <engine>`** Template engine to use (ejs, handlebars, mustache) - requires installing the corresponding dependency
 - **`--merge <pattern=strategy>`** Merge strategy for file patterns (e.g., _.json=deep, _.md=replace)
+- **`--no-warnings`** Disable warning messages

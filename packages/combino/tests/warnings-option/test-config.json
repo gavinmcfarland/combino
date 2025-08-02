@@ -1,0 +1,10 @@
+{
+	"data": {
+		"framework": "react",
+		"language": "ts"
+	},
+	"plugins": ["ejs"],
+	"inputDirs": ["input/base"],
+	"description": "Test that warnings can be disabled via the warnings option",
+	"skip": false
+}

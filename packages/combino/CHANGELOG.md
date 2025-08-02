@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.9.0](https://github.com/gavinmcfarland/combino/compare/v1.8.0...v1.9.0) (2025-08-02)
+
+### Features
+
+- add optional warnings control to combino.build and CLI ([commit-hash])
+
 # [1.8.0](https://github.com/gavinmcfarland/combino/compare/v1.6.0...v1.8.0) (2025-08-02)
 
 ### Features
