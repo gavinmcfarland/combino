@@ -1,0 +1,20 @@
+{
+	"include": [
+		{
+			"source": "../nonexistent-folder/file.txt",
+			"target": "src/file.txt"
+		},
+		{
+			"source": "../frameworks/react/[typescript]/missing-file.json",
+			"target": "src/missing.json"
+		},
+		{
+			"source": "../existing-folder",
+			"target": "src/existing"
+		}
+	],
+	"data": {
+		"project.name": "Missing Include Warning Test",
+		"project.version": "1.0.0"
+	}
+}

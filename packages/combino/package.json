@@ -21,6 +21,7 @@
 		"build:watch": "tsc --watch",
 		"test:watch": "vitest",
 		"test": "vitest run",
+		"test:debug": "DEBUG=true vitest run --reporter=verbose",
 		"test:ui": "vitest --ui",
 		"lint": "eslint src/**/*.ts",
 		"format": "prettier --write .",

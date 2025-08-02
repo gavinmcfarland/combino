@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import { join, dirname } from 'path';
 import { ProcessedFile, PluginManager, FileHookContext } from './types.js';
 import { FileMerger } from './file-merger.js';
+import { DebugLogger } from './utils/debug.js';
 
 export class FileWriter {
 	private fileMerger: FileMerger;
@@ -11,9 +12,11 @@ export class FileWriter {
 	}
 
 	async mergeFiles(files: ProcessedFile[]): Promise<ProcessedFile[]> {
-		console.log('DEBUG: FileWriter.mergeFiles - Input files:');
+		DebugLogger.log('DEBUG: FileWriter.mergeFiles - Input files:');
 		files.forEach((file) => {
-			console.log(`  - ${file.sourcePath} -> ${file.targetPath} (strategy: ${file.mergeStrategy || 'replace'})`);
+			DebugLogger.log(
+				`  - ${file.sourcePath} -> ${file.targetPath} (strategy: ${file.mergeStrategy || 'replace'})`,
+			);
 		});
 
 		// Group files by target path for merging
@@ -27,11 +30,11 @@ export class FileWriter {
 			fileGroups.get(key)!.push(file);
 		}
 
-		console.log('DEBUG: FileWriter.mergeFiles - File groups:');
+		DebugLogger.log('DEBUG: FileWriter.mergeFiles - File groups:');
 		for (const [targetPath, fileGroup] of fileGroups) {
-			console.log(`  - ${targetPath}: ${fileGroup.length} files`);
+			DebugLogger.log(`  - ${targetPath}: ${fileGroup.length} files`);
 			fileGroup.forEach((file) => {
-				console.log(`    - ${file.sourcePath} (strategy: ${file.mergeStrategy || 'replace'})`);
+				DebugLogger.log(`    - ${file.sourcePath} (strategy: ${file.mergeStrategy || 'replace'})`);
 			});
 		}
 

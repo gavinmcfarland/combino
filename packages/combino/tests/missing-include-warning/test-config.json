@@ -1,0 +1,9 @@
+{
+	"data": {
+		"framework": "react",
+		"typescript": true
+	},
+	"plugins": ["ejs"],
+	"inputDirs": ["input/base"],
+	"description": "Test that console warnings are shown when includes can't be found on disk"
+}
