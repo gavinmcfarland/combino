@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.6.0](https://github.com/gavinmcfarland/combino/compare/v1.5.1...v1.6.0) (2025-08-02)
+
+### Features
+
+- add debug logging and test command to enhance development experience ([1c6387b](https://github.com/gavinmcfarland/combino/commit/1c6387ba92c84b283dfe42f2cb2376c9d85fb1bb))
+
 ## [1.5.1](https://github.com/gavinmcfarland/combino/compare/v1.5.0...v1.5.1) (2025-08-02)
 
 **Note:** Version bump only for package combino
