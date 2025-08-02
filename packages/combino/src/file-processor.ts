@@ -103,27 +103,27 @@ export class FileProcessor {
 			const resolvedFile = this.applyConditionalLogic(file, data || {});
 			if (resolvedFile) {
 				const fileName = basename(resolvedFile);
-				console.log('DEBUG: FileProcessor processing file:', {
-					file,
-					resolvedFile,
-					fileName,
-					hasExclusions: !!(config && config._resolvedExcludes),
-					excludes: config && config._resolvedExcludes ? Array.from(config._resolvedExcludes) : [],
-				});
+				// console.log('DEBUG: FileProcessor processing file:', {
+				// 	file,
+				// 	resolvedFile,
+				// 	fileName,
+				// 	hasExclusions: !!(config && config._resolvedExcludes),
+				// 	excludes: config && config._resolvedExcludes ? Array.from(config._resolvedExcludes) : [],
+				// });
 			}
 
 			// Exclude if matches any resolved exclusion path
 			if (config && config._resolvedExcludes) {
 				if (resolvedFile) {
 					const fileName = basename(resolvedFile);
-					console.log('DEBUG: FileProcessor exclusion check:', {
-						file,
-						resolvedFile,
-						fileName,
-						excludes: Array.from(config._resolvedExcludes),
-					});
+					// console.log('DEBUG: FileProcessor exclusion check:', {
+					// 	file,
+					// 	resolvedFile,
+					// 	fileName,
+					// 	excludes: Array.from(config._resolvedExcludes),
+					// });
 					const isExcluded = Array.from(config._resolvedExcludes).some((excludePath) => {
-						console.log('  Checking excludePath:', excludePath);
+						// console.log('  Checking excludePath:', excludePath);
 
 						// Apply conditional logic to the exclude path to remove brackets for comparison
 						const processedExcludePath = this.applyConditionalLogic(excludePath, data || {});
@@ -136,31 +136,31 @@ export class FileProcessor {
 						const processedFileName = processedResolvedFile ? basename(processedResolvedFile) : fileName;
 
 						if (excludePath === resolvedFile) {
-							console.log('    -> Exact match!');
+							// console.log('    -> Exact match!');
 							return true;
 						}
 						if (processedExcludePath === resolvedFile) {
-							console.log('    -> Processed exact match!');
+							// console.log('    -> Processed exact match!');
 							return true;
 						}
 						if (processedExcludePath === processedResolvedFile) {
-							console.log('    -> Processed exact match (both processed)!');
+							// console.log('    -> Processed exact match (both processed)!');
 							return true;
 						}
 						if (excludePath === fileName) {
-							console.log('    -> Filename match!');
+							// console.log('    -> Filename match!');
 							return true;
 						}
 						if (excludeFileName === fileName) {
-							console.log('    -> Processed filename match!');
+							// console.log('    -> Processed filename match!');
 							return true;
 						}
 						if (excludeFileName === processedFileName) {
-							console.log('    -> Processed filename match (both processed)!');
+							// console.log('    -> Processed filename match (both processed)!');
 							return true;
 						}
 						if (excludePath.endsWith('/') && resolvedFile.startsWith(excludePath)) {
-							console.log('    -> Directory match!');
+							// console.log('    -> Directory match!');
 							return true;
 						}
 						if (
@@ -168,16 +168,16 @@ export class FileProcessor {
 							processedExcludePath.endsWith('/') &&
 							resolvedFile.startsWith(processedExcludePath)
 						) {
-							console.log('    -> Processed directory match!');
+							// console.log('    -> Processed directory match!');
 							return true;
 						}
 						return false;
 					});
 					if (isExcluded) {
-						console.log('  -> File EXCLUDED');
+						// console.log('  -> File EXCLUDED');
 						return false;
 					}
-					console.log('  -> File NOT excluded');
+					// console.log('  -> File NOT excluded');
 				}
 			}
 			// Handle underscore exclusion using resolved paths
@@ -408,7 +408,7 @@ export class FileProcessor {
 		pluginManager: PluginManager,
 		globalConfig?: CombinoConfig,
 	): Promise<ProcessedFile[]> {
-		console.log('DEBUG: FileProcessor.compileFiles - Starting compilation');
+		// console.log('DEBUG: FileProcessor.compileFiles - Starting compilation');
 		const compiledFiles: ProcessedFile[] = [];
 
 		// Combine merge configurations in topological order
@@ -427,32 +427,32 @@ export class FileProcessor {
 		}));
 
 		for (const template of templates) {
-			console.log(`DEBUG: FileProcessor.compileFiles - Processing template: ${template.path}`);
+			// console.log(`DEBUG: FileProcessor.compileFiles - Processing template: ${template.path}`);
 			for (const file of template.files) {
-				console.log(
-					`DEBUG: FileProcessor.compileFiles - Processing file: ${file.sourcePath} -> ${file.targetPath}`,
-				);
+				// console.log(
+				// 	`DEBUG: FileProcessor.compileFiles - Processing file: ${file.sourcePath} -> ${file.targetPath}`,
+				// );
 
 				// Skip companion files (they're only used for data)
 				const isCompanionFile = file.targetPath.match(/\.json\.json$/);
 
 				if (isCompanionFile) {
-					console.log(`DEBUG: FileProcessor.compileFiles - Skipping companion file: ${file.targetPath}`);
+					// console.log(`DEBUG: FileProcessor.compileFiles - Skipping companion file: ${file.targetPath}`);
 					continue;
 				}
 
 				// Apply conditional logic to file paths
 				const targetPath = this.applyConditionalLogic(file.targetPath, data);
 				if (!targetPath) {
-					console.log(
-						`DEBUG: FileProcessor.compileFiles - File excluded by conditional logic: ${file.targetPath}`,
-					);
+					// console.log(
+					// 	`DEBUG: FileProcessor.compileFiles - File excluded by conditional logic: ${file.targetPath}`,
+					// );
 					continue; // File excluded by conditional logic
 				}
 
-				console.log(
-					`DEBUG: FileProcessor.compileFiles - Conditional logic result: ${file.targetPath} -> ${targetPath}`,
-				);
+				// console.log(
+				// 	`DEBUG: FileProcessor.compileFiles - Conditional logic result: ${file.targetPath} -> ${targetPath}`,
+				// );
 
 				// Compile file content with plugins (single compile hook with full context)
 				const context = {
@@ -469,9 +469,9 @@ export class FileProcessor {
 				const mergeStrategy = this.getMergeStrategy(file, this.combinedMergeConfig);
 
 				const finalTargetPath = result.id || targetPath;
-				console.log(
-					`DEBUG: FileProcessor.compileFiles - Final target path: ${finalTargetPath} (strategy: ${mergeStrategy})`,
-				);
+				// console.log(
+				// 	`DEBUG: FileProcessor.compileFiles - Final target path: ${finalTargetPath} (strategy: ${mergeStrategy})`,
+				// );
 
 				compiledFiles.push({
 					sourcePath: file.sourcePath,
@@ -482,7 +482,7 @@ export class FileProcessor {
 			}
 		}
 
-		console.log('DEBUG: FileProcessor.compileFiles - Compilation complete');
+		// console.log('DEBUG: FileProcessor.compileFiles - Compilation complete');
 		return compiledFiles;
 	}
 
@@ -685,16 +685,16 @@ export class FileProcessor {
 	}
 
 	private getMergeStrategy(file: ResolvedFile, config: Record<string, Record<string, any>>): MergeStrategy {
-		console.log(`DEBUG: getMergeStrategy - File: ${file.targetPath}`);
-		console.log(`DEBUG: getMergeStrategy - Config:`, config);
+		// console.log(`DEBUG: getMergeStrategy - File: ${file.targetPath}`);
+		// console.log(`DEBUG: getMergeStrategy - Config:`, config);
 
 		// Check file-specific config first
 		if (file.config?.merge) {
-			console.log(`DEBUG: getMergeStrategy - File config merge:`, file.config.merge);
+			// console.log(`DEBUG: getMergeStrategy - File config merge:`, file.config.merge);
 			for (const [pattern, config] of Object.entries(file.config.merge)) {
 				if (this.matchesPattern(file.targetPath, pattern)) {
 					const strategy = config.strategy || 'replace';
-					console.log(`DEBUG: getMergeStrategy - File config match: ${pattern} -> ${strategy}`);
+					// console.log(`DEBUG: getMergeStrategy - File config match: ${pattern} -> ${strategy}`);
 					return strategy;
 				}
 			}
@@ -702,11 +702,11 @@ export class FileProcessor {
 
 		// Check include config (for files that come from included directories)
 		if (file.includeConfig?.merge) {
-			console.log(`DEBUG: getMergeStrategy - Include config merge:`, file.includeConfig.merge);
+			// console.log(`DEBUG: getMergeStrategy - Include config merge:`, file.includeConfig.merge);
 			for (const [pattern, config] of Object.entries(file.includeConfig.merge)) {
 				if (this.matchesPattern(file.targetPath, pattern)) {
 					const strategy = config.strategy || 'replace';
-					console.log(`DEBUG: getMergeStrategy - Include config match: ${pattern} -> ${strategy}`);
+					// console.log(`DEBUG: getMergeStrategy - Include config match: ${pattern} -> ${strategy}`);
 					return strategy;
 				}
 			}
@@ -714,24 +714,24 @@ export class FileProcessor {
 
 		// Check template config
 		if (config) {
-			console.log(`DEBUG: getMergeStrategy - Template config:`, config);
+			// console.log(`DEBUG: getMergeStrategy - Template config:`, config);
 			for (const [pattern, mergeConfig] of Object.entries(config)) {
 				if (this.matchesPattern(file.targetPath, pattern)) {
 					const strategy = mergeConfig.strategy || 'replace';
-					console.log(`DEBUG: getMergeStrategy - Template config match: ${pattern} -> ${strategy}`);
+					// console.log(`DEBUG: getMergeStrategy - Template config match: ${pattern} -> ${strategy}`);
 					return strategy;
 				}
 			}
 		}
 
-		console.log(`DEBUG: getMergeStrategy - No match found, using default: replace`);
+		// console.log(`DEBUG: getMergeStrategy - No match found, using default: replace`);
 		return 'replace'; // Default strategy
 	}
 
 	private matchesPattern(filePath: string, pattern: string): boolean {
 		// Use minimatch for proper glob pattern matching
 		const result = minimatch(filePath, pattern);
-		console.log(`DEBUG: matchesPattern - "${filePath}" matches "${pattern}": ${result}`);
+		// console.log(`DEBUG: matchesPattern - "${filePath}" matches "${pattern}": ${result}`);
 		return result;
 	}
 }

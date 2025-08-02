@@ -99,7 +99,7 @@ program
 
 			await combino.build(templateOptions);
 
-			console.log(`Successfully generated output in ${options.output}`);
+			// console.log(`Successfully generated output in ${options.output}`);
 		} catch (error: unknown) {
 			if (error instanceof Error) {
 				console.error('Error:', error.message);
