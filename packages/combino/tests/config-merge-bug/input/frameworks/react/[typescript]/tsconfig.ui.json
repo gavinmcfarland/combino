@@ -1,0 +1,10 @@
+{
+	"compilerOptions": {
+		"jsx": "react-jsx",
+		"paths": {
+			"@components/*": ["src/components/*"]
+		}
+	},
+	"include": ["src/**/*", "components/**/*"],
+	"exclude": ["node_modules", "dist", "build"]
+}

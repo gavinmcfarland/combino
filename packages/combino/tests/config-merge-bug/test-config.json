@@ -1,0 +1,10 @@
+{
+	"data": {
+		"framework": "react",
+		"typescript": true,
+		"hasUI": true
+	},
+	"plugins": ["ejs"],
+	"inputDirs": ["input/example-1"],
+	"description": "Test that config files with include arrays are merged properly instead of being overridden"
+}
