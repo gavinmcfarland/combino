@@ -654,6 +654,17 @@ async function findLayoutContent(context: FileHookContext, layoutPath: string): 
 	throw new Error(`Layout file not found: ${layoutPath}`);
 }
 
+function isValidLayoutTemplate(content: string): boolean {
+	// A valid layout template should contain layout-specific markers
+	// like <%- body %> or block definitions
+	return (
+		PATTERNS.bodyBlock.test(content) ||
+		content.includes('<% block(') ||
+		content.includes('<%- block(') ||
+		content.includes('<%= block(')
+	);
+}
+
 async function findDynamicLayout(context: FileHookContext): Promise<string | null> {
 	const layoutDirectories = collectLayoutDirectories(context);
 	if (layoutDirectories.length === 0) return null;
@@ -665,7 +676,11 @@ async function findDynamicLayout(context: FileHookContext): Promise<string | nul
 		const layoutPath = path.resolve(layoutDir, currentFileName);
 		const content = readFileIfExists(layoutPath);
 		if (content !== null) {
-			return content;
+			// Only treat the file as a layout if it actually contains layout markers
+			if (isValidLayoutTemplate(content)) {
+				return content;
+			}
+			// If it's just a data file with the same name, don't use it as a layout
 		}
 	}
 

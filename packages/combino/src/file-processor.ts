@@ -36,7 +36,6 @@ export class FileProcessor {
 				Object.assign(combinedConfig, template.config.merge);
 			}
 		}
-
 		return combinedConfig;
 	}
 
@@ -429,10 +428,6 @@ export class FileProcessor {
 		for (const template of templates) {
 			// console.log(`DEBUG: FileProcessor.compileFiles - Processing template: ${template.path}`);
 			for (const file of template.files) {
-				// console.log(
-				// 	`DEBUG: FileProcessor.compileFiles - Processing file: ${file.sourcePath} -> ${file.targetPath}`,
-				// );
-
 				// Skip companion files (they're only used for data)
 				const isCompanionFile = file.targetPath.match(/\.json\.json$/);
 
@@ -685,9 +680,6 @@ export class FileProcessor {
 	}
 
 	private getMergeStrategy(file: ResolvedFile, config: Record<string, Record<string, any>>): MergeStrategy {
-		// console.log(`DEBUG: getMergeStrategy - File: ${file.targetPath}`);
-		// console.log(`DEBUG: getMergeStrategy - Config:`, config);
-
 		// Check file-specific config first
 		if (file.config?.merge) {
 			// console.log(`DEBUG: getMergeStrategy - File config merge:`, file.config.merge);
@@ -714,24 +706,19 @@ export class FileProcessor {
 
 		// Check template config
 		if (config) {
-			// console.log(`DEBUG: getMergeStrategy - Template config:`, config);
 			for (const [pattern, mergeConfig] of Object.entries(config)) {
 				if (this.matchesPattern(file.targetPath, pattern)) {
 					const strategy = mergeConfig.strategy || 'replace';
-					// console.log(`DEBUG: getMergeStrategy - Template config match: ${pattern} -> ${strategy}`);
 					return strategy;
 				}
 			}
 		}
-
-		// console.log(`DEBUG: getMergeStrategy - No match found, using default: replace`);
 		return 'replace'; // Default strategy
 	}
 
 	private matchesPattern(filePath: string, pattern: string): boolean {
 		// Use minimatch for proper glob pattern matching
 		const result = minimatch(filePath, pattern);
-		// console.log(`DEBUG: matchesPattern - "${filePath}" matches "${pattern}": ${result}`);
 		return result;
 	}
 }

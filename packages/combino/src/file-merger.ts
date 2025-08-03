@@ -67,6 +67,12 @@ export class FileMerger {
 	}
 
 	private async mergeJsonFiles(files: ProcessedFile[], strategy: MergeStrategy): Promise<string> {
+		console.log(`DEBUG: mergeJsonFiles - ${files.length} files, strategy: ${strategy}`);
+		files.forEach((file, i) => {
+			console.log(`DEBUG: File ${i}: ${file.sourcePath}`);
+			console.log(`DEBUG: Content ${i}: ${file.content.substring(0, 200)}...`);
+		});
+
 		if (strategy === 'replace') {
 			return files[files.length - 1].content;
 		}
@@ -83,6 +89,7 @@ export class FileMerger {
 				await fs.writeFile(tempFile2, files[1].content);
 
 				const result = await mergeJson(tempFile1, tempFile2, strategy);
+				console.log(`DEBUG: Merge result: ${result.substring(0, 300)}...`);
 
 				// Clean up temp files
 				await fs.unlink(tempFile1).catch(() => {});

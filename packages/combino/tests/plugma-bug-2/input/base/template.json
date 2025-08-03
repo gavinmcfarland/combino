@@ -8,9 +8,8 @@
 		"mainDir": "src/main",
 		"uiDir": "src/ui"
 	},
-	"layout": ["./"],
-    "include": [
-        {
+	"include": [
+		{
 			"source": "../frameworks/<%= framework %>/components",
 			"target": "src/ui/components"
 		},
@@ -18,17 +17,17 @@
 			"source": "../frameworks/<%= framework %>/assets",
 			"target": "src/ui/assets"
 		},
-        {
+		{
 			"source": "../typescript[typescript]/tsconfig.main.json",
 			"target": "src/main/tsconfig.json"
 		},
-        {
+		{
 			"source": "../frameworks/[framework]/[typescript]/tsconfig.ui.json[hasUI]",
 			"target": "src/ui/tsconfig.json"
 		},
-        {
+		{
 			"source": "../typescript[typescript]/tsconfig.ui.json[hasUI]",
 			"target": "src/ui/tsconfig.json"
 		}
-    ]
+	]
 }

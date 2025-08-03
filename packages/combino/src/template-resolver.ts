@@ -992,15 +992,34 @@ export class TemplateResolver {
 				continue;
 			}
 
-			// Skip included paths - these should only be processed when explicitly included
-			if (includedPaths.has(resolvedPath)) {
-				console.log('DEBUG: Skipping included path as main template:', resolvedPath);
-				continue;
-			}
-
 			// Get paths to exclude for this template
 			const pathsToExclude = targetedIncludes.get(resolvedPath);
 			const templateExcludeSet = templateExclusions.get(resolvedPath);
+
+			// For included paths, use includes-only mode to process only includes
+			if (includedPaths.has(resolvedPath)) {
+				console.log('DEBUG: Processing includes-only for included template:', resolvedPath);
+
+				const includeOnlyTemplate = await this.resolveTemplate(
+					resolvedPath,
+					undefined,
+					globalExclude,
+					pathsToExclude,
+					pluginManager,
+					data,
+					templateExcludeSet,
+					true, // includesOnlyMode
+				);
+
+				if (includeOnlyTemplate.files.length > 0) {
+					console.log(
+						`DEBUG: Adding ${includeOnlyTemplate.files.length} include files from included template`,
+					);
+					templates.push(includeOnlyTemplate);
+				}
+
+				continue;
+			}
 			// console.log('DEBUG: Paths to exclude for template:', pathsToExclude ? Array.from(pathsToExclude) : 'none');
 			// console.log(
 			// 	'DEBUG: Template-specific exclusions:',
@@ -1031,6 +1050,7 @@ export class TemplateResolver {
 		pluginManager?: PluginManager,
 		data?: Record<string, any>,
 		allResolvedExcludes?: Set<string>,
+		includesOnlyMode?: boolean,
 	): Promise<ResolvedTemplate> {
 		// At the top of resolveTemplate, before any includes are processed
 		let includedFiles: any[] = [];
@@ -1108,7 +1128,7 @@ export class TemplateResolver {
 			_resolvedIncludes: explicitlyIncludedPaths,
 		};
 		DebugLogger.log(`DEBUG: resolveTemplate - Getting template files for: ${templatePath}`);
-		let files = await this.fileProcessor.getTemplateFiles(templatePath, mergedConfig, data);
+		let files = includesOnlyMode ? [] : await this.fileProcessor.getTemplateFiles(templatePath, mergedConfig, data);
 		DebugLogger.log(
 			`DEBUG: resolveTemplate - Found ${files.length} files:`,
 			files.map((f) => f.targetPath),
@@ -1120,7 +1140,7 @@ export class TemplateResolver {
 			const normalizedIncludes = this.normalizeIncludeArray(config.include);
 			// Apply conditional logic to include paths
 			const conditionalIncludes = this.applyConditionalLogicToIncludePaths(normalizedIncludes, data || {});
-			console.log('DEBUG: resolveTemplate - Conditional includes after processing:', conditionalIncludes);
+			// console.log('DEBUG: resolveTemplate - Conditional includes after processing:', conditionalIncludes);
 
 			for (const include of conditionalIncludes) {
 				console.log(`DEBUG: Processing conditional include: ${include.source} -> ${include.target}`);
