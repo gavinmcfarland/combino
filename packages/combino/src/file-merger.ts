@@ -5,6 +5,7 @@ import { mergeText } from './mergers/text.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { DebugLogger } from './utils/debug.js';
 
 export class FileMerger {
 	async mergeFiles(files: ProcessedFile[]): Promise<string> {
@@ -67,10 +68,10 @@ export class FileMerger {
 	}
 
 	private async mergeJsonFiles(files: ProcessedFile[], strategy: MergeStrategy): Promise<string> {
-		console.log(`DEBUG: mergeJsonFiles - ${files.length} files, strategy: ${strategy}`);
+		DebugLogger.log(`DEBUG: mergeJsonFiles - ${files.length} files, strategy: ${strategy}`);
 		files.forEach((file, i) => {
-			console.log(`DEBUG: File ${i}: ${file.sourcePath}`);
-			console.log(`DEBUG: Content ${i}: ${file.content.substring(0, 200)}...`);
+			DebugLogger.log(`DEBUG: File ${i}: ${file.sourcePath}`);
+			DebugLogger.log(`DEBUG: Content ${i}: ${file.content.substring(0, 200)}...`);
 		});
 
 		if (strategy === 'replace') {
@@ -89,7 +90,7 @@ export class FileMerger {
 				await fs.writeFile(tempFile2, files[1].content);
 
 				const result = await mergeJson(tempFile1, tempFile2, strategy);
-				console.log(`DEBUG: Merge result: ${result.substring(0, 300)}...`);
+				DebugLogger.log(`DEBUG: Merge result: ${result.substring(0, 300)}...`);
 
 				// Clean up temp files
 				await fs.unlink(tempFile1).catch(() => {});
