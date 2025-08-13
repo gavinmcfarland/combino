@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.10.0](https://github.com/gavinmcfarland/combino/compare/v1.9.1...v1.10.0) (2025-08-13)
+
+### Bug Fixes
+
+- improve template resolution and update test configurations ([6cae400](https://github.com/gavinmcfarland/combino/commit/6cae400b2ca945ac5414ae9d33d7a92820092c03))
+
+### Features
+
+- enhance debug logging in file merger and processor ([5206c86](https://github.com/gavinmcfarland/combino/commit/5206c868427879493ddacc188254275f975f9b8c))
+
 ## [1.9.1](https://github.com/gavinmcfarland/combino/compare/v1.8.0...v1.9.1) (2025-08-02)
 
 ### Bug Fixes
