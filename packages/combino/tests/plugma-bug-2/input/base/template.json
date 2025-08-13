@@ -10,11 +10,11 @@
 	},
 	"include": [
 		{
-			"source": "../frameworks/<%= framework %>/components",
+			"source": "[hasUI]../frameworks/<%= framework %>/components",
 			"target": "src/ui/components"
 		},
 		{
-			"source": "../frameworks/<%= framework %>/assets",
+			"source": "[hasUI]../frameworks/<%= framework %>/assets",
 			"target": "src/ui/assets"
 		},
 		{

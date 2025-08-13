@@ -122,8 +122,6 @@ export class FileProcessor {
 					// 	excludes: Array.from(config._resolvedExcludes),
 					// });
 					const isExcluded = Array.from(config._resolvedExcludes).some((excludePath) => {
-						// console.log('  Checking excludePath:', excludePath);
-
 						// Apply conditional logic to the exclude path to remove brackets for comparison
 						const processedExcludePath = this.applyConditionalLogic(excludePath, data || {});
 						const excludeFileName = processedExcludePath
@@ -135,31 +133,24 @@ export class FileProcessor {
 						const processedFileName = processedResolvedFile ? basename(processedResolvedFile) : fileName;
 
 						if (excludePath === resolvedFile) {
-							// console.log('    -> Exact match!');
 							return true;
 						}
 						if (processedExcludePath === resolvedFile) {
-							// console.log('    -> Processed exact match!');
 							return true;
 						}
 						if (processedExcludePath === processedResolvedFile) {
-							// console.log('    -> Processed exact match (both processed)!');
 							return true;
 						}
 						if (excludePath === fileName) {
-							// console.log('    -> Filename match!');
 							return true;
 						}
 						if (excludeFileName === fileName) {
-							// console.log('    -> Processed filename match!');
 							return true;
 						}
 						if (excludeFileName === processedFileName) {
-							// console.log('    -> Processed filename match (both processed)!');
 							return true;
 						}
 						if (excludePath.endsWith('/') && resolvedFile.startsWith(excludePath)) {
-							// console.log('    -> Directory match!');
 							return true;
 						}
 						if (
@@ -167,9 +158,14 @@ export class FileProcessor {
 							processedExcludePath.endsWith('/') &&
 							resolvedFile.startsWith(processedExcludePath)
 						) {
-							// console.log('    -> Processed directory match!');
 							return true;
 						}
+
+						// Check if processedExcludePath is a directory and resolvedFile starts with it
+						if (processedExcludePath && resolvedFile.startsWith(processedExcludePath + '/')) {
+							return true;
+						}
+
 						return false;
 					});
 					if (isExcluded) {

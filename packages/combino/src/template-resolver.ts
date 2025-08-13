@@ -365,14 +365,10 @@ export class TemplateResolver {
 	): Promise<string | null> {
 		// First try the original resolution (with brackets)
 		const primaryPath = this.resolvePhysicalPathForInclude(logicalPath, originalPath, data);
-		DebugLogger.log(`DEBUG: tryResolvePhysicalPathWithFallback - primaryPath: ${primaryPath}`);
 		if (primaryPath) {
 			// If the primary path contains brackets, it might not exist on disk
 			// In that case, try the fallback logic
 			if (primaryPath.includes('[') || primaryPath.includes(']')) {
-				DebugLogger.log(
-					`DEBUG: tryResolvePhysicalPathWithFallback - primaryPath contains brackets, trying fallback`,
-				);
 			} else {
 				return primaryPath;
 			}
@@ -380,11 +376,8 @@ export class TemplateResolver {
 
 		// Try multiple path variations to find the actual file on disk
 		const pathVariations = this.generatePathVariations(originalPath, data);
-		DebugLogger.log(`DEBUG: tryResolvePhysicalPathWithFallback - trying path variations:`, pathVariations);
 
 		for (const variation of pathVariations) {
-			DebugLogger.log(`DEBUG: tryResolvePhysicalPathWithFallback - trying variation: ${variation}`);
-			// Check if this variation exists on disk
 			try {
 				let fullPath: string;
 				if (templatePath && !variation.startsWith('/')) {
@@ -394,7 +387,6 @@ export class TemplateResolver {
 					fullPath = resolve(variation);
 				}
 				await fs.access(fullPath);
-				DebugLogger.log(`DEBUG: tryResolvePhysicalPathWithFallback - found existing file: ${variation}`);
 				return variation;
 			} catch {
 				// This variation doesn't exist, try the next one
@@ -752,8 +744,6 @@ export class TemplateResolver {
 		const includedPaths = new Set<string>(); // Track paths that are only included, not main templates
 		const processedPaths = new Set<string>();
 
-		DebugLogger.log('DEBUG: allPathsToProcess:', Array.from(allPathsToProcess));
-
 		// First pass: collect all include source paths with targets from template configs and gather recursive includes
 		while (true) {
 			let newPathsAdded = false;
@@ -781,8 +771,39 @@ export class TemplateResolver {
 							data || {},
 						);
 						for (const include of conditionalIncludes) {
-							// Use the original source (with brackets) for physical path construction
-							const includeSourcePath = resolve(resolvedPath, include.source);
+							// Use the physical source from applyConditionalLogicToIncludePaths for proper path resolution
+							const physicalSource = include.physicalSource;
+							if (!physicalSource) {
+								DebugLogger.warn(
+									`⚠️  Include skipped: No physical source resolved for "${include.source}"`,
+								);
+								continue;
+							}
+
+							// Apply the same physical path resolution logic as in include processing
+							const resolvedPhysicalSource = await this.tryResolvePhysicalPathWithFallback(
+								include.source,
+								physicalSource,
+								data || {},
+								resolvedPath,
+							);
+
+							if (!resolvedPhysicalSource) {
+								DebugLogger.warn(
+									`⚠️  Include skipped: Physical path resolution failed for "${include.source}"`,
+								);
+								continue;
+							}
+
+							// Resolve the path relative to the template path
+							let includeSourcePath: string;
+							if (resolvedPhysicalSource.startsWith('/')) {
+								// Handle absolute paths
+								includeSourcePath = resolvedPhysicalSource;
+							} else {
+								// Handle relative paths by resolving them relative to the template path
+								includeSourcePath = resolve(resolvedPath, resolvedPhysicalSource);
+							}
 
 							// Only add directory paths to allPathsToProcess for recursive processing
 							// Skip individual file paths (they should be handled by individual file includes)
@@ -796,8 +817,12 @@ export class TemplateResolver {
 										!processedPaths.has(includeSourcePath)
 									) {
 										allPathsToProcess.add(includeSourcePath);
-										includedPaths.add(includeSourcePath); // Mark as included path
 										newPathsAdded = true;
+									}
+
+									// Mark as included path if it has a target (regardless of whether it was already in allPathsToProcess)
+									if (include.target) {
+										includedPaths.add(includeSourcePath);
 									}
 								}
 							} catch {
@@ -839,16 +864,64 @@ export class TemplateResolver {
 								// This ensures that files are properly excluded from their source locations
 								// Use the physical path (with brackets) for proper exclusion matching
 								const physicalPath = include.physicalSource || include.source;
-								// Use the parent template path as the base for calculating the physical relative path
-								const physicalSourcePath = resolve(parentTemplatePath, physicalPath);
-								const physicalRelativePath = relative(parentTemplatePath, physicalSourcePath);
-								// console.log('DEBUG: First loop exclusion path construction:', {
-								// 	includeSource: include.source,
-								// 	physicalPath,
-								// 	parentTemplatePath,
-								// 	physicalSourcePath,
-								// 	physicalRelativePath,
-								// });
+
+								// Extract the relative path within the parent template
+								// For paths like "../frameworks/react/components[hasUI]", we want just "components[hasUI]"
+								// when the parent template is "frameworks/react"
+								let physicalRelativePath: string;
+
+								// First, handle conditionals at the beginning of the path
+								let processedPhysicalPath = physicalPath;
+								if (physicalPath.startsWith('[')) {
+									// Extract the conditional part and the remaining path
+									const conditionalMatch = physicalPath.match(/^(\[[^\]]+\])(.*)$/);
+									if (conditionalMatch) {
+										const conditionalPart = conditionalMatch[1];
+										const remainingPath = conditionalMatch[2];
+
+										// Apply conditional logic to see if the conditional evaluates to true
+										const conditionExpr = conditionalPart.slice(1, -1); // Remove [ and ]
+										const isConditional = this.isConditionalExpression(conditionExpr, data || {});
+										if (isConditional) {
+											const shouldInclude = this.evaluateCondition(conditionExpr, data || {});
+											if (shouldInclude) {
+												// Condition is true, so remove the conditional part
+												processedPhysicalPath = remainingPath;
+											} else {
+												// Condition is false, path should be excluded entirely
+												continue;
+											}
+										} else {
+											// Not a conditional, treat as dynamic expression
+											const evaluated = this.evaluateExpression(conditionExpr, data || {});
+											processedPhysicalPath = (evaluated || '') + remainingPath;
+										}
+									}
+								}
+
+								if (processedPhysicalPath.startsWith('../')) {
+									// For relative paths, we need to find the part that's relative to the parent template
+									const physicalSourcePath = resolve(parentTemplatePath, processedPhysicalPath);
+									// Get the path relative to the parent template directory
+									const tempRelativePath = relative(parentTemplatePath, physicalSourcePath);
+
+									// If the relative path goes outside the parent template, extract the last segment with brackets
+									if (
+										tempRelativePath.startsWith('../') ||
+										tempRelativePath === '' ||
+										tempRelativePath === '.'
+									) {
+										// Extract the last segment from the original physical path
+										const pathSegments = processedPhysicalPath.split('/');
+										physicalRelativePath = pathSegments[pathSegments.length - 1];
+									} else {
+										physicalRelativePath = tempRelativePath;
+									}
+								} else {
+									// For non-relative paths, use as-is
+									physicalRelativePath = processedPhysicalPath;
+								}
+
 								targetedIncludes.get(parentTemplatePath)!.add(physicalRelativePath);
 							}
 						}
