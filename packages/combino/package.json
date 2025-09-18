@@ -55,7 +55,6 @@
 		"@typescript-eslint/eslint-plugin": "^5.0.0",
 		"@typescript-eslint/parser": "^5.0.0",
 		"@vitest/ui": "^1.0.0",
-		"ejs": "^3.1.10",
 		"ejs-mate": "^4.0.0",
 		"eslint": "^8.0.0",
 		"strip-ts": "^0.0.0-alpha.6",
@@ -64,6 +63,7 @@
 		"vitest": "^1.0.0"
 	},
 	"dependencies": {
+		"ejs": "^3.1.10",
 		"chalk": "^5.4.1",
 		"commander": "^11.1.0",
 		"deepmerge": "^4.3.0",
