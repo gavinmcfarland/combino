@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.10.3](https://github.com/gavinmcfarland/combino/compare/v1.10.2...v1.10.3) (2025-09-18)
+
+### Bug Fixes
+
+- restore ejs dependency in package.json ([315c061](https://github.com/gavinmcfarland/combino/commit/315c06102304f8f387c0827a6951fd0c88d109c9))
+
 ## [1.10.2](https://github.com/gavinmcfarland/combino/compare/v1.10.1...v1.10.2) (2025-08-13)
 
 **Note:** Version bump only for package combino
