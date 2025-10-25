@@ -1,6 +1,6 @@
 {
 	"name": "@combino/plugin-strip-ts",
-	"version": "1.0.1",
+	"version": "1.10.4",
 	"type": "module",
 	"description": "TypeScript stripping plugin for Combino",
 	"main": "./dist/index.js",
