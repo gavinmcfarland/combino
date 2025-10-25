@@ -38,7 +38,7 @@
 	},
 	"dependencies": {
 		"chalk": "^5.4.1",
-		"strip-ts": "0.0.0"
+		"strip-ts": "0.0.1"
 	},
 	"devDependencies": {
 		"@types/node": "^20.17.55",
